@@ -1,0 +1,199 @@
+/* index.css - Archivo principal simplificado */
+
+/* Resetear estilos de Ant Design */
+@import 'antd/dist/reset.css';
+
+/* Importar estilos simplificados */
+@import './styles/theme.css';
+@import './styles/navbar.css';
+@import './styles/dashboard.css';
+@import './styles/project-card.css';
+@import './styles/forms.css';
+
+/* === ESTILOS GLOBALES === */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-container);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+/* === SCROLLBAR PERSONALIZADO === */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-gray);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* === CLASES DE UTILIDAD PARA ANIMACIONES === */
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.5s ease-out;
+}
+
+.scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+/* === ACCESIBILIDAD === */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus visible para elementos interactivos */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* === SOBRESCRIBIR ESTILOS DE ANT DESIGN === */
+
+/* Layout */
+.ant-layout {
+  background: var(--bg-container) !important;
+}
+
+.ant-layout-header {
+  background: var(--bg-dark) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.ant-layout-content {
+  background: var(--bg-container) !important;
+}
+
+/* Menu */
+.ant-menu {
+  background: transparent !important;
+  color: var(--text-white) !important;
+}
+
+.ant-menu-item {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.ant-menu-item-selected {
+  background-color: var(--primary-light) !important;
+  color: var(--primary-color) !important;
+}
+
+.ant-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-white) !important;
+}
+
+/* Formularios */
+.ant-form-item-label > label {
+  color: var(--text-primary) !important;
+}
+
+.ant-form-item-explain-error {
+  color: var(--error-color) !important;
+}
+
+/* Tablas */
+.ant-table {
+  background: var(--bg-white) !important;
+  color: var(--text-primary) !important;
+}
+
+.ant-table-thead > tr > th {
+  background: var(--bg-gray) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--border-color) !important;
+  color: var(--text-secondary) !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: var(--bg-gray) !important;
+}
+
+/* Modales */
+.ant-modal-content {
+  background: var(--bg-white) !important;
+  color: var(--text-primary) !important;
+}
+
+.ant-modal-header {
+  background: var(--bg-gray) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* Notificaciones */
+.ant-notification {
+  background: var(--bg-white) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* === RESPONSIVE HELPERS === */
+.mobile-only {
+  display: none;
+}
+
+.desktop-only {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .mobile-only {
+    display: block;
+  }
+  
+  .desktop-only {
+    display: none;
+  }
+}
+
+/* === MEJORAS PARA DISPOSITIVOS TÁCTILES === */
+@media (hover: none) and (pointer: coarse) {
+  .project-card:hover {
+    transform: none;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .navbar-avatar:hover {
+    transform: none;
+  }
+  
+  button:hover {
+    transform: none;
+  }
+}

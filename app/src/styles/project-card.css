@@ -1,0 +1,240 @@
+/* project-card.css - Tarjetas blancas que contrastan con el fondo gris */
+
+/* === TARJETA PRINCIPAL === */
+.project-card {
+  background: var(--bg-white); /* Blanco para contrastar con fondo gris */
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Barra superior con gradiente */
+.project-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--transition-normal);
+}
+
+.project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--primary-color);
+}
+
+.project-card:hover::before {
+  transform: scaleX(1);
+}
+
+/* === HEADER DE LA TARJETA === */
+.project-card .ant-card-head {
+  background: var(--bg-gray); /* Fondo gris claro para el header */
+  border-bottom: 1px solid var(--border-color);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+}
+
+.project-card .ant-card-head-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  padding: 0;
+  margin: 0;
+  line-height: var(--line-height-tight);
+}
+
+/* === CUERPO DE LA TARJETA === */
+.project-card .ant-card-body {
+  padding: var(--space-lg);
+}
+
+.project-card-content {
+  margin-bottom: var(--space-md);
+}
+
+/* === CAMPOS DE INFORMACIÓN === */
+.project-card-field {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+  gap: var(--space-sm);
+}
+
+.project-card-field:last-child {
+  margin-bottom: 0;
+}
+
+.project-card-label {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  min-width: 70px;
+  font-size: var(--font-size-sm);
+}
+
+.project-card-value {
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  flex: 1;
+}
+
+/* === DESCRIPCIÓN === */
+.project-card-description {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  margin-bottom: var(--space-md);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* === ESTADOS Y TAGS === */
+.project-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.project-card-status .ant-tag {
+  margin: 0;
+  border-radius: 20px;
+  font-weight: var(--font-weight-medium);
+  font-size: 12px;
+  padding: 4px 12px;
+  border: none;
+}
+
+.project-card-status .ant-tag-blue {
+  background: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.project-card-status .ant-tag-green {
+  background: var(--success-light);
+  color: var(--success-color);
+}
+
+/* === ID Y FECHA === */
+.project-card-id {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  background: var(--bg-gray);
+  color: var(--text-tertiary);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: var(--font-weight-medium);
+}
+
+.project-card-date {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: var(--font-weight-normal);
+}
+
+/* === ACCIONES === */
+.project-card-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap; /* permite que los botones bajen de línea en pantallas pequeñas */
+}
+
+.project-card-actions .btn-card {
+  flex: 1 1 auto; /* los botones se expanden para llenar el espacio */
+  min-width: 100px; /* ancho mínimo para que no colapsen demasiado */
+}
+
+/* Para pantallas pequeñas */
+@media (max-width: 480px) {
+  .project-card-actions .btn-card {
+    width: 100%; /* ocupan todo el ancho */
+  }
+}
+
+
+/* === ANIMACIONES === */
+@keyframes projectCardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.project-card {
+  animation: projectCardSlideIn 0.3s ease-out;
+}
+
+/* === ESTADOS ESPECIALES === */
+.project-card-loading {
+  pointer-events: none;
+  opacity: 0.7;
+  position: relative;
+}
+
+.project-card-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: var(--border-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* === ACCESIBILIDAD === */
+.project-card:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .project-card .ant-card-body {
+    padding: var(--space-md);
+  }
+  
+  .project-card-actions {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .project-card .ant-card-head {
+    padding: var(--space-sm) var(--space-md);
+  }
+  
+  .project-card .ant-card-head-title {
+    font-size: var(--font-size-base);
+  }
+  
+  .project-card-id {
+    position: static;
+    display: inline-block;
+    margin-top: var(--space-sm);
+  }
+}
