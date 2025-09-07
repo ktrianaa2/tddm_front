@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Form, Input, Select, Button, message, Typography } from "antd";
 import { ArrowLeftOutlined, SaveOutlined, ProjectOutlined } from '@ant-design/icons';
-import { useNavigate } from "react-router-dom";
 import { getStoredToken, API_ENDPOINTS, postFormDataAuth } from "../../../config";
 import '../../styles/forms.css';
 import '../../styles/buttons.css';
@@ -9,10 +8,9 @@ import '../../styles/buttons.css';
 const { Option } = Select;
 const { Title } = Typography;
 
-const CrearProyecto = ({ onCreado }) => {
+const CrearProyecto = ({ onCreado, onBack }) => {
     const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
-    const navigate = useNavigate();
 
     const handleSubmit = async (values) => {
         setLoading(true);
@@ -25,6 +23,7 @@ const CrearProyecto = ({ onCreado }) => {
         try {
             const res = await postFormDataAuth(API_ENDPOINTS.CREAR_PROYECTO, formData, token);
             message.success(res.mensaje || "Proyecto creado exitosamente");
+            form.resetFields(); // Limpiar el formulario después de crear
             onCreado();
         } catch (error) {
             message.error(error.message);
@@ -33,10 +32,16 @@ const CrearProyecto = ({ onCreado }) => {
         }
     };
 
+    const handleCancel = () => {
+        if (onBack) {
+            onBack();
+        }
+    };
+
     return (
         <div className={`form-container ${loading ? 'form-loading' : ''}`}>
             <div className="form-header">
-                <ProjectOutlined style={{ fontSize: '2rem', color: 'var(--primary-color)', marginBottom: '0.5rem' }} />
+                <ProjectOutlined style={{ fontSize: '2rem', color: 'var(--secondary-color)', marginBottom: '0.5rem' }} />
                 <Title level={3} className="form-title">Crear Nuevo Proyecto</Title>
                 <p className="form-subtitle">
                     Completa la información básica para crear tu nuevo proyecto
@@ -96,7 +101,7 @@ const CrearProyecto = ({ onCreado }) => {
                                 <span style={{
                                     width: '8px',
                                     height: '8px',
-                                    backgroundColor: 'var(--primary-color)',
+                                    backgroundColor: 'var(--secondary-color)',
                                     borderRadius: '50%'
                                 }}></span>
                                 Requisitos
@@ -119,8 +124,9 @@ const CrearProyecto = ({ onCreado }) => {
                 <div className="form-actions">
                     <Button
                         icon={<ArrowLeftOutlined />}
-                        onClick={() => navigate('/dashboard')}
+                        onClick={handleCancel}
                         className="btn btn-secondary"
+                        disabled={loading}
                     >
                         Cancelar
                     </Button>

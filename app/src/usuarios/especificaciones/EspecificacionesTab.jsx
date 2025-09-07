@@ -78,7 +78,6 @@ const EspecificacionesTab = ({ proyecto }) => {
                     >
                         ← Volver a Especificaciones
                     </Button>
-
                 </div>
 
                 {activeSection === 'requisitos' && (

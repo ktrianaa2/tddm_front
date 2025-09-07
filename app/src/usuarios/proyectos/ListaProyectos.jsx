@@ -5,7 +5,7 @@ import ProyectoCard from "./ProyectoCard";
 import { getStoredToken, API_ENDPOINTS, getWithAuth, postFormDataAuth } from "../../../config";
 import '../../styles/dashboard.css';
 
-const ListaProyectos = ({ onEditar, onEliminar, refreshFlag }) => {
+const ListaProyectos = ({ onEditar, onVer, onEliminar, refreshFlag }) => {
     const [proyectos, setProyectos] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -67,15 +67,6 @@ const ListaProyectos = ({ onEditar, onEliminar, refreshFlag }) => {
                 <div className="dashboard-empty-description">
                     Comienza creando tu primer proyecto para gestionar tus requisitos
                 </div>
-                <Button 
-                    type="primary" 
-                    icon={<PlusOutlined />}
-                    className="dashboard-create-btn"
-                    onClick={() => onEditar(null)}
-                    size="large"
-                >
-                    Crear tu primer proyecto
-                </Button>
             </div>
         );
     }
@@ -105,20 +96,21 @@ const ListaProyectos = ({ onEditar, onEliminar, refreshFlag }) => {
             {/* Grid de proyectos */}
             <Row gutter={[24, 24]} style={{ marginTop: '2rem' }}>
                 {proyectos.map((proyecto, index) => (
-                    <Col 
-                        key={proyecto.proyecto_id} 
-                        xs={24} 
-                        sm={12} 
-                        lg={8} 
+                    <Col
+                        key={proyecto.proyecto_id}
+                        xs={24}
+                        sm={12}
+                        lg={8}
                         xl={6}
-                        style={{ 
+                        style={{
                             animationDelay: `${index * 0.1}s`
                         }}
                     >
-                        <ProyectoCard 
-                            proyecto={proyecto} 
-                            onEditar={onEditar} 
-                            onEliminar={handleEliminar} 
+                        <ProyectoCard
+                            proyecto={proyecto}
+                            onEditar={onEditar}
+                            onEliminar={handleEliminar}
+                            onVer={onVer}
                         />
                     </Col>
                 ))}

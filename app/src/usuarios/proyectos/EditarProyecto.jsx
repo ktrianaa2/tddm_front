@@ -1,45 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { Form, Input, Select, Button, message, Typography, Skeleton } from "antd";
+import { Form, Input, Select, Button, message, Typography } from "antd";
 import { ArrowLeftOutlined, SaveOutlined, EditOutlined } from '@ant-design/icons';
-import { useParams, useNavigate } from "react-router-dom";
-import { getStoredToken, API_ENDPOINTS, postFormDataAuth, getWithAuth } from "../../../config";
+import { getStoredToken, API_ENDPOINTS, postFormDataAuth } from "../../../config";
 import '../../styles/forms.css';
 import '../../styles/buttons.css';
 
 const { Option } = Select;
 const { Title } = Typography;
 
-const EditarProyecto = ({ onEditado }) => {
-    const { id } = useParams();
+const EditarProyecto = ({ proyecto, onEditado, onBack }) => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
-    const [loadingData, setLoadingData] = useState(true);
-    const [projectData, setProjectData] = useState(null);
-    const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchProyecto = async () => {
-            try {
-                setLoadingData(true);
-                const token = getStoredToken();
-                const res = await getWithAuth(`${API_ENDPOINTS.OBTENER_PROYECTO}/${id}/`, token);
-                setProjectData(res);
-                form.setFieldsValue({
-                    nombre: res.nombre,
-                    descripcion: res.descripcion,
-                    estado: res.estado
-                });
-            } catch (error) {
-                message.error("Error al cargar el proyecto");
-                navigate('/dashboard');
-            } finally {
-                setLoadingData(false);
-            }
-        };
-        fetchProyecto();
-    }, [id, form, navigate]);
+        if (proyecto) {
+            form.setFieldsValue({
+                nombre: proyecto.nombre,
+                descripcion: proyecto.descripcion,
+                estado: proyecto.estado
+            });
+        }
+    }, [proyecto, form]);
 
     const handleSubmit = async (values) => {
+        if (!proyecto?.proyecto_id) {
+            message.error("Error: No se encontró el ID del proyecto");
+            return;
+        }
+
         setLoading(true);
         const token = getStoredToken();
         const formData = new FormData();
@@ -48,7 +36,11 @@ const EditarProyecto = ({ onEditado }) => {
         formData.append("estado", values.estado);
 
         try {
-            const res = await postFormDataAuth(`${API_ENDPOINTS.EDITAR_PROYECTO}/${id}/`, formData, token);
+            const res = await postFormDataAuth(
+                `${API_ENDPOINTS.EDITAR_PROYECTO}/${proyecto.proyecto_id}/`, 
+                formData, 
+                token
+            );
             message.success(res.mensaje || "Proyecto actualizado exitosamente");
             onEditado();
         } catch (error) {
@@ -58,14 +50,22 @@ const EditarProyecto = ({ onEditado }) => {
         }
     };
 
-    if (loadingData) {
+    const handleCancel = () => {
+        if (onBack) {
+            onBack();
+        }
+    };
+
+    if (!proyecto) {
         return (
             <div className="form-container">
                 <div className="form-header">
-                    <Skeleton.Button active size="large" shape="round" style={{ width: 200, height: 40 }} />
-                    <Skeleton.Input active size="small" style={{ width: 300, marginTop: 8 }} />
+                    <Title level={3}>Error</Title>
+                    <p>No se pudo cargar la información del proyecto</p>
                 </div>
-                <Skeleton active paragraph={{ rows: 6 }} />
+                <Button onClick={handleCancel}>
+                    Regresar
+                </Button>
             </div>
         );
     }
@@ -76,7 +76,7 @@ const EditarProyecto = ({ onEditado }) => {
                 <EditOutlined style={{ fontSize: '2rem', color: 'var(--warning-color)', marginBottom: '0.5rem' }} />
                 <Title level={3} className="form-title">Editar Proyecto</Title>
                 <p className="form-subtitle">
-                    Modifica la información de "{projectData?.nombre}"
+                    Modifica la información de "{proyecto.nombre}"
                 </p>
             </div>
 
@@ -153,7 +153,7 @@ const EditarProyecto = ({ onEditado }) => {
                 <div className="form-actions">
                     <Button
                         icon={<ArrowLeftOutlined />}
-                        onClick={() => navigate('/dashboard')}
+                        onClick={handleCancel}
                         className="btn btn-secondary"
                         disabled={loading}
                     >
@@ -167,7 +167,6 @@ const EditarProyecto = ({ onEditado }) => {
                     >
                         {loading ? 'Guardando...' : 'Guardar Cambios'}
                     </Button>
-
                 </div>
             </Form>
         </div>

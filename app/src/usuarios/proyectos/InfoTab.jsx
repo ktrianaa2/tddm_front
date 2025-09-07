@@ -7,7 +7,8 @@ import {
   Row,
   Col,
   Space,
-  Typography
+  Typography,
+  message
 } from 'antd';
 import {
   EditOutlined,
@@ -18,9 +19,18 @@ import {
 
 const { Text, Paragraph, Title } = Typography;
 
-const InfoTab = ({ proyecto, navigate }) => {
+const InfoTab = ({ proyecto, onBack, onEditar }) => {
   const getStatusColor = (estado) => {
     return estado === "Requisitos" ? "blue" : "green";
+  };
+
+  const handleEditarProyecto = () => {
+    if (onEditar) {
+      onEditar(proyecto);
+    } else {
+      // Si no se pasa onEditar, mostrar mensaje de que la función no está disponible
+      message.info('La función de editar estará disponible próximamente');
+    }
   };
 
   return (
@@ -90,7 +100,7 @@ const InfoTab = ({ proyecto, navigate }) => {
               block
               icon={<EditOutlined />}
               className="btn btn-primary"
-              onClick={() => navigate(`/dashboard/editar/${proyecto.proyecto_id}`)}
+              onClick={handleEditarProyecto}
             >
               Editar Proyecto
             </Button>

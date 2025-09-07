@@ -31,17 +31,17 @@
 
 /* === VARIANTES === */
 
-/* Primario (guardar, confirmar, crear) */
+/* Primario (guardar, confirmar, crear) → ahora en lila */
 .btn-primary {
-  color: var(--primary-color);
-  background: var(--primary-light);
-  border: 1px solid var(--primary-color);
+  color: var(--secondary-color);
+  background: rgba(124, 58, 237, 0.1); /* lila clarito */
+  border: 1px solid var(--secondary-color);
 }
 .btn-primary:hover {
-  background: var(--primary-color);
+  background: var(--secondary-hover);
   color: var(--text-white);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
 }
 
 /* Secundario (cancelar, cerrar, volver...) */
@@ -51,8 +51,8 @@
   color: var(--text-primary);
 }
 .btn-secondary:hover {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  border-color: var(--secondary-color);
+  color: var(--secondary-color);
 }
 
 /* Éxito (guardar, confirmar) */
@@ -67,7 +67,6 @@
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
-
 
 /* Advertencia (acciones de riesgo medio) */
 .btn-warning {
@@ -130,3 +129,14 @@
   justify-content: center;
 }
 
+/* === Fix para sobrescribir estilos de Ant Design === */
+.ant-btn.btn-primary {
+  background: rgba(124, 58, 237, 0.1) !important;
+  border-color: var(--secondary-color) !important;
+  color: var(--secondary-color) !important;
+}
+.ant-btn.btn-primary:hover {
+  background: var(--secondary-hover) !important;
+  border-color: var(--secondary-hover) !important;
+  color: var(--text-white) !important;
+}

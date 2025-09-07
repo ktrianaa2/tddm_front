@@ -1,10 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import {
   Typography,
   Button,
-  Spin,
-  message,
   Tabs
 } from "antd";
 import {
@@ -14,7 +11,6 @@ import {
   BugOutlined,
   PlayCircleOutlined
 } from '@ant-design/icons';
-import { getStoredToken, API_ENDPOINTS, getWithAuth } from "../../config";
 import '../styles/dashboard.css';
 import '../styles/forms.css';
 import '../styles/buttons.css';
@@ -27,41 +23,8 @@ import EjecutarPruebasTab from './pruebas/ejecutar_pruebas/EjecutarPruebasTab';
 
 const { Title } = Typography;
 
-const GestionProyecto = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [proyecto, setProyecto] = useState(null);
-  const [loading, setLoading] = useState(true);
+const GestionProyecto = ({ proyecto, onBack, onEditar }) => {
   const [activeTab, setActiveTab] = useState('info');
-
-  useEffect(() => {
-    const fetchProyecto = async () => {
-      try {
-        setLoading(true);
-        const token = getStoredToken();
-        const response = await getWithAuth(`${API_ENDPOINTS.OBTENER_PROYECTO}/${id}/`, token);
-        setProyecto(response);
-      } catch (error) {
-        message.error("Error al cargar el proyecto");
-        navigate('/dashboard');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchProyecto();
-    }
-  }, [id, navigate]);
-
-  if (loading) {
-    return (
-      <div className="dashboard-loading">
-        <Spin size="large" />
-        <div>Cargando proyecto...</div>
-      </div>
-    );
-  }
 
   if (!proyecto) {
     return (
@@ -73,12 +36,12 @@ const GestionProyecto = () => {
           Proyecto no encontrado
         </div>
         <div className="dashboard-empty-description">
-          El proyecto que buscas no existe o no tienes permisos para verlo
+          No se pudo cargar la información del proyecto
         </div>
         <Button
           type="primary"
           icon={<ArrowLeftOutlined />}
-          onClick={() => navigate('/dashboard')}
+          onClick={onBack}
         >
           Volver al Dashboard
         </Button>
@@ -95,7 +58,7 @@ const GestionProyecto = () => {
           Información
         </span>
       ),
-      children: <InfoTab proyecto={proyecto} navigate={navigate} />,
+      children: <InfoTab proyecto={proyecto} onBack={onBack} onEditar={onEditar} />,
     },
     {
       key: 'especificaciones',
@@ -143,7 +106,7 @@ const GestionProyecto = () => {
         {/* Botón regresar */}
         <Button
           icon={<ArrowLeftOutlined />}
-          onClick={() => navigate('/dashboard')}
+          onClick={onBack}
           className="btn btn-secondary"
         >
           Regresar
@@ -162,7 +125,6 @@ const GestionProyecto = () => {
           {proyecto.nombre}
         </Title>
       </div>
-
 
       {/* Tabs */}
       <Tabs
