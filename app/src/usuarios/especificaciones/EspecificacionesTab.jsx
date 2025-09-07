@@ -25,8 +25,6 @@ const { Title, Text } = Typography;
 
 const EspecificacionesTab = ({ proyecto }) => {
     const [activeSection, setActiveSection] = useState(null);
-
-    // Datos simulados - en tu aplicación real vendrían del backend
     const contadores = {
         requisitos: 0,
         casosUso: 0,

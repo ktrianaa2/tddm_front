@@ -98,15 +98,6 @@ const InfoTab = ({ proyecto, onBack, onEditar }) => {
           <Space direction="vertical" style={{ width: '100%' }} size="middle">
             <Button
               block
-              icon={<EditOutlined />}
-              className="btn btn-primary"
-              onClick={handleEditarProyecto}
-            >
-              Editar Proyecto
-            </Button>
-
-            <Button
-              block
               icon={<SettingOutlined />}
               className="btn btn-secondary"
               disabled
