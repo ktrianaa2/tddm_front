@@ -79,7 +79,7 @@ const EspecificacionesTab = ({ proyecto }) => {
                 </div>
 
                 {activeSection === 'requisitos' && (
-                    <RequisitosSection proyecto={proyecto} />
+                    <RequisitosSection proyectoId={proyecto.proyecto_id} />
                 )}
                 {activeSection === 'casos-uso' && (
                     <CasosDeUsoSection proyecto={proyecto} />
