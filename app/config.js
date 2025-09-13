@@ -19,46 +19,46 @@ export const API_ENDPOINTS = {
   // Tipos de Requisito
   TIPOS_REQUISITO: '/app/catalogos/listar/',
   TIPOS_REQUISITO_CREAR: '/app/catalogos/crear/',
-  TIPOS_REQUISITO_ACTUALIZAR: (id) => `/app/catalogos/editar/${id}/`,
-  TIPOS_REQUISITO_CAMBIAR_ESTADO: (id) => `/app/catalogos/deshabilitar/${id}/`,
+  TIPOS_REQUISITO_ACTUALIZAR: `/app/catalogos/editar`, // Se concatena /:proyecto_id en el componente
+  TIPOS_REQUISITO_CAMBIAR_ESTADO: `/app/catalogos/deshabilitar`, // Se concatena /:proyecto_id en el componente
 
   // Prioridades
   PRIORIDADES: '/app/catalogos/prioridades/listar/',
   PRIORIDADES_CREAR: '/app/catalogos/prioridades/crear/',
-  PRIORIDADES_ACTUALIZAR: (id) => `/app/catalogos/prioridades/editar/${id}/`,
-  PRIORIDADES_CAMBIAR_ESTADO: (id) => `/app/catalogos/prioridades/deshabilitar/${id}/`,
+  PRIORIDADES_ACTUALIZAR: `/app/catalogos/prioridades/editar`, // Se concatena /:proyecto_id en el componente
+  PRIORIDADES_CAMBIAR_ESTADO: `/app/catalogos/prioridades/deshabilitar`, // Se concatena /:proyecto_id en el componente
 
   // Estados de Proyecto
   ESTADOS_PROYECTO: '/app/catalogos/estados/listar/',
   ESTADOS_PROYECTO_CREAR: '/app/catalogos/estados/crear/',
-  ESTADOS_PROYECTO_ACTUALIZAR: (id) => `/app/catalogos/estados/editar/${id}/`,
-  ESTADOS_PROYECTO_CAMBIAR_ESTADO: (id) => `/app/catalogos/estados/deshabilitar/${id}/`,
+  ESTADOS_PROYECTO_ACTUALIZAR:`/app/catalogos/estados/editar`, // Se concatena /:proyecto_id en el componente
+  ESTADOS_PROYECTO_CAMBIAR_ESTADO: `/app/catalogos/estados/deshabilitar`, // Se concatena /:proyecto_id en el componente
 
   // EstadosElemento
   ESTADOS_ELEMENTO: '/app/catalogos/estados_elemento/listar/',
   ESTADOS_ELEMENTO_CREAR: '/app/catalogos/estados_elemento/crear/',
-  ESTADOS_ELEMENTO_ACTUALIZAR: (id) => `/app/catalogos/estados_elemento/editar/${id}/`,
-  ESTADOS_ELEMENTO_CAMBIAR_ESTADO: (id) => `/app/catalogos/estados_elemento/deshabilitar/${id}/`,
+  ESTADOS_ELEMENTO_ACTUALIZAR: `/app/catalogos/estados_elemento/editar`, // Se concatena /:proyecto_id en el componente
+  ESTADOS_ELEMENTO_CAMBIAR_ESTADO: `/app/catalogos/estados_elemento/deshabilitar`, // Se concatena /:proyecto_id en el componente
 
   // Tipos de Relación de Casos de Uso
   TIPOS_RELACION_CU: '/app/catalogos/tipos_relacion_cu/listar/',
   TIPOS_RELACION_CU_CREAR: '/app/catalogos/tipos_relacion_cu/crear/',
-  TIPOS_RELACION_CU_ACTUALIZAR: (id) => `/app/catalogos/tipos_relacion_cu/editar/${id}/`,
-  TIPOS_RELACION_CU_CAMBIAR_ESTADO: (id) => `/app/catalogos/tipos_relacion_cu/deshabilitar/${id}/`,
+  TIPOS_RELACION_CU_ACTUALIZAR: `/app/catalogos/tipos_relacion_cu/editar`, // Se concatena /:proyecto_id en el componente
+  TIPOS_RELACION_CU_CAMBIAR_ESTADO: `/app/catalogos/tipos_relacion_cu/deshabilitar`, // Se concatena /:proyecto_id en el componente
 
   // Tipos de Relación de Requisitos
   TIPOS_RELACION_REQUISITO: '/app/catalogos/tipos_relacion_requisito/listar/',
   TIPOS_RELACION_REQUISITO_CREAR: '/app/catalogos/tipos_relacion_requisito/crear/',
-  TIPOS_RELACION_REQUISITO_ACTUALIZAR: (id) => `/app/catalogos/tipos_relacion_requisito/editar/${id}/`,
-  TIPOS_RELACION_REQUISITO_CAMBIAR_ESTADO: (id) => `/app/catalogos/tipos_relacion_requisito/deshabilitar/${id}/`,
-
-  // Requisitos
+  TIPOS_RELACION_REQUISITO_ACTUALIZAR: `/app/catalogos/tipos_relacion_requisito/editar`, // Se concatena /:proyecto_id en el componente
+  TIPOS_RELACION_REQUISITO_CAMBIAR_ESTADO: `/app/catalogos/tipos_relacion_requisito/deshabilitar`, // Se concatena /:proyecto_id en el componente
+  
+  // Endpoints de Requisitos - CRUD completo 
   CREAR_REQUISITO: '/app/requisitos/crear/',
-  LISTAR_REQUISITOS: (proyecto_id) => `/app/requisitos/listar/${proyecto_id}/`,
-  OBTENER_REQUISITO: (id) => `/app/requisitos/obtener/${id}/`,
-  ACTUALIZAR_REQUISITO: (id) => `/app/requisitos/editar/${id}/`,
-  ELIMINAR_REQUISITO: (id) => `/app/requisitos/eliminar/${id}/`,
-  RELACIONES_REQUISITO: (id) => `/app/requisitos/relaciones/${id}/`,
+  LISTAR_REQUISITOS: '/app/requisitos/listar', // Se concatena /:proyecto_id en el componente
+  OBTENER_REQUISITO: '/app/requisitos/obtener', // Se concatena /:requisito_id en el componente 
+  ACTUALIZAR_REQUISITO: '/app/requisitos/actualizar', // Se concatena /:requisito_id en el componente
+  ELIMINAR_REQUISITO: '/app/requisitos/eliminar', // Se concatena /:requisito_id en el componente
+  RELACIONES_REQUISITO: '/app/requisitos/relaciones', // Se concatena /:requisito_id en el componente
 };
 
 // Función helper para construir URLs completas

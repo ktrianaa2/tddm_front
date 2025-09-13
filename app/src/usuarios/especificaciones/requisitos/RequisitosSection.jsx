@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, Button, List, Typography, Tag, message, Spin, Modal } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, ReloadOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
-import RequisitosForm from "./RequisitosForm";
+import RequisitosFormContainer from "./RequisitosFormContainer";
 import { getStoredToken, API_ENDPOINTS, postJSONAuth, getWithAuth, putJSONAuth, deleteWithAuth } from "../../../../config";
 import '../../../styles/forms.css';
 import '../../../styles/buttons.css';
@@ -9,11 +9,16 @@ import '../../../styles/buttons.css';
 const { Title, Text } = Typography;
 const { confirm } = Modal;
 
-const RequisitosSection = ({ proyectoId, catalogos }) => {
+const RequisitosSection = ({ proyectoId }) => {
     const [requisitos, setRequisitos] = useState([]);
-    const [editing, setEditing] = useState(null); // null = lista, {} = creando, {id} = editando
+    const [editing, setEditing] = useState(null); // null = lista, {} = creando, {datos} = editando
     const [loading, setLoading] = useState(false);
     const [loadingSubmit, setLoadingSubmit] = useState(false);
+
+    // NUEVOS ESTADOS PARA CATÁLOGOS
+    const [catalogos, setCatalogos] = useState(null);
+    const [loadingCatalogos, setLoadingCatalogos] = useState(false);
+    const [errorCatalogos, setErrorCatalogos] = useState(null);
 
     // Mapeo de colores para tipos de requisito
     const tipoColors = {
@@ -42,6 +47,103 @@ const RequisitosSection = ({ proyectoId, catalogos }) => {
         'cancelado': '#ff4d4f'
     };
 
+    const cargarCatalogos = async () => {
+        console.log('Cargando catálogos...');
+        setLoadingCatalogos(true);
+        setErrorCatalogos(null);
+
+        try {
+            const token = getStoredToken();
+            if (!token) {
+                throw new Error('No hay token de autenticación');
+            }
+            const [tiposResponse, prioridadesResponse, estadosResponse, tiposRelacionResponse] = await Promise.allSettled([
+                getWithAuth(API_ENDPOINTS.TIPOS_REQUISITO, token),
+                getWithAuth(API_ENDPOINTS.PRIORIDADES, token),
+                getWithAuth(API_ENDPOINTS.ESTADOS_ELEMENTO, token),
+                getWithAuth(API_ENDPOINTS.TIPOS_RELACION_REQUISITO, token)
+            ]);
+
+            const catalogosData = {
+                tipos_requisito: [],
+                prioridades: [],
+                estados: [],
+                tipos_relacion: []
+            };
+
+            // Procesar tipos de requisito
+            if (tiposResponse.status === 'fulfilled' && tiposResponse.value) {
+                const tiposData = tiposResponse.value.tipos_requisito || tiposResponse.value.data || tiposResponse.value;
+                if (Array.isArray(tiposData)) {
+                    catalogosData.tipos_requisito = tiposData.map(tipo => ({
+                        id: tipo.id || tipo.tipo_id,
+                        nombre: tipo.nombre,
+                        key: tipo.key || tipo.nombre?.toLowerCase().replace(/[\s_-]+/g, '-'),
+                        descripcion: tipo.descripcion || '',
+                        activo: tipo.activo !== false
+                    }));
+                }
+            }
+
+            // Procesar prioridades
+            if (prioridadesResponse.status === 'fulfilled' && prioridadesResponse.value) {
+                const prioridadesData = prioridadesResponse.value.prioridades || prioridadesResponse.value.data || prioridadesResponse.value;
+                if (Array.isArray(prioridadesData)) {
+                    catalogosData.prioridades = prioridadesData.map(prioridad => ({
+                        id: prioridad.id || prioridad.prioridad_id,
+                        nombre: prioridad.nombre,
+                        key: prioridad.key || prioridad.nombre?.toLowerCase().replace(/[\s_-]+/g, '-'),
+                        descripcion: prioridad.descripcion || '',
+                        nivel: prioridad.nivel,
+                        activo: prioridad.activo !== false
+                    }));
+                }
+            }
+
+            // Procesar estados (filtrar solo para requisitos)
+            if (estadosResponse.status === 'fulfilled' && estadosResponse.value) {
+                const estadosData = estadosResponse.value.estados_elemento || estadosResponse.value.estados || estadosResponse.value.data || estadosResponse.value;
+                if (Array.isArray(estadosData)) {
+                    const estadosRequisitos = estadosData.filter(estado =>
+                        estado.tipo === 'requisito' || !estado.tipo
+                    );
+                    catalogosData.estados = estadosRequisitos.map(estado => ({
+                        id: estado.id || estado.estado_id,
+                        nombre: estado.nombre,
+                        key: estado.key || estado.nombre?.toLowerCase().replace(/[\s_-]+/g, '-'),
+                        descripcion: estado.descripcion || '',
+                        tipo: estado.tipo,
+                        activo: estado.activo !== false
+                    }));
+                }
+            }
+
+            // Procesar tipos de relación
+            if (tiposRelacionResponse.status === 'fulfilled' && tiposRelacionResponse.value) {
+                const tiposRelacionData = tiposRelacionResponse.value.tipos_relacion_requisito || tiposRelacionResponse.value.tipos_relacion || tiposRelacionResponse.value.data || tiposRelacionResponse.value;
+                if (Array.isArray(tiposRelacionData)) {
+                    catalogosData.tipos_relacion = tiposRelacionData.map(tipoRelacion => ({
+                        id: tipoRelacion.id || tipoRelacion.relacion_id,
+                        nombre: tipoRelacion.nombre,
+                        key: tipoRelacion.key || tipoRelacion.nombre?.toLowerCase().replace(/[\s_-]+/g, '-'),
+                        descripcion: tipoRelacion.descripcion || '',
+                        activo: tipoRelacion.activo !== false
+                    }));
+                }
+            }
+
+            setCatalogos(catalogosData);
+            console.log('Catálogos cargados exitosamente:', catalogosData);
+
+        } catch (error) {
+            console.error('Error cargando catálogos:', error);
+            setErrorCatalogos(error.message);
+            message.error(`Error al cargar catálogos: ${error.message}`);
+        } finally {
+            setLoadingCatalogos(false);
+        }
+    };
+
     // Cargar requisitos del proyecto
     const cargarRequisitos = async () => {
         if (!proyectoId) return;
@@ -51,7 +153,7 @@ const RequisitosSection = ({ proyectoId, catalogos }) => {
             const token = getStoredToken();
             const response = await getWithAuth(`${API_ENDPOINTS.LISTAR_REQUISITOS}/${proyectoId}/`, token);
 
-            // Procesar los datos para que coincidan con el formato esperado por el formulario
+            // Procesar los datos para que coincidan con el formato esperado
             const requisitosProcessed = response.requisitos.map(req => ({
                 id: req.id,
                 nombre: req.nombre,
@@ -67,7 +169,9 @@ const RequisitosSection = ({ proyectoId, catalogos }) => {
             }));
 
             setRequisitos(requisitosProcessed);
+            console.log('Requisitos cargados:', requisitosProcessed);
         } catch (error) {
+            console.error('Error al cargar requisitos:', error);
             message.error(`Error al cargar requisitos: ${error.message}`);
             setRequisitos([]);
         } finally {
@@ -75,64 +179,130 @@ const RequisitosSection = ({ proyectoId, catalogos }) => {
         }
     };
 
-    // Funciones helper para mapear entre keys y IDs
-    const getTipoIdByKey = (key) => {
-        const tipo = catalogos.tipos_requisito.find(t => t.key === key);
-        return tipo ? tipo.id.toString() : undefined;
-    };
-
-    const getPrioridadIdByKey = (key) => {
-        const prioridad = catalogos.prioridades.find(p => p.key === key);
-        return prioridad ? prioridad.id.toString() : undefined;
-    };
-
-    const getEstadoIdByKey = (key) => {
-        const estado = catalogos.estados.find(e => e.key === key);
-        return estado ? estado.id.toString() : undefined;
-    };
-
-    // Cargar un requisito específico para edición
+    // FUNCIÓN CORREGIDA - Cargar un requisito específico para edición
     const cargarRequisitoParaEdicion = async (requisitoId) => {
+        console.log('=== INICIANDO CARGA PARA EDICIÓN ===');
+        console.log('ID del requisito a cargar:', requisitoId);
+        console.log('Catálogos disponibles:', catalogos);
+
+        setLoadingSubmit(true);
+
         try {
             const token = getStoredToken();
             const response = await getWithAuth(`${API_ENDPOINTS.OBTENER_REQUISITO}/${requisitoId}/`, token);
 
-            // Preparar los valores para el formulario, convirtiendo keys a IDs
-            const requisitoParaEditar = {
-                ...response.requisito,
-                // Convertir keys del backend a IDs para el formulario
-                tipo: getTipoIdByKey(response.requisito.tipo),
-                prioridad: getPrioridadIdByKey(response.requisito.prioridad),
-                estado: getEstadoIdByKey(response.requisito.estado),
-                // Convertir relaciones al formato esperado por el formulario
-                relaciones_requisitos: (response.requisito.relaciones_requisitos || []).map(rel => ({
-                    id: rel.id || Date.now() + Math.random(), // ID temporal para el formulario
-                    requisito_id: rel.requisito_id,
-                    tipo_relacion: rel.tipo_relacion,
-                    descripcion: rel.descripcion || ''
-                }))
+            console.log('Respuesta del backend para edición:', response);
+
+            if (!response || !response.requisito) {
+                throw new Error('No se pudo obtener la información del requisito');
+            }
+
+            const requisitoBackend = response.requisito;
+
+            // Función helper para mapear keys a IDs
+            const mapearKeyAId = (key, catalogo, tipo) => {
+                if (!key || !catalogo) return undefined;
+
+                const item = catalogo.find(item =>
+                    item.key === key ||
+                    item.nombre?.toLowerCase() === key.toLowerCase() ||
+                    item.id?.toString() === key.toString()
+                );
+
+                console.log(`Mapeando ${tipo}: '${key}' -> '${item?.id}'`);
+                return item ? item.id.toString() : undefined;
             };
 
-            console.log('Requisito cargado para edición:', requisitoParaEditar); // Debug
+            // Preparar los valores para el formulario
+            const requisitoParaEditar = {
+                id: requisitoBackend.id,
+                nombre: requisitoBackend.nombre || '',
+                descripcion: requisitoBackend.descripcion || '',
+                criterios: requisitoBackend.criterios || '',
+                origen: requisitoBackend.origen || '',
+                condiciones_previas: requisitoBackend.condiciones_previas || '',
+                proyecto_id: requisitoBackend.proyecto_id,
+
+                // Mapear usando los catálogos disponibles
+                tipo: mapearKeyAId(requisitoBackend.tipo, catalogos.tipos_requisito, 'tipo'),
+                prioridad: mapearKeyAId(requisitoBackend.prioridad, catalogos.prioridades, 'prioridad'),
+                estado: mapearKeyAId(requisitoBackend.estado, catalogos.estados, 'estado'),
+
+                relaciones_requisitos: []
+            };
+
+            let relacionesData = [];
+
+            // 1. Primero buscar en la respuesta del requisito
+            if (requisitoBackend.relaciones_requisitos && Array.isArray(requisitoBackend.relaciones_requisitos)) {
+                relacionesData = requisitoBackend.relaciones_requisitos;
+                console.log('Relaciones encontradas en la respuesta del requisito:', relacionesData);
+            }
+            // 2. Si no están en la respuesta del requisito, intentar cargarlas por separado
+            else {
+                try {
+                    console.log('Intentando cargar relaciones por separado...');
+                    const relacionesResponse = await getWithAuth(`${API_ENDPOINTS.RELACIONES_REQUISITO}/${requisitoId}/`, token);
+
+                    if (relacionesResponse && relacionesResponse.relaciones) {
+                        relacionesData = relacionesResponse.relaciones;
+                        console.log('Relaciones cargadas por separado:', relacionesData);
+                    } else if (Array.isArray(relacionesResponse)) {
+                        relacionesData = relacionesResponse;
+                        console.log('Relaciones cargadas como array directo:', relacionesData);
+                    }
+                } catch (relacionesError) {
+                    console.warn('No se pudieron cargar las relaciones por separado (probablemente CORS):', relacionesError.message);
+                    relacionesData = [];
+                }
+            }
+
+            // Procesar relaciones si existen
+            if (Array.isArray(relacionesData) && relacionesData.length > 0) {
+                requisitoParaEditar.relaciones_requisitos = relacionesData.map(rel => {
+                    console.log('Procesando relación:', rel);
+
+                    return {
+                        id: rel.id || `temp_${Date.now()}_${Math.random()}`,
+                        requisito_id: (rel.requisito_id || rel.requisito_relacionado_id || '').toString(),
+                        tipo_relacion: (rel.tipo_relacion_id || rel.tipo_relacion || '').toString(),
+                        descripcion: rel.descripcion || ''
+                    };
+                });
+
+                console.log('Relaciones procesadas:', requisitoParaEditar.relaciones_requisitos);
+            }
+
+            console.log('Datos preparados para edición:', requisitoParaEditar);
             setEditing(requisitoParaEditar);
+
         } catch (error) {
+            console.error('Error al cargar requisito para edición:', error);
             message.error(`Error al cargar requisito: ${error.message}`);
+        } finally {
+            setLoadingSubmit(false);
         }
     };
 
-    // Efecto para cargar requisitos cuando cambia el proyectoId
     useEffect(() => {
         if (proyectoId) {
+            console.log('Cargando datos para proyecto:', proyectoId);
+            if (!catalogos) {
+                cargarCatalogos();
+            }
             cargarRequisitos();
         }
     }, [proyectoId]);
 
-    // Manejar guardado de requisito (crear/editar)
     const handleGuardar = async (values) => {
         if (!proyectoId) {
             message.error('No se ha especificado el ID del proyecto');
             return;
         }
+
+        console.log('=== INICIANDO GUARDADO ===');
+        console.log('Valores recibidos del formulario:', values);
+        console.log('Estado de edición actual:', editing);
 
         setLoadingSubmit(true);
         try {
@@ -142,25 +312,29 @@ const RequisitosSection = ({ proyectoId, catalogos }) => {
             const dataToSend = {
                 nombre: values.nombre,
                 descripcion: values.descripcion,
-                tipo_id: parseInt(values.tipo), // El backend espera tipo_id
+                tipo_id: values.tipo ? parseInt(values.tipo) : null,
                 criterios: values.criterios,
-                prioridad_id: values.prioridad ? parseInt(values.prioridad) : null, // El backend espera prioridad_id
-                estado_id: parseInt(values.estado), // El backend espera estado_id
+                prioridad_id: values.prioridad ? parseInt(values.prioridad) : null,
+                estado_id: values.estado ? parseInt(values.estado) : null,
                 origen: values.origen || '',
                 condiciones_previas: values.condiciones_previas || '',
                 proyecto_id: proyectoId,
-                relaciones_requisitos: (values.relaciones_requisitos || []).map(rel => ({
-                    requisito_id: parseInt(rel.requisito_id),
-                    tipo_relacion_id: parseInt(rel.tipo_relacion),
-                    descripcion: rel.descripcion || ''
-                }))
+                relaciones_requisitos: (values.relaciones_requisitos || [])
+                    .filter(rel => rel.requisito_id && rel.tipo_relacion) // Solo enviar relaciones completas
+                    .map(rel => ({
+                        requisito_id: parseInt(rel.requisito_id),
+                        tipo_relacion_id: parseInt(rel.tipo_relacion),
+                        descripcion: rel.descripcion || ''
+                    }))
             };
 
-            console.log('Datos a enviar:', dataToSend); // Debug
+            console.log('Datos preparados para envío:', dataToSend);
 
-            if (editing?.id) {
-                // Editar requisito existente
-                const response = await putJSONAuth(
+            let response;
+
+            if (editing && editing.id) {
+                console.log(`Editando requisito existente con ID: ${editing.id}`);
+                response = await putJSONAuth(
                     `${API_ENDPOINTS.ACTUALIZAR_REQUISITO}/${editing.id}/`,
                     dataToSend,
                     token
@@ -168,15 +342,21 @@ const RequisitosSection = ({ proyectoId, catalogos }) => {
                 message.success(response.mensaje || 'Requisito actualizado exitosamente');
             } else {
                 // Crear nuevo requisito
-                const response = await postJSONAuth(API_ENDPOINTS.CREAR_REQUISITO, dataToSend, token);
+                console.log('Creando nuevo requisito');
+                response = await postJSONAuth(API_ENDPOINTS.CREAR_REQUISITO, dataToSend, token);
                 message.success(response.mensaje || 'Requisito creado exitosamente');
             }
 
-            // Recargar la lista de requisitos
+            console.log('Respuesta del servidor:', response);
+
             await cargarRequisitos();
             setEditing(null);
+
+            console.log('=== GUARDADO COMPLETADO EXITOSAMENTE ===');
+
         } catch (error) {
-            console.error('Error al guardar:', error); // Debug
+            console.error('=== ERROR EN GUARDADO ===');
+            console.error('Error completo:', error);
             message.error(`Error al guardar requisito: ${error.message}`);
         } finally {
             setLoadingSubmit(false);
@@ -208,8 +388,6 @@ const RequisitosSection = ({ proyectoId, catalogos }) => {
                         token
                     );
                     message.success(response.mensaje || 'Requisito eliminado exitosamente');
-
-                    // Recargar la lista de requisitos
                     await cargarRequisitos();
                 } catch (error) {
                     message.error(`Error al eliminar requisito: ${error.message}`);
@@ -218,33 +396,60 @@ const RequisitosSection = ({ proyectoId, catalogos }) => {
         });
     };
 
-    // Manejar edición de requisito
     const handleEditar = async (requisito) => {
-        // Cargar el requisito completo con sus relaciones
+        console.log('=== INICIANDO EDICIÓN ===');
+        console.log('Requisito seleccionado para edición:', requisito);
+        console.log('Catálogos disponibles:', catalogos);
+
+        // Verificar que los catálogos estén disponibles
+        const catalogosDisponibles = catalogos &&
+            Array.isArray(catalogos.tipos_requisito) && catalogos.tipos_requisito.length > 0 &&
+            Array.isArray(catalogos.prioridades) && catalogos.prioridades.length > 0 &&
+            Array.isArray(catalogos.estados) && catalogos.estados.length > 0;
+
+        if (!catalogosDisponibles) {
+            console.error('Catálogos no disponibles:', catalogos);
+            message.error('Los catálogos necesarios no están disponibles. Reintentando carga...');
+
+            await cargarCatalogos();
+            return;
+        }
+
         await cargarRequisitoParaEdicion(requisito.id);
     };
 
-    // Obtener el color correspondiente a un tipo
+    // Funciones helper para obtener colores (sin cambios)
     const getColorTipo = (tipo) => {
         return tipoColors[tipo] || '#d9d9d9';
     };
 
-    // Obtener el color correspondiente a una prioridad
     const getColorPrioridad = (prioridad) => {
         return prioridadColors[prioridad] || '#d9d9d9';
     };
 
-    // Obtener el color correspondiente a un estado
     const getColorEstado = (estado) => {
         return estadoColors[estado] || '#d9d9d9';
     };
 
-    // Obtener etiqueta formateada para mostrar
     const getEtiquetaFormateada = (valor) => {
         if (!valor) return '';
         return valor.split('-').map(word =>
             word.charAt(0).toUpperCase() + word.slice(1)
         ).join(' ');
+    };
+
+    // Manejar cancelación
+    const handleCancelar = () => {
+        console.log('Cancelando edición/creación');
+        setEditing(null);
+    };
+
+    // Recargar tanto catálogos como requisitos
+    const handleRecargarTodo = async () => {
+        await Promise.all([
+            cargarCatalogos(),
+            cargarRequisitos()
+        ]);
     };
 
     if (!proyectoId) {
@@ -257,16 +462,47 @@ const RequisitosSection = ({ proyectoId, catalogos }) => {
         );
     }
 
+    // MOSTRAR LOADING SI ESTÁN CARGANDO LOS CATÁLOGOS CRÍTICOS
+    if (loadingCatalogos && !catalogos) {
+        return (
+            <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
+                <Spin size="large" />
+                <div style={{ marginTop: "1rem" }}>
+                    <Text type="secondary">Cargando catálogos necesarios...</Text>
+                </div>
+            </Card>
+        );
+    }
+
+    // MOSTRAR ERROR SI NO SE PUDIERON CARGAR LOS CATÁLOGOS
+    if (errorCatalogos && !catalogos) {
+        return (
+            <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
+                <ExclamationCircleOutlined style={{ fontSize: "3rem", color: "#ff4d4f", marginBottom: "1rem" }} />
+                <Title level={4} type="danger">Error al cargar catálogos</Title>
+                <Text type="secondary" style={{ display: 'block', marginBottom: '1rem' }}>{errorCatalogos}</Text>
+                <Button
+                    type="primary"
+                    onClick={cargarCatalogos}
+                    loading={loadingCatalogos}
+                >
+                    Reintentar
+                </Button>
+            </Card>
+        );
+    }
+
     return (
         <div>
-            {editing ? (
-                <RequisitosForm
+            {editing !== null ? (
+                <RequisitosFormContainer
                     initialValues={editing?.id ? editing : {}}
                     onSubmit={handleGuardar}
-                    onCancel={() => setEditing(null)}
+                    onCancel={handleCancelar}
                     requisitosExistentes={requisitos}
-                    catalogos={catalogos}
+                    proyectoId={proyectoId}
                     loading={loadingSubmit}
+                    catalogosExternos={catalogos} 
                 />
             ) : (
                 <>
@@ -285,8 +521,8 @@ const RequisitosSection = ({ proyectoId, catalogos }) => {
                         <div style={{ display: "flex", gap: "0.5rem" }}>
                             <Button
                                 icon={<ReloadOutlined />}
-                                onClick={cargarRequisitos}
-                                loading={loading}
+                                onClick={handleRecargarTodo} 
+                                loading={loading || loadingCatalogos}
                                 className="btn btn-secondary"
                             >
                                 Actualizar
@@ -295,8 +531,16 @@ const RequisitosSection = ({ proyectoId, catalogos }) => {
                             <Button
                                 className="btn btn-primary"
                                 icon={<PlusOutlined />}
-                                onClick={() => setEditing({})}
-                                disabled={loading}
+                                onClick={() => {
+                                    // VALIDACIÓN: Verificar que los catálogos estén disponibles antes de crear
+                                    if (!catalogos || !catalogos.tipos_requisito || catalogos.tipos_requisito.length === 0) {
+                                        message.error('Los catálogos necesarios no están disponibles. Por favor, actualiza la página.');
+                                        return;
+                                    }
+                                    console.log('Iniciando creación de nuevo requisito');
+                                    setEditing({}); // Objeto vacío para crear nuevo
+                                }}
+                                disabled={loading || loadingCatalogos || !catalogos}
                             >
                                 Agregar Requisito
                             </Button>
@@ -313,7 +557,7 @@ const RequisitosSection = ({ proyectoId, catalogos }) => {
                         </Card>
                     ) : (
                         <>
-                            {/* Lista */}
+                            {/* Lista de requisitos */}
                             {requisitos.length === 0 ? (
                                 <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
                                     <FileTextOutlined style={{ fontSize: "3rem", color: "var(--text-disabled)", marginBottom: "1rem" }} />
@@ -333,6 +577,8 @@ const RequisitosSection = ({ proyectoId, catalogos }) => {
                                                         icon={<EditOutlined />}
                                                         onClick={() => handleEditar(req)}
                                                         size="small"
+                                                        loading={loadingSubmit}
+                                                        disabled={!catalogos} // DESHABILITADO si no hay catálogos
                                                     >
                                                         Editar
                                                     </Button>,
@@ -341,6 +587,7 @@ const RequisitosSection = ({ proyectoId, catalogos }) => {
                                                         icon={<DeleteOutlined />}
                                                         onClick={() => handleEliminar(req)}
                                                         size="small"
+                                                        disabled={loadingSubmit}
                                                     >
                                                         Eliminar
                                                     </Button>

@@ -1,248 +1,244 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Form, Input, Select, Button, Divider, Space, Row, Col, Card, Tag, Typography, Spin, Alert } from 'antd';
 import { PlusOutlined, DeleteOutlined, LinkOutlined } from '@ant-design/icons';
-import { getStoredToken, API_ENDPOINTS, getWithAuth } from '../../../../config';
 import '../../../styles/forms.css';
 import '../../../styles/buttons.css';
 
 const { TextArea } = Input;
 const { Title } = Typography;
 
-// Mapeo de colores por defecto para los tipos
-const defaultColors = {
-    tipos: {
-        'funcional': '#1890ff',
-        'no-funcional': '#52c41a',
-        'negocio': '#fa8c16',
-        'tecnico': '#722ed1',
-        'sistema': '#13c2c2',
-        'interfaz': '#eb2f96'
-    },
-    prioridades: {
-        'critica': '#ff4d4f',
-        'alta': '#fa8c16',
-        'media': '#fadb14',
-        'baja': '#52c41a'
-    },
-    estados: {
-        'pendiente': '#d9d9d9',
-        'en-desarrollo': '#1890ff',
-        'en-revision': '#fa8c16',
-        'completado': '#52c41a',
-        'cancelado': '#ff4d4f'
-    }
-};
-
 const RequisitosForm = ({
     initialValues = {},
     onSubmit,
     onCancel,
     requisitosExistentes = [],
-    catalogos = {},
-    loading = false
+    proyectoId,
+    loading = false,
+
+    // Datos de los catálogos
+    tiposRequisito = [],
+    prioridades = [],
+    estados = [],
+    tiposRelacion = [],
+
+    // Estados de carga
+    loadingTipos = false,
+    loadingPrioridades = false,
+    loadingEstados = false,
+    loadingTiposRelacion = false,
+    loadingRelaciones = false,
+
+    // Estados de error
+    errorTipos = null,
+    errorPrioridades = null,
+    errorEstados = null,
+    errorTiposRelacion = null,
+
+    // Funciones utilitarias
+    cargarRelacionesExistentes,
+    retryFunctions = {}
 }) => {
     const [form] = Form.useForm();
     const [relacionesRequisitos, setRelacionesRequisitos] = useState([]);
     const [isEditing, setIsEditing] = useState(false);
-    const [loadingRelaciones, setLoadingRelaciones] = useState(false);
+    const [relacionesCargadas, setRelacionesCargadas] = useState(false);
 
-    // Validar que los catálogos estén disponibles - CORREGIDO
-    const catalogosValidos = catalogos && 
-        Array.isArray(catalogos.tipos_requisito) && catalogos.tipos_requisito.length > 0 &&
-        Array.isArray(catalogos.prioridades) && catalogos.prioridades.length > 0 &&
-        Array.isArray(catalogos.estados) && catalogos.estados.length > 0 &&
-        Array.isArray(catalogos.tipos_relacion) && catalogos.tipos_relacion.length > 0;
+    // Funciones helper para mapear entre keys y IDs
+    const findByKeyOrId = useCallback((items, keyOrId) => {
+        if (!keyOrId || !Array.isArray(items)) return null;
 
-    console.log('Catálogos recibidos:', catalogos); // Debug
-    console.log('Catálogos válidos:', catalogosValidos); // Debug
+        const keyOrIdStr = keyOrId.toString().toLowerCase();
 
-    // Funciones helper para trabajar con catálogos dinámicos - MEJORADAS
-    const prepararOpcionesSelect = (items, tipo = 'general') => {
-        if (!items || !Array.isArray(items)) {
-            console.warn(`Items para ${tipo} no es un array válido:`, items);
-            return [];
+        // Buscar por ID exacto primero
+        let found = items.find(item => item.value === keyOrId.toString());
+        if (found) return found;
+
+        // Buscar por key
+        found = items.find(item => item.key === keyOrIdStr);
+        if (found) return found;
+
+        // Buscar por label normalizado
+        found = items.find(item =>
+            item.label && item.label.toLowerCase().replace(/\s+/g, '-') === keyOrIdStr
+        );
+
+        return found;
+    }, []);
+
+    const getIdByKeyOrId = useCallback((items, keyOrId) => {
+        const found = findByKeyOrId(items, keyOrId);
+        return found ? found.value : null;
+    }, [findByKeyOrId]);
+
+    const cargarRelaciones = useCallback(async (requisitoId) => {
+        if (!requisitoId || !cargarRelacionesExistentes || relacionesCargadas) {
+            console.log('Saltando carga de relaciones:', {
+                requisitoId,
+                tieneFunction: !!cargarRelacionesExistentes,
+                relacionesCargadas
+            });
+            return;
         }
 
-        return items.map(item => {
-            // Asegurar que el item tenga la estructura correcta
-            const key = item.key || item.nombre?.toLowerCase().replace(/\s+/g, '-') || 'unknown';
-            return {
-                value: item.id?.toString() || item.value?.toString(),
-                label: item.nombre || 'Sin nombre',
-                key: key,
-                color: defaultColors[tipo]?.[key] || '#d9d9d9',
-                descripcion: item.descripcion || '',
-                nivel: item.nivel || undefined,
-                ...item
-            };
-        });
-    };
+        console.log('Cargando relaciones para requisito:', requisitoId);
+        setRelacionesCargadas(true); // MARCAR COMO CARGADAS para evitar bucles
 
-    // Obtener opciones de select para cada catálogo
-    const tiposRequisito = prepararOpcionesSelect(catalogos.tipos_requisito || [], 'tipos');
-    const prioridades = prepararOpcionesSelect(catalogos.prioridades || [], 'prioridades');
-    const estados = prepararOpcionesSelect(catalogos.estados || [], 'estados');
-    const tiposRelacion = prepararOpcionesSelect(catalogos.tipos_relacion || []);
-
-    console.log('Opciones preparadas:', { tiposRequisito, prioridades, estados, tiposRelacion }); // Debug
-
-    // Funciones helper para mapear entre keys y IDs - MEJORADAS
-    const getTipoIdByKey = (key) => {
-        const tipo = tiposRequisito.find(t => t.key === key);
-        console.log(`Buscando tipo por key "${key}":`, tipo); // Debug
-        return tipo ? tipo.value : undefined;
-    };
-
-    const getPrioridadIdByKey = (key) => {
-        const prioridad = prioridades.find(p => p.key === key);
-        console.log(`Buscando prioridad por key "${key}":`, prioridad); // Debug
-        return prioridad ? prioridad.value : undefined;
-    };
-
-    const getEstadoIdByKey = (key) => {
-        const estado = estados.find(e => e.key === key);
-        console.log(`Buscando estado por key "${key}":`, estado); // Debug
-        return estado ? estado.value : undefined;
-    };
-
-    // Cargar las relaciones existentes del requisito - SIN CAMBIOS
-    const cargarRelacionesExistentes = async (requisitoId) => {
-        if (!requisitoId) return [];
-
-        setLoadingRelaciones(true);
         try {
-            const token = getStoredToken();
-            const response = await getWithAuth(`${API_ENDPOINTS.RELACIONES_REQUISITO}/${requisitoId}/`, token);
-
-            const relacionesProcesadas = (response.relaciones || []).map(rel => ({
-                id: rel.id || `temp_${Date.now()}_${Math.random()}`,
-                requisito_id: rel.requisito_id,
-                tipo_relacion: rel.tipo_relacion_id?.toString() || rel.tipo_relacion,
-                descripcion: rel.descripcion || ''
-            }));
-
-            return relacionesProcesadas;
+            const relacionesExistentes = await cargarRelacionesExistentes(requisitoId);
+            setRelacionesRequisitos(relacionesExistentes || []);
+            console.log('Relaciones cargadas exitosamente:', relacionesExistentes);
         } catch (error) {
-            console.warn('Error cargando relaciones existentes:', error);
-            return [];
-        } finally {
-            setLoadingRelaciones(false);
+            console.error('Error al cargar relaciones:', error);
+            // No mostrar error al usuario si es problema de CORS/conexión
+            if (!error.message.includes('CORS') && !error.message.includes('conexión')) {
+                // Solo loggear el error, no interferir con la UI
+            }
+            setRelacionesRequisitos([]); // Establecer array vacío en caso de error
         }
-    };
+    }, [cargarRelacionesExistentes, relacionesCargadas]);
+
+    // USEEFFECT CORREGIDO - Con dependencias específicas y sin bucles
+    useEffect(() => {
+        console.log('useEffect - Inicialización del formulario');
+        console.log('Datos disponibles:', {
+            tiposRequisito: tiposRequisito.length,
+            prioridades: prioridades.length,
+            estados: estados.length,
+            tiposRelacion: tiposRelacion.length,
+            initialValues: initialValues?.id ? 'Con ID' : 'Sin ID'
+        });
+
+        // Verificar que los catálogos básicos estén disponibles
+        const catalogosBasicosDisponibles = tiposRequisito.length > 0 &&
+            prioridades.length > 0 &&
+            estados.length > 0;
+
+        if (!catalogosBasicosDisponibles) {
+            console.log('Esperando catálogos básicos...');
+            return;
+        }
+
+        // Resetear flag de relaciones si cambia el requisito
+        const requisitoId = initialValues?.id;
+        const esNuevoRequisito = !requisitoId;
+
+        if (esNuevoRequisito || !relacionesCargadas) {
+            setRelacionesCargadas(false);
+        }
+
+        if (requisitoId) {
+            // MODO EDICIÓN
+            setIsEditing(true);
+            console.log('Configurando modo edición para requisito:', requisitoId);
+
+            // Preparar valores para edición
+            const formValues = {
+                nombre: initialValues.nombre || '',
+                descripcion: initialValues.descripcion || '',
+                criterios: initialValues.criterios || '',
+                origen: initialValues.origen || '',
+                condiciones_previas: initialValues.condiciones_previas || '',
+            };
+
+            // Mapear tipo de requisito
+            if (initialValues.tipo) {
+                const tipoId = getIdByKeyOrId(tiposRequisito, initialValues.tipo);
+                if (tipoId) {
+                    formValues.tipo = tipoId;
+                    console.log(`Tipo mapeado: ${initialValues.tipo} -> ${tipoId}`);
+                }
+            }
+
+            // Mapear prioridad
+            if (initialValues.prioridad) {
+                const prioridadId = getIdByKeyOrId(prioridades, initialValues.prioridad);
+                if (prioridadId) {
+                    formValues.prioridad = prioridadId;
+                    console.log(`Prioridad mapeada: ${initialValues.prioridad} -> ${prioridadId}`);
+                }
+            }
+
+            // Mapear estado
+            if (initialValues.estado) {
+                const estadoId = getIdByKeyOrId(estados, initialValues.estado);
+                if (estadoId) {
+                    formValues.estado = estadoId;
+                    console.log(`Estado mapeado: ${initialValues.estado} -> ${estadoId}`);
+                }
+            }
+
+            console.log('Estableciendo valores del formulario:', formValues);
+            form.setFieldsValue(formValues);
+
+            // Cargar relaciones si tiene tipos de relación disponibles y no han sido cargadas
+            if (tiposRelacion.length > 0 && !relacionesCargadas) {
+                cargarRelaciones(requisitoId);
+            }
+
+        } else {
+            // MODO CREACIÓN
+            setIsEditing(false);
+            setRelacionesCargadas(true);
+            console.log('Configurando modo creación');
+
+            const valoresPorDefecto = {};
+
+            // Establecer valores por defecto
+            const estadoPorDefecto = findByKeyOrId(estados, 'pendiente') || estados[0];
+            if (estadoPorDefecto) {
+                valoresPorDefecto.estado = estadoPorDefecto.value;
+                console.log('Estado por defecto:', estadoPorDefecto);
+            }
+
+            const prioridadPorDefecto = findByKeyOrId(prioridades, 'media') || prioridades[0];
+            if (prioridadPorDefecto) {
+                valoresPorDefecto.prioridad = prioridadPorDefecto.value;
+                console.log('Prioridad por defecto:', prioridadPorDefecto);
+            }
+
+            form.setFieldsValue(valoresPorDefecto);
+            setRelacionesRequisitos([]);
+        }
+
+    }, [
+        // DEPENDENCIAS ESPECÍFICAS - No incluir funciones que cambien en cada render
+        initialValues?.id,
+        tiposRequisito.length,
+        prioridades.length,
+        estados.length,
+        tiposRelacion.length,
+    ]);
 
     useEffect(() => {
-        const initializeForm = async () => {
-            console.log('Inicializando formulario con:', { initialValues, catalogosValidos }); // Debug
-            
-            if (!catalogosValidos) {
-                console.error('Catálogos no válidos, no se puede inicializar el formulario');
-                return;
-            }
-
-            if (initialValues.id) {
-                setIsEditing(true);
-
-                // Preparar los valores para el formulario - MEJORADO
-                const formValues = {
-                    nombre: initialValues.nombre || '',
-                    descripcion: initialValues.descripcion || '',
-                    criterios: initialValues.criterios || '',
-                    origen: initialValues.origen || '',
-                    condiciones_previas: initialValues.condiciones_previas || '',
-                };
-
-                // Mapear tipo - intentar primero por ID, luego por key
-                if (initialValues.tipo) {
-                    // Si ya es un ID válido, usarlo directamente
-                    const tipoExiste = tiposRequisito.find(t => t.value === initialValues.tipo.toString());
-                    if (tipoExiste) {
-                        formValues.tipo = initialValues.tipo.toString();
-                    } else {
-                        // Si no, intentar convertir de key a ID
-                        formValues.tipo = getTipoIdByKey(initialValues.tipo);
-                    }
-                }
-
-                // Mapear prioridad
-                if (initialValues.prioridad) {
-                    const prioridadExiste = prioridades.find(p => p.value === initialValues.prioridad.toString());
-                    if (prioridadExiste) {
-                        formValues.prioridad = initialValues.prioridad.toString();
-                    } else {
-                        formValues.prioridad = getPrioridadIdByKey(initialValues.prioridad);
-                    }
-                }
-
-                // Mapear estado
-                if (initialValues.estado) {
-                    const estadoExiste = estados.find(e => e.value === initialValues.estado.toString());
-                    if (estadoExiste) {
-                        formValues.estado = initialValues.estado.toString();
-                    } else {
-                        formValues.estado = getEstadoIdByKey(initialValues.estado);
-                    }
-                }
-
-                console.log('Valores del formulario preparados:', formValues); // Debug
-
-                // Establecer los valores en el formulario
-                form.setFieldsValue(formValues);
-
-                // Cargar relaciones existentes
-                const relacionesExistentes = await cargarRelacionesExistentes(initialValues.id);
-                setRelacionesRequisitos(relacionesExistentes);
-            } else {
-                setIsEditing(false);
-                // Valores por defecto para nuevo requisito - MEJORADO
-                const valoresPorDefecto = {};
-                
-                // Buscar estado "pendiente" o usar el primero disponible
-                const estadoPendiente = estados.find(e => e.key === 'pendiente') || estados[0];
-                if (estadoPendiente) {
-                    valoresPorDefecto.estado = estadoPendiente.value;
-                }
-
-                // Buscar prioridad "media" o usar la primera disponible
-                const prioridadMedia = prioridades.find(p => p.key === 'media') || prioridades[0];
-                if (prioridadMedia) {
-                    valoresPorDefecto.prioridad = prioridadMedia.value;
-                }
-
-                console.log('Valores por defecto:', valoresPorDefecto); // Debug
-
-                form.setFieldsValue(valoresPorDefecto);
-                setRelacionesRequisitos([]);
-            }
-        };
-
-        if (catalogosValidos) {
-            initializeForm();
+        // Solo resetear relacionesCargadas cuando cambie el ID del requisito
+        const requisitoId = initialValues?.id;
+        if (requisitoId && !relacionesCargadas && tiposRelacion.length > 0) {
+            setRelacionesCargadas(false);
         }
-    }, [initialValues, catalogos, form, catalogosValidos, tiposRequisito, prioridades, estados]);
+    }, [initialValues?.id]);
 
     const handleSubmit = (values) => {
-        console.log('Valores del formulario al enviar:', values); // Debug
+        console.log('Valores del formulario al enviar:', values);
 
-        // Incluir las relaciones en los valores del formulario
         const finalValues = {
             ...values,
+            proyecto_id: proyectoId,
             relaciones_requisitos: relacionesRequisitos.map(rel => ({
-                requisito_id: rel.requisito_id,
-                tipo_relacion: rel.tipo_relacion,
+                requisito_id: parseInt(rel.requisito_id),
+                tipo_relacion: parseInt(rel.tipo_relacion),
                 descripcion: rel.descripcion || ''
-            }))
+            })).filter(rel => rel.requisito_id && rel.tipo_relacion)
         };
 
-        // Si es edición, incluir el ID
         if (isEditing && initialValues.id) {
             finalValues.id = initialValues.id;
         }
 
-        console.log('Valores finales a enviar:', finalValues); // Debug
+        console.log('Valores finales a enviar:', finalValues);
         onSubmit(finalValues);
     };
 
-    // Funciones para relaciones - SIN CAMBIOS
+    // Funciones para relaciones
     const agregarRelacionRequisito = () => {
         const nuevaRelacion = {
             id: `temp_${Date.now()}_${Math.random()}`,
@@ -250,65 +246,27 @@ const RequisitosForm = ({
             tipo_relacion: '',
             descripcion: ''
         };
-        setRelacionesRequisitos([...relacionesRequisitos, nuevaRelacion]);
+        setRelacionesRequisitos(prev => [...prev, nuevaRelacion]);
     };
 
     const eliminarRelacionRequisito = (id) => {
-        setRelacionesRequisitos(relacionesRequisitos.filter(r => r.id !== id));
+        setRelacionesRequisitos(prev => prev.filter(r => r.id !== id));
     };
 
     const actualizarRelacionRequisito = (id, campo, valor) => {
-        setRelacionesRequisitos(relacionesRequisitos.map(r =>
+        setRelacionesRequisitos(prev => prev.map(r =>
             r.id === id ? { ...r, [campo]: valor } : r
         ));
     };
 
-    // Funciones helper para colores - MEJORADAS
-    const getColorTipo = (tipoKey) => {
-        const tipo = tiposRequisito.find(t => t.key === tipoKey);
-        return tipo ? tipo.color : '#d9d9d9';
-    };
+    // Funciones helper para obtener información
+    const getItemByKey = useCallback((items, key) => {
+        return items.find(item => item.key === key);
+    }, []);
 
-    const getColorPrioridad = (prioridadKey) => {
-        const prioridad = prioridades.find(p => p.key === prioridadKey);
-        return prioridad ? prioridad.color : '#d9d9d9';
-    };
-
-    const getRequisitoInfo = (requisitoId) => {
-        return requisitosExistentes.find(r => r.id === requisitoId);
-    };
-
-    // Mostrar error si no hay catálogos válidos - MEJORADO
-    if (!catalogosValidos) {
-        return (
-            <div style={{ padding: '2rem' }}>
-                <Alert
-                    message="Error en catálogos"
-                    description={
-                        <div>
-                            <p>No se pueden cargar los catálogos necesarios para el formulario.</p>
-                            <p><strong>Debug info:</strong></p>
-                            <ul style={{ fontSize: '12px', marginTop: '10px' }}>
-                                <li>Tipos de requisito: {catalogos?.tipos_requisito ? `${catalogos.tipos_requisito.length} items` : 'No disponible'}</li>
-                                <li>Prioridades: {catalogos?.prioridades ? `${catalogos.prioridades.length} items` : 'No disponible'}</li>
-                                <li>Estados: {catalogos?.estados ? `${catalogos.estados.length} items` : 'No disponible'}</li>
-                                <li>Tipos de relación: {catalogos?.tipos_relacion ? `${catalogos.tipos_relacion.length} items` : 'No disponible'}</li>
-                            </ul>
-                            <Button 
-                                type="primary" 
-                                onClick={() => window.location.reload()}
-                                style={{ marginTop: '10px' }}
-                            >
-                                Recargar página
-                            </Button>
-                        </div>
-                    }
-                    type="error"
-                    showIcon
-                />
-            </div>
-        );
-    }
+    const getRequisitoInfo = useCallback((requisitoId) => {
+        return requisitosExistentes.find(r => r.id.toString() === requisitoId.toString());
+    }, [requisitosExistentes]);
 
     return (
         <div className="form-container">
@@ -321,7 +279,7 @@ const RequisitosForm = ({
                 </p>
             </div>
 
-            <Spin spinning={loading || loadingRelaciones}>
+            <Spin spinning={loading}>
                 <Form
                     form={form}
                     layout="vertical"
@@ -373,10 +331,14 @@ const RequisitosForm = ({
                             rules={[{ required: true, message: 'El tipo de requisito es obligatorio' }]}
                             className="form-field"
                         >
-                            <Select 
+                            <Select
                                 placeholder="Selecciona el tipo de requisito"
+                                loading={loadingTipos}
                                 showSearch
                                 optionFilterProp="children"
+                                filterOption={(input, option) =>
+                                    option.children.props.children[1].toLowerCase().indexOf(input.toLowerCase()) >= 0
+                                }
                             >
                                 {tiposRequisito.map(tipo => (
                                     <Select.Option key={tipo.value} value={tipo.value} title={tipo.descripcion}>
@@ -428,7 +390,10 @@ const RequisitosForm = ({
                                     label="Prioridad"
                                     className="form-field"
                                 >
-                                    <Select placeholder="Nivel de importancia">
+                                    <Select
+                                        placeholder="Nivel de importancia"
+                                        loading={loadingPrioridades}
+                                    >
                                         {prioridades.map(p => (
                                             <Select.Option key={p.value} value={p.value} title={p.descripcion}>
                                                 <Space>
@@ -459,7 +424,10 @@ const RequisitosForm = ({
                                     label="Estado del Requisito"
                                     className="form-field"
                                 >
-                                    <Select placeholder="Estado actual">
+                                    <Select
+                                        placeholder="Estado actual"
+                                        loading={loadingEstados}
+                                    >
                                         {estados.map(e => (
                                             <Select.Option key={e.value} value={e.value} title={e.descripcion}>
                                                 <Space>
@@ -518,8 +486,23 @@ const RequisitosForm = ({
                             Define las relaciones de dependencia, conflicto o complemento con otros requisitos del sistema
                         </p>
 
-                        {/* Lista de relaciones de requisitos */}
-                        {relacionesRequisitos.map((relacion) => {
+                        {/* Mostrar loading solo si está cargando relaciones por primera vez */}
+                        {loadingRelaciones && relacionesRequisitos.length === 0 && isEditing && (
+                            <div style={{
+                                textAlign: 'center',
+                                padding: '2rem',
+                                color: 'var(--text-secondary)',
+                                background: 'var(--bg-light)',
+                                borderRadius: 'var(--border-radius)',
+                                border: '1px dashed var(--border-color)'
+                            }}>
+                                <Spin size="small" />
+                                <p style={{ marginTop: '8px', marginBottom: 0 }}>Cargando relaciones existentes...</p>
+                            </div>
+                        )}
+
+                        {/* Lista de relaciones de requisitos - Solo mostrar si no está cargando */}
+                        {!loadingRelaciones && relacionesRequisitos.map((relacion) => {
                             const requisitoInfo = getRequisitoInfo(relacion.requisito_id);
                             return (
                                 <Card
@@ -558,6 +541,7 @@ const RequisitosForm = ({
                                                     value={relacion.tipo_relacion}
                                                     onChange={(value) => actualizarRelacionRequisito(relacion.id, 'tipo_relacion', value)}
                                                     style={{ width: '100%' }}
+                                                    loading={loadingTiposRelacion}
                                                 >
                                                     {tiposRelacion.map(tr => (
                                                         <Select.Option key={tr.value} value={tr.value} title={tr.descripcion}>
@@ -585,32 +569,48 @@ const RequisitosForm = ({
                                                     style={{ width: '100%' }}
                                                     showSearch
                                                     optionFilterProp="children"
+                                                    filterOption={(input, option) => {
+                                                        const children = option.children;
+                                                        if (typeof children === 'string') {
+                                                            return children.toLowerCase().indexOf(input.toLowerCase()) >= 0;
+                                                        }
+                                                        // Para elementos más complejos, buscar en el texto del nombre
+                                                        const nombre = children.props?.children?.[0]?.props?.children?.[0] || '';
+                                                        return nombre.toLowerCase().indexOf(input.toLowerCase()) >= 0;
+                                                    }}
                                                 >
                                                     {requisitosExistentes
                                                         .filter(req => req.id !== initialValues.id)
-                                                        .map(req => (
-                                                            <Select.Option key={req.id} value={req.id}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                                    <span style={{ fontWeight: 'medium' }}>{req.nombre}</span>
-                                                                    <Space size={4}>
-                                                                        <Tag
-                                                                            color={getColorTipo(req.tipo)}
-                                                                            style={{ margin: 0, fontSize: '10px' }}
-                                                                        >
-                                                                            {tiposRequisito.find(t => t.key === req.tipo)?.label}
-                                                                        </Tag>
-                                                                        {req.prioridad && (
-                                                                            <Tag
-                                                                                color={getColorPrioridad(req.prioridad)}
-                                                                                style={{ margin: 0, fontSize: '10px' }}
-                                                                            >
-                                                                                {prioridades.find(p => p.key === req.prioridad)?.label}
-                                                                            </Tag>
-                                                                        )}
-                                                                    </Space>
-                                                                </div>
-                                                            </Select.Option>
-                                                        ))}
+                                                        .map(req => {
+                                                            const tipoInfo = getItemByKey(tiposRequisito, req.tipo);
+                                                            const prioridadInfo = getItemByKey(prioridades, req.prioridad);
+
+                                                            return (
+                                                                <Select.Option key={req.id} value={req.id.toString()}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                                        <span style={{ fontWeight: 'medium' }}>{req.nombre}</span>
+                                                                        <Space size={4}>
+                                                                            {tipoInfo && (
+                                                                                <Tag
+                                                                                    color={tipoInfo.color}
+                                                                                    style={{ margin: 0, fontSize: '10px' }}
+                                                                                >
+                                                                                    {tipoInfo.label}
+                                                                                </Tag>
+                                                                            )}
+                                                                            {prioridadInfo && (
+                                                                                <Tag
+                                                                                    color={prioridadInfo.color}
+                                                                                    style={{ margin: 0, fontSize: '10px' }}
+                                                                                >
+                                                                                    {prioridadInfo.label}
+                                                                                </Tag>
+                                                                            )}
+                                                                        </Space>
+                                                                    </div>
+                                                                </Select.Option>
+                                                            );
+                                                        })}
                                                 </Select>
                                                 {requisitoInfo && (
                                                     <div style={{
@@ -654,19 +654,60 @@ const RequisitosForm = ({
                             );
                         })}
 
-                        {/* Botón para agregar nueva relación */}
-                        <Button
-                            type="dashed"
-                            onClick={agregarRelacionRequisito}
-                            block
-                            icon={<PlusOutlined />}
-                            style={{ marginTop: relacionesRequisitos.length > 0 ? '1rem' : 0 }}
-                        >
-                            Agregar Relación con Requisito
-                        </Button>
+                        {/* Botón para agregar nueva relación - solo si hay tipos de relación cargados */}
+                        {tiposRelacion.length > 0 && !loadingRelaciones && (
+                            <Button
+                                type="dashed"
+                                onClick={agregarRelacionRequisito}
+                                block
+                                icon={<PlusOutlined />}
+                                style={{ marginTop: relacionesRequisitos.length > 0 ? '1rem' : 0 }}
+                            >
+                                Agregar Relación con Requisito
+                            </Button>
+                        )}
+
+                        {/* Mensaje de carga para tipos de relación */}
+                        {loadingTiposRelacion && tiposRelacion.length === 0 && (
+                            <div style={{
+                                textAlign: 'center',
+                                padding: '1rem',
+                                color: 'var(--text-secondary)',
+                                background: 'var(--bg-light)',
+                                borderRadius: 'var(--border-radius)',
+                                border: '1px dashed var(--border-color)'
+                            }}>
+                                <Spin size="small" />
+                                <p style={{ marginTop: '8px', marginBottom: 0 }}>Cargando tipos de relación...</p>
+                            </div>
+                        )}
+
+                        {/* Mensaje de error para tipos de relación */}
+                        {errorTiposRelacion && tiposRelacion.length === 0 && (
+                            <Alert
+                                message="Error cargando tipos de relación"
+                                description={
+                                    <div>
+                                        <p>{errorTiposRelacion}</p>
+                                        {retryFunctions.cargarTiposRelacion && (
+                                            <Button
+                                                size="small"
+                                                onClick={retryFunctions.cargarTiposRelacion}
+                                                style={{ marginTop: '8px' }}
+                                            >
+                                                Reintentar
+                                            </Button>
+                                        )}
+                                    </div>
+                                }
+                                type="warning"
+                                showIcon
+                                style={{ marginTop: '1rem' }}
+                            />
+                        )}
 
                         {/* Estado vacío */}
-                        {relacionesRequisitos.length === 0 && (
+                        {relacionesRequisitos.length === 0 && !loadingTiposRelacion && !loadingRelaciones && tiposRelacion.length > 0 && (
                             <div style={{
                                 textAlign: 'center',
                                 padding: '2rem',
@@ -691,7 +732,12 @@ const RequisitosForm = ({
                             <Button onClick={onCancel} className="btn btn-secondary" size="large" disabled={loading}>
                                 Cancelar
                             </Button>
-                            <Button htmlType="submit" className="btn btn-primary" size="large" loading={loading}>
+                            <Button
+                                htmlType="submit"
+                                className="btn btn-primary"
+                                size="large"
+                                loading={loading}
+                            >
                                 {isEditing ? "Actualizar Requisito" : "Crear Requisito"}
                             </Button>
                         </Space>
