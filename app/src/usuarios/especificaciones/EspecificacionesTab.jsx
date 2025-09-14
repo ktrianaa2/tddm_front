@@ -19,7 +19,7 @@ import {
 // Importar los componentes individuales
 import RequisitosSection from './requisitos/RequisitosSection';
 import CasosDeUsoSection from './casos_de_uso/CasosDeUsoSection';
-import HistoriasDeUsuarioSection from './historias_de_usuario/HistoriasDeUsuarioSection';
+import HistoriasDeUsuarioSection from './historias_de_usuario/HistoriasUsuarioSection';
 
 const { Title, Text } = Typography;
 

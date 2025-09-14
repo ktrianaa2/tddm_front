@@ -52,6 +52,12 @@ export const API_ENDPOINTS = {
   TIPOS_RELACION_REQUISITO_ACTUALIZAR: `/app/catalogos/tipos_relacion_requisito/editar`, // Se concatena /:proyecto_id en el componente
   TIPOS_RELACION_REQUISITO_CAMBIAR_ESTADO: `/app/catalogos/tipos_relacion_requisito/deshabilitar`, // Se concatena /:proyecto_id en el componente
 
+  // Tipos de Estimación
+  TIPOS_ESTIMACION: '/app/catalogos/tipos_estimacion/listar/',
+  TIPOS_ESTIMACION_CREAR: '/app/catalogos/tipos_estimacion/crear/',
+  TIPOS_ESTIMACION_ACTUALIZAR: `/app/catalogos/tipos_estimacion/editar`, // Se concatena /:id en el componente
+  TIPOS_ESTIMACION_CAMBIAR_ESTADO: `/app/catalogos/tipos_estimacion/deshabilitar`, // Se concatena /:id en el componente
+
   // Endpoints de Requisitos - CRUD completo 
   CREAR_REQUISITO: '/app/requisitos/crear/',
   LISTAR_REQUISITOS: '/app/requisitos/listar', // Se concatena /:proyecto_id en el componente
@@ -67,6 +73,13 @@ export const API_ENDPOINTS = {
   ACTUALIZAR_CASO_USO: '/app/casosdeuso/actualizar', // Se concatena /:caso_uso_id en el componente
   ELIMINAR_CASO_USO: '/app/casosdeuso/eliminar', // Se concatena /:caso_uso_id en el componente
   RELACIONES_CASO_USO: '/app/casosdeuso/relaciones', // Se concatena /:caso_uso_id en el componente
+
+  // Endpoints de Historias de Usuario - CRUD completo
+  CREAR_HISTORIA_USUARIO: '/app/historiasdeusuario/crear/',
+  LISTAR_HISTORIAS_USUARIO: '/app/historiasdeusuario/listar', // Se concatena /:proyecto_id en el componente
+  OBTENER_HISTORIA_USUARIO: '/app/historiasdeusuario/obtener', // Se concatena /:historia_id en el componente
+  ACTUALIZAR_HISTORIA_USUARIO: '/app/historiasdeusuario/actualizar', // Se concatena /:historia_id en el componente
+  ELIMINAR_HISTORIA_USUARIO: '/app/historiasdeusuario/eliminar', // Se concatena /:historia_id en el componente
 };
 
 // Función helper para construir URLs completas
