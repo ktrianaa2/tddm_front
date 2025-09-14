@@ -48,7 +48,6 @@ const RequisitosSection = ({ proyectoId }) => {
     };
 
     const cargarCatalogos = async () => {
-        console.log('Cargando catálogos...');
         setLoadingCatalogos(true);
         setErrorCatalogos(null);
 
@@ -133,10 +132,8 @@ const RequisitosSection = ({ proyectoId }) => {
             }
 
             setCatalogos(catalogosData);
-            console.log('Catálogos cargados exitosamente:', catalogosData);
 
         } catch (error) {
-            console.error('Error cargando catálogos:', error);
             setErrorCatalogos(error.message);
             message.error(`Error al cargar catálogos: ${error.message}`);
         } finally {
@@ -169,9 +166,7 @@ const RequisitosSection = ({ proyectoId }) => {
             }));
 
             setRequisitos(requisitosProcessed);
-            console.log('Requisitos cargados:', requisitosProcessed);
         } catch (error) {
-            console.error('Error al cargar requisitos:', error);
             message.error(`Error al cargar requisitos: ${error.message}`);
             setRequisitos([]);
         } finally {
@@ -179,20 +174,12 @@ const RequisitosSection = ({ proyectoId }) => {
         }
     };
 
-    // FUNCIÓN CORREGIDA - Cargar un requisito específico para edición
     const cargarRequisitoParaEdicion = async (requisitoId) => {
-        console.log('=== INICIANDO CARGA PARA EDICIÓN ===');
-        console.log('ID del requisito a cargar:', requisitoId);
-        console.log('Catálogos disponibles:', catalogos);
-
         setLoadingSubmit(true);
 
         try {
             const token = getStoredToken();
             const response = await getWithAuth(`${API_ENDPOINTS.OBTENER_REQUISITO}/${requisitoId}/`, token);
-
-            console.log('Respuesta del backend para edición:', response);
-
             if (!response || !response.requisito) {
                 throw new Error('No se pudo obtener la información del requisito');
             }
@@ -208,8 +195,6 @@ const RequisitosSection = ({ proyectoId }) => {
                     item.nombre?.toLowerCase() === key.toLowerCase() ||
                     item.id?.toString() === key.toString()
                 );
-
-                console.log(`Mapeando ${tipo}: '${key}' -> '${item?.id}'`);
                 return item ? item.id.toString() : undefined;
             };
 
@@ -236,23 +221,18 @@ const RequisitosSection = ({ proyectoId }) => {
             // 1. Primero buscar en la respuesta del requisito
             if (requisitoBackend.relaciones_requisitos && Array.isArray(requisitoBackend.relaciones_requisitos)) {
                 relacionesData = requisitoBackend.relaciones_requisitos;
-                console.log('Relaciones encontradas en la respuesta del requisito:', relacionesData);
             }
             // 2. Si no están en la respuesta del requisito, intentar cargarlas por separado
             else {
                 try {
-                    console.log('Intentando cargar relaciones por separado...');
                     const relacionesResponse = await getWithAuth(`${API_ENDPOINTS.RELACIONES_REQUISITO}/${requisitoId}/`, token);
 
                     if (relacionesResponse && relacionesResponse.relaciones) {
                         relacionesData = relacionesResponse.relaciones;
-                        console.log('Relaciones cargadas por separado:', relacionesData);
                     } else if (Array.isArray(relacionesResponse)) {
                         relacionesData = relacionesResponse;
-                        console.log('Relaciones cargadas como array directo:', relacionesData);
                     }
                 } catch (relacionesError) {
-                    console.warn('No se pudieron cargar las relaciones por separado (probablemente CORS):', relacionesError.message);
                     relacionesData = [];
                 }
             }
@@ -260,7 +240,6 @@ const RequisitosSection = ({ proyectoId }) => {
             // Procesar relaciones si existen
             if (Array.isArray(relacionesData) && relacionesData.length > 0) {
                 requisitoParaEditar.relaciones_requisitos = relacionesData.map(rel => {
-                    console.log('Procesando relación:', rel);
 
                     return {
                         id: rel.id || `temp_${Date.now()}_${Math.random()}`,
@@ -270,14 +249,11 @@ const RequisitosSection = ({ proyectoId }) => {
                     };
                 });
 
-                console.log('Relaciones procesadas:', requisitoParaEditar.relaciones_requisitos);
             }
 
-            console.log('Datos preparados para edición:', requisitoParaEditar);
             setEditing(requisitoParaEditar);
 
         } catch (error) {
-            console.error('Error al cargar requisito para edición:', error);
             message.error(`Error al cargar requisito: ${error.message}`);
         } finally {
             setLoadingSubmit(false);
@@ -286,7 +262,6 @@ const RequisitosSection = ({ proyectoId }) => {
 
     useEffect(() => {
         if (proyectoId) {
-            console.log('Cargando datos para proyecto:', proyectoId);
             if (!catalogos) {
                 cargarCatalogos();
             }
@@ -299,10 +274,6 @@ const RequisitosSection = ({ proyectoId }) => {
             message.error('No se ha especificado el ID del proyecto');
             return;
         }
-
-        console.log('=== INICIANDO GUARDADO ===');
-        console.log('Valores recibidos del formulario:', values);
-        console.log('Estado de edición actual:', editing);
 
         setLoadingSubmit(true);
         try {
@@ -328,12 +299,10 @@ const RequisitosSection = ({ proyectoId }) => {
                     }))
             };
 
-            console.log('Datos preparados para envío:', dataToSend);
 
             let response;
 
             if (editing && editing.id) {
-                console.log(`Editando requisito existente con ID: ${editing.id}`);
                 response = await putJSONAuth(
                     `${API_ENDPOINTS.ACTUALIZAR_REQUISITO}/${editing.id}/`,
                     dataToSend,
@@ -342,21 +311,15 @@ const RequisitosSection = ({ proyectoId }) => {
                 message.success(response.mensaje || 'Requisito actualizado exitosamente');
             } else {
                 // Crear nuevo requisito
-                console.log('Creando nuevo requisito');
                 response = await postJSONAuth(API_ENDPOINTS.CREAR_REQUISITO, dataToSend, token);
                 message.success(response.mensaje || 'Requisito creado exitosamente');
             }
 
-            console.log('Respuesta del servidor:', response);
 
             await cargarRequisitos();
             setEditing(null);
 
-            console.log('=== GUARDADO COMPLETADO EXITOSAMENTE ===');
-
         } catch (error) {
-            console.error('=== ERROR EN GUARDADO ===');
-            console.error('Error completo:', error);
             message.error(`Error al guardar requisito: ${error.message}`);
         } finally {
             setLoadingSubmit(false);
@@ -397,10 +360,6 @@ const RequisitosSection = ({ proyectoId }) => {
     };
 
     const handleEditar = async (requisito) => {
-        console.log('=== INICIANDO EDICIÓN ===');
-        console.log('Requisito seleccionado para edición:', requisito);
-        console.log('Catálogos disponibles:', catalogos);
-
         // Verificar que los catálogos estén disponibles
         const catalogosDisponibles = catalogos &&
             Array.isArray(catalogos.tipos_requisito) && catalogos.tipos_requisito.length > 0 &&
@@ -408,7 +367,6 @@ const RequisitosSection = ({ proyectoId }) => {
             Array.isArray(catalogos.estados) && catalogos.estados.length > 0;
 
         if (!catalogosDisponibles) {
-            console.error('Catálogos no disponibles:', catalogos);
             message.error('Los catálogos necesarios no están disponibles. Reintentando carga...');
 
             await cargarCatalogos();
@@ -440,7 +398,6 @@ const RequisitosSection = ({ proyectoId }) => {
 
     // Manejar cancelación
     const handleCancelar = () => {
-        console.log('Cancelando edición/creación');
         setEditing(null);
     };
 
@@ -502,7 +459,7 @@ const RequisitosSection = ({ proyectoId }) => {
                     requisitosExistentes={requisitos}
                     proyectoId={proyectoId}
                     loading={loadingSubmit}
-                    catalogosExternos={catalogos} 
+                    catalogosExternos={catalogos}
                 />
             ) : (
                 <>
@@ -521,7 +478,7 @@ const RequisitosSection = ({ proyectoId }) => {
                         <div style={{ display: "flex", gap: "0.5rem" }}>
                             <Button
                                 icon={<ReloadOutlined />}
-                                onClick={handleRecargarTodo} 
+                                onClick={handleRecargarTodo}
                                 loading={loading || loadingCatalogos}
                                 className="btn btn-secondary"
                             >
@@ -537,7 +494,6 @@ const RequisitosSection = ({ proyectoId }) => {
                                         message.error('Los catálogos necesarios no están disponibles. Por favor, actualiza la página.');
                                         return;
                                     }
-                                    console.log('Iniciando creación de nuevo requisito');
                                     setEditing({}); // Objeto vacío para crear nuevo
                                 }}
                                 disabled={loading || loadingCatalogos || !catalogos}

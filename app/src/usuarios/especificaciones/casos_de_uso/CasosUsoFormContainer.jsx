@@ -1,27 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { message } from 'antd';
 import { getStoredToken, API_ENDPOINTS, getWithAuth } from '../../../../config';
-import RequisitosForm from './RequisitosForm';
+import CasosUsoForm from './CasosUsoForm';
 
-const RequisitosFormContainer = ({
+const CasosUsoFormContainer = ({
     initialValues = {},
     onSubmit,
     onCancel,
-    requisitosExistentes = [],
+    casosUsoExistentes = [],
     proyectoId,
     loading = false,
     catalogosExternos = null
 }) => {
     // Estados para cada catálogo procesado desde los externos
-    const [tiposRequisito, setTiposRequisito] = useState([]);
     const [prioridades, setPrioridades] = useState([]);
-    const [estados, setEstados] = useState([]);
     const [tiposRelacion, setTiposRelacion] = useState([]);
     const [loadingRelaciones, setLoadingRelaciones] = useState(false);
+    const [estados, setEstados] = useState([]);
+
 
     // Función helper para procesar items de catálogo
     const procesarItems = (items, tipoColor) => {
-
         if (!Array.isArray(items)) {
             return [];
         }
@@ -29,7 +28,7 @@ const RequisitosFormContainer = ({
         const itemsProcesados = items
             .filter(item => {
                 // Buscar diferentes posibles campos de ID
-                const id = item.id || item.tipo_id || item.prioridad_id || item.estado_id || item.relacion_id;
+                const id = item.id || item.prioridad_id || item.estado_id || item.relacion_id;
                 const tieneId = id !== undefined && id !== null;
                 const estaActivo = item.activo !== false; // Si no tiene campo activo, se considera activo
                 return tieneId && estaActivo;
@@ -37,14 +36,14 @@ const RequisitosFormContainer = ({
             .map(item => {
                 // Obtener el ID correcto según el tipo de catálogo
                 let id;
-                if (tipoColor === 'tipos') {
-                    id = item.tipo_id || item.id;
-                } else if (tipoColor === 'prioridades') {
+                if (tipoColor === 'prioridades') {
                     id = item.prioridad_id || item.id;
+                } else if (tipoColor === 'tipos-relacion') {
+                    id = item.relacion_id || item.id;
                 } else if (tipoColor === 'estados') {
                     id = item.estado_id || item.id;
                 } else {
-                    id = item.id || item.tipo_id || item.prioridad_id || item.estado_id || item.relacion_id;
+                    id = item.id || item.prioridad_id || item.relacion_id || item.estado_id;
                 }
 
                 // Generar key normalizada a partir del nombre
@@ -63,28 +62,29 @@ const RequisitosFormContainer = ({
 
                 // Mapeo de colores por defecto
                 const defaultColors = {
-                    tipos: {
-                        'funcional': '#1890ff',
-                        'no-funcional': '#52c41a',
-                        'negocio': '#fa8c16',
-                        'tecnico': '#722ed1',
-                        'sistema': '#13c2c2',
-                        'interfaz': '#eb2f96'
-                    },
                     prioridades: {
                         'muy-alta': '#ff4d4f',
                         'alta': '#fa8c16',
-                        'media': '#fadb14',
+                        'media': '#1890ff',
                         'baja': '#52c41a',
                         'muy-baja': '#d9d9d9'
                     },
-                    estados: {
+                    'tipos-relacion': {
+                        'include': '#1890ff',
+                        'extend': '#52c41a',
+                        'generalization': '#722ed1',
+                        'generalizacion': '#722ed1',
+                        'association': '#fa8c16',
+                        'dependency': '#13c2c2',
+                        'dependencia': '#13c2c2'
+                    },
+                    'estados': {
                         'pendiente': '#d9d9d9',
                         'aprobado': '#52c41a',
-                        'en-desarrollo': '#1890ff',
-                        'implementado': '#722ed1',
+                        'en-analisis': '#1890ff',
+                        'desarrollado': '#722ed1',
                         'rechazado': '#ff4d4f',
-                        'postpuesto': '#fa8c16'
+                        'probado': '#fa8c16'
                     }
                 };
 
@@ -96,13 +96,12 @@ const RequisitosFormContainer = ({
                     descripcion: item.descripcion || '',
                     nivel: item.nivel || undefined,
                     activo: item.activo !== false,
-                    tipo: item.tipo || undefined, // Para estados_elemento
-                    orden: item.orden || undefined, // Para estados_proyecto
-                    ...item // Mantener propiedades originales, luego MANDAR ESTO A LAS CSS
+                    tipo: item.tipo || undefined,
+                    orden: item.orden || undefined,
+                    ...item // Mantener propiedades originales
                 };
                 return itemProcesado;
             });
-
         return itemsProcesados;
     };
 
@@ -110,14 +109,6 @@ const RequisitosFormContainer = ({
 
         if (!catalogosExternos || typeof catalogosExternos !== 'object') {
             return;
-        }
-
-        // Procesar tipos de requisito
-        if (catalogosExternos.tipos_requisito && Array.isArray(catalogosExternos.tipos_requisito)) {
-            const tiposProcesados = procesarItems(catalogosExternos.tipos_requisito, 'tipos');
-            setTiposRequisito(tiposProcesados);
-        } else {
-            setTiposRequisito([]);
         }
 
         // Procesar prioridades
@@ -128,6 +119,14 @@ const RequisitosFormContainer = ({
             setPrioridades([]);
         }
 
+        // Procesar tipos de relación para casos de uso
+        if (catalogosExternos.tipos_relacion && Array.isArray(catalogosExternos.tipos_relacion)) {
+            const tiposRelacionProcesados = procesarItems(catalogosExternos.tipos_relacion, 'tipos-relacion');
+            setTiposRelacion(tiposRelacionProcesados);
+        } else {
+            setTiposRelacion([]);
+        }
+
         // Procesar estados
         if (catalogosExternos.estados && Array.isArray(catalogosExternos.estados)) {
             const estadosProcesados = procesarItems(catalogosExternos.estados, 'estados');
@@ -135,43 +134,33 @@ const RequisitosFormContainer = ({
         } else {
             setEstados([]);
         }
-
-        // Procesar tipos de relación
-        if (catalogosExternos.tipos_relacion && Array.isArray(catalogosExternos.tipos_relacion)) {
-            const tiposRelacionProcesados = procesarItems(catalogosExternos.tipos_relacion, 'general');
-            setTiposRelacion(tiposRelacionProcesados);
-        } else {
-            setTiposRelacion([]);
-        }
     };
 
     useEffect(() => {
-
         if (catalogosExternos) {
             procesarCatalogosExternos(catalogosExternos);
         } else {
             // Si no hay catálogos externos, limpiar los estados
-            setTiposRequisito([]);
             setPrioridades([]);
-            setEstados([]);
             setTiposRelacion([]);
+            setEstados([]);
         }
     }, [catalogosExternos]);
 
     useEffect(() => {
         const estadoCatalogos = {
-            tiposRequisito: tiposRequisito.length,
             prioridades: prioridades.length,
-            estados: estados.length,
             tiposRelacion: tiposRelacion.length,
-            requisitosExistentes: requisitosExistentes.length,
-            tieneCatalogosExternos: !!catalogosExternos
+            casosUsoExistentes: casosUsoExistentes.length,
+            tieneCatalogosExternos: !!catalogosExternos,
+            estados: estados.length
         };
 
-    }, [tiposRequisito, prioridades, estados, tiposRelacion, requisitosExistentes, catalogosExternos]);
+    }, [prioridades, tiposRelacion, casosUsoExistentes, catalogosExternos, estados]);
 
-    const cargarRelacionesExistentes = async (requisitoId) => {
-        if (!requisitoId) {
+    // Cargar relaciones existentes para un caso de uso
+    const cargarRelacionesExistentes = async (casoUsoId) => {
+        if (!casoUsoId) {
             return [];
         }
 
@@ -183,13 +172,8 @@ const RequisitosFormContainer = ({
                 return [];
             }
 
-            const endpoint = `${API_ENDPOINTS.RELACIONES_REQUISITO}/${requisitoId}/`;
+            const endpoint = `${API_ENDPOINTS.RELACIONES_CASO_USO}/${casoUsoId}/`;
             const response = await getWithAuth(endpoint, token);
-
-            if (!response) {
-                return [];
-            }
-
             let relacionesData = [];
 
             if (response.relaciones && Array.isArray(response.relaciones)) {
@@ -201,13 +185,12 @@ const RequisitosFormContainer = ({
             } else {
                 relacionesData = [];
             }
-
             const relacionesProcesadas = relacionesData.map(rel => {
 
                 return {
                     id: rel.id || `temp_${Date.now()}_${Math.random()}`,
-                    requisito_id: (rel.requisito_id || '').toString(),
-                    tipo_relacion: (rel.tipo_relacion || '').toString(),
+                    casoUsoRelacionado: (rel.casoUsoRelacionado || rel.caso_uso_destino_id || rel.caso_uso_relacionado_id || '').toString(),
+                    tipo: (rel.tipo || rel.tipo_relacion_id || rel.tipo_relacion || '').toString(),
                     descripcion: rel.descripcion || ''
                 };
             });
@@ -220,6 +203,7 @@ const RequisitosFormContainer = ({
                 error.message.includes('conexión') ||
                 error.message.includes('Failed to fetch') ||
                 error.message.includes('Access-Control-Allow-Origin')) {
+
                 return [];
             }
             return [];
@@ -228,7 +212,6 @@ const RequisitosFormContainer = ({
             setLoadingRelaciones(false);
         }
     };
-
     // Función de reintento simplificada
     const retryFunctions = {
         cargarTodosCatalogos: () => {
@@ -247,31 +230,26 @@ const RequisitosFormContainer = ({
     }
 
     return (
-        <RequisitosForm
+        <CasosUsoForm
             initialValues={initialValues}
             onSubmit={onSubmit}
             onCancel={onCancel}
-            requisitosExistentes={requisitosExistentes}
+            casosUsoExistentes={casosUsoExistentes}
             proyectoId={proyectoId}
             loading={loading}
 
             // Datos de los catálogos (ya procesados)
-            tiposRequisito={tiposRequisito}
             prioridades={prioridades}
-            estados={estados}
             tiposRelacion={tiposRelacion}
+            estados={estados}
 
             // Estados de carga 
-            loadingTipos={false}
             loadingPrioridades={false}
-            loadingEstados={false}
             loadingTiposRelacion={false}
             loadingRelaciones={loadingRelaciones}
 
             // Estados de error 
-            errorTipos={null} // Los errores se manejan en el componente padre
-            errorPrioridades={null}
-            errorEstados={null}
+            errorPrioridades={null} // Los errores se manejan en el componente padre
             errorTiposRelacion={null}
 
             // Funciones utilitarias
@@ -281,4 +259,4 @@ const RequisitosFormContainer = ({
     );
 };
 
-export default RequisitosFormContainer;
+export default CasosUsoFormContainer;

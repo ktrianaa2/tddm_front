@@ -72,23 +72,15 @@ const RequisitosForm = ({
 
     const cargarRelaciones = useCallback(async (requisitoId) => {
         if (!requisitoId || !cargarRelacionesExistentes || relacionesCargadas) {
-            console.log('Saltando carga de relaciones:', {
-                requisitoId,
-                tieneFunction: !!cargarRelacionesExistentes,
-                relacionesCargadas
-            });
             return;
         }
 
-        console.log('Cargando relaciones para requisito:', requisitoId);
         setRelacionesCargadas(true); // MARCAR COMO CARGADAS para evitar bucles
 
         try {
             const relacionesExistentes = await cargarRelacionesExistentes(requisitoId);
             setRelacionesRequisitos(relacionesExistentes || []);
-            console.log('Relaciones cargadas exitosamente:', relacionesExistentes);
         } catch (error) {
-            console.error('Error al cargar relaciones:', error);
             // No mostrar error al usuario si es problema de CORS/conexión
             if (!error.message.includes('CORS') && !error.message.includes('conexión')) {
                 // Solo loggear el error, no interferir con la UI
@@ -97,24 +89,13 @@ const RequisitosForm = ({
         }
     }, [cargarRelacionesExistentes, relacionesCargadas]);
 
-    // USEEFFECT CORREGIDO - Con dependencias específicas y sin bucles
     useEffect(() => {
-        console.log('useEffect - Inicialización del formulario');
-        console.log('Datos disponibles:', {
-            tiposRequisito: tiposRequisito.length,
-            prioridades: prioridades.length,
-            estados: estados.length,
-            tiposRelacion: tiposRelacion.length,
-            initialValues: initialValues?.id ? 'Con ID' : 'Sin ID'
-        });
-
         // Verificar que los catálogos básicos estén disponibles
         const catalogosBasicosDisponibles = tiposRequisito.length > 0 &&
             prioridades.length > 0 &&
             estados.length > 0;
 
         if (!catalogosBasicosDisponibles) {
-            console.log('Esperando catálogos básicos...');
             return;
         }
 
@@ -129,7 +110,6 @@ const RequisitosForm = ({
         if (requisitoId) {
             // MODO EDICIÓN
             setIsEditing(true);
-            console.log('Configurando modo edición para requisito:', requisitoId);
 
             // Preparar valores para edición
             const formValues = {
@@ -145,7 +125,6 @@ const RequisitosForm = ({
                 const tipoId = getIdByKeyOrId(tiposRequisito, initialValues.tipo);
                 if (tipoId) {
                     formValues.tipo = tipoId;
-                    console.log(`Tipo mapeado: ${initialValues.tipo} -> ${tipoId}`);
                 }
             }
 
@@ -154,7 +133,6 @@ const RequisitosForm = ({
                 const prioridadId = getIdByKeyOrId(prioridades, initialValues.prioridad);
                 if (prioridadId) {
                     formValues.prioridad = prioridadId;
-                    console.log(`Prioridad mapeada: ${initialValues.prioridad} -> ${prioridadId}`);
                 }
             }
 
@@ -163,11 +141,9 @@ const RequisitosForm = ({
                 const estadoId = getIdByKeyOrId(estados, initialValues.estado);
                 if (estadoId) {
                     formValues.estado = estadoId;
-                    console.log(`Estado mapeado: ${initialValues.estado} -> ${estadoId}`);
                 }
             }
 
-            console.log('Estableciendo valores del formulario:', formValues);
             form.setFieldsValue(formValues);
 
             // Cargar relaciones si tiene tipos de relación disponibles y no han sido cargadas
@@ -179,7 +155,6 @@ const RequisitosForm = ({
             // MODO CREACIÓN
             setIsEditing(false);
             setRelacionesCargadas(true);
-            console.log('Configurando modo creación');
 
             const valoresPorDefecto = {};
 
@@ -187,13 +162,11 @@ const RequisitosForm = ({
             const estadoPorDefecto = findByKeyOrId(estados, 'pendiente') || estados[0];
             if (estadoPorDefecto) {
                 valoresPorDefecto.estado = estadoPorDefecto.value;
-                console.log('Estado por defecto:', estadoPorDefecto);
             }
 
             const prioridadPorDefecto = findByKeyOrId(prioridades, 'media') || prioridades[0];
             if (prioridadPorDefecto) {
                 valoresPorDefecto.prioridad = prioridadPorDefecto.value;
-                console.log('Prioridad por defecto:', prioridadPorDefecto);
             }
 
             form.setFieldsValue(valoresPorDefecto);
@@ -218,7 +191,6 @@ const RequisitosForm = ({
     }, [initialValues?.id]);
 
     const handleSubmit = (values) => {
-        console.log('Valores del formulario al enviar:', values);
 
         const finalValues = {
             ...values,
@@ -234,7 +206,6 @@ const RequisitosForm = ({
             finalValues.id = initialValues.id;
         }
 
-        console.log('Valores finales a enviar:', finalValues);
         onSubmit(finalValues);
     };
 

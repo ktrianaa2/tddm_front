@@ -82,10 +82,10 @@ const EspecificacionesTab = ({ proyecto }) => {
                     <RequisitosSection proyectoId={proyecto.proyecto_id} />
                 )}
                 {activeSection === 'casos-uso' && (
-                    <CasosDeUsoSection proyecto={proyecto} />
+                    <CasosDeUsoSection proyectoId={proyecto.proyecto_id} />
                 )}
                 {activeSection === 'historias-usuario' && (
-                    <HistoriasDeUsuarioSection proyecto={proyecto} />
+                    <HistoriasDeUsuarioSection proyectoId={proyecto.proyecto_id} />
                 )}
             </div>
         );

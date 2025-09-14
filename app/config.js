@@ -31,7 +31,7 @@ export const API_ENDPOINTS = {
   // Estados de Proyecto
   ESTADOS_PROYECTO: '/app/catalogos/estados/listar/',
   ESTADOS_PROYECTO_CREAR: '/app/catalogos/estados/crear/',
-  ESTADOS_PROYECTO_ACTUALIZAR:`/app/catalogos/estados/editar`, // Se concatena /:proyecto_id en el componente
+  ESTADOS_PROYECTO_ACTUALIZAR: `/app/catalogos/estados/editar`, // Se concatena /:proyecto_id en el componente
   ESTADOS_PROYECTO_CAMBIAR_ESTADO: `/app/catalogos/estados/deshabilitar`, // Se concatena /:proyecto_id en el componente
 
   // EstadosElemento
@@ -51,7 +51,7 @@ export const API_ENDPOINTS = {
   TIPOS_RELACION_REQUISITO_CREAR: '/app/catalogos/tipos_relacion_requisito/crear/',
   TIPOS_RELACION_REQUISITO_ACTUALIZAR: `/app/catalogos/tipos_relacion_requisito/editar`, // Se concatena /:proyecto_id en el componente
   TIPOS_RELACION_REQUISITO_CAMBIAR_ESTADO: `/app/catalogos/tipos_relacion_requisito/deshabilitar`, // Se concatena /:proyecto_id en el componente
-  
+
   // Endpoints de Requisitos - CRUD completo 
   CREAR_REQUISITO: '/app/requisitos/crear/',
   LISTAR_REQUISITOS: '/app/requisitos/listar', // Se concatena /:proyecto_id en el componente
@@ -59,6 +59,14 @@ export const API_ENDPOINTS = {
   ACTUALIZAR_REQUISITO: '/app/requisitos/actualizar', // Se concatena /:requisito_id en el componente
   ELIMINAR_REQUISITO: '/app/requisitos/eliminar', // Se concatena /:requisito_id en el componente
   RELACIONES_REQUISITO: '/app/requisitos/relaciones', // Se concatena /:requisito_id en el componente
+
+  // Endpoints de Casos de Uso - CRUD completo
+  CREAR_CASO_USO: '/app/casosdeuso/crear/',
+  LISTAR_CASOS_USO: '/app/casosdeuso/listar', // Se concatena /:proyecto_id en el componente
+  OBTENER_CASO_USO: '/app/casosdeuso/obtener', // Se concatena /:caso_uso_id en el componente
+  ACTUALIZAR_CASO_USO: '/app/casosdeuso/actualizar', // Se concatena /:caso_uso_id en el componente
+  ELIMINAR_CASO_USO: '/app/casosdeuso/eliminar', // Se concatena /:caso_uso_id en el componente
+  RELACIONES_CASO_USO: '/app/casosdeuso/relaciones', // Se concatena /:caso_uso_id en el componente
 };
 
 // Función helper para construir URLs completas
