@@ -31,7 +31,7 @@ const RequisitosFormContainer = ({
                 // Buscar diferentes posibles campos de ID
                 const id = item.id || item.tipo_id || item.prioridad_id || item.estado_id || item.relacion_id;
                 const tieneId = id !== undefined && id !== null;
-                const estaActivo = item.activo !== false; // Si no tiene campo activo, se considera activo
+                const estaActivo = item.activo !== false;
                 return tieneId && estaActivo;
             })
             .map(item => {
@@ -72,6 +72,7 @@ const RequisitosFormContainer = ({
                         'interfaz': '#eb2f96'
                     },
                     prioridades: {
+                        'critica': '#ff4d4f',
                         'muy-alta': '#ff4d4f',
                         'alta': '#fa8c16',
                         'media': '#fadb14',
@@ -96,9 +97,9 @@ const RequisitosFormContainer = ({
                     descripcion: item.descripcion || '',
                     nivel: item.nivel || undefined,
                     activo: item.activo !== false,
-                    tipo: item.tipo || undefined, // Para estados_elemento
-                    orden: item.orden || undefined, // Para estados_proyecto
-                    ...item // Mantener propiedades originales, luego MANDAR ESTO A LAS CSS
+                    tipo: item.tipo || undefined,
+                    orden: item.orden || undefined,
+                    ...item // Mantener propiedades originales
                 };
                 return itemProcesado;
             });
@@ -112,7 +113,7 @@ const RequisitosFormContainer = ({
             return;
         }
 
-        // Procesar tipos de requisito
+        // Procesar tipos de requisito - CORREGIR LA REFERENCIA
         if (catalogosExternos.tipos_requisito && Array.isArray(catalogosExternos.tipos_requisito)) {
             const tiposProcesados = procesarItems(catalogosExternos.tipos_requisito, 'tipos');
             setTiposRequisito(tiposProcesados);
@@ -136,9 +137,9 @@ const RequisitosFormContainer = ({
             setEstados([]);
         }
 
-        // Procesar tipos de relación
-        if (catalogosExternos.tipos_relacion && Array.isArray(catalogosExternos.tipos_relacion)) {
-            const tiposRelacionProcesados = procesarItems(catalogosExternos.tipos_relacion, 'general');
+        // Procesar tipos de relación - CORREGIR LA REFERENCIA
+        if (catalogosExternos.tipos_relacion_requisito && Array.isArray(catalogosExternos.tipos_relacion_requisito)) {
+            const tiposRelacionProcesados = procesarItems(catalogosExternos.tipos_relacion_requisito, 'general');
             setTiposRelacion(tiposRelacionProcesados);
         } else {
             setTiposRelacion([]);
@@ -146,7 +147,6 @@ const RequisitosFormContainer = ({
     };
 
     useEffect(() => {
-
         if (catalogosExternos) {
             procesarCatalogosExternos(catalogosExternos);
         } else {
@@ -157,18 +157,6 @@ const RequisitosFormContainer = ({
             setTiposRelacion([]);
         }
     }, [catalogosExternos]);
-
-    useEffect(() => {
-        const estadoCatalogos = {
-            tiposRequisito: tiposRequisito.length,
-            prioridades: prioridades.length,
-            estados: estados.length,
-            tiposRelacion: tiposRelacion.length,
-            requisitosExistentes: requisitosExistentes.length,
-            tieneCatalogosExternos: !!catalogosExternos
-        };
-
-    }, [tiposRequisito, prioridades, estados, tiposRelacion, requisitosExistentes, catalogosExternos]);
 
     const cargarRelacionesExistentes = async (requisitoId) => {
         if (!requisitoId) {
@@ -203,7 +191,6 @@ const RequisitosFormContainer = ({
             }
 
             const relacionesProcesadas = relacionesData.map(rel => {
-
                 return {
                     id: rel.id || `temp_${Date.now()}_${Math.random()}`,
                     requisito_id: (rel.requisito_id || '').toString(),
@@ -215,7 +202,6 @@ const RequisitosFormContainer = ({
             return relacionesProcesadas;
 
         } catch (error) {
-
             if (error.message.includes('CORS') ||
                 error.message.includes('conexión') ||
                 error.message.includes('Failed to fetch') ||
@@ -269,7 +255,7 @@ const RequisitosFormContainer = ({
             loadingRelaciones={loadingRelaciones}
 
             // Estados de error 
-            errorTipos={null} // Los errores se manejan en el componente padre
+            errorTipos={null}
             errorPrioridades={null}
             errorEstados={null}
             errorTiposRelacion={null}

@@ -30,7 +30,7 @@ const CasosUsoFormContainer = ({
                 // Buscar diferentes posibles campos de ID
                 const id = item.id || item.prioridad_id || item.estado_id || item.relacion_id;
                 const tieneId = id !== undefined && id !== null;
-                const estaActivo = item.activo !== false; // Si no tiene campo activo, se considera activo
+                const estaActivo = item.activo !== false;
                 return tieneId && estaActivo;
             })
             .map(item => {
@@ -120,8 +120,8 @@ const CasosUsoFormContainer = ({
         }
 
         // Procesar tipos de relación para casos de uso
-        if (catalogosExternos.tipos_relacion && Array.isArray(catalogosExternos.tipos_relacion)) {
-            const tiposRelacionProcesados = procesarItems(catalogosExternos.tipos_relacion, 'tipos-relacion');
+        if (catalogosExternos.tipos_relacion_cu && Array.isArray(catalogosExternos.tipos_relacion_cu)) {
+            const tiposRelacionProcesados = procesarItems(catalogosExternos.tipos_relacion_cu, 'tipos-relacion');
             setTiposRelacion(tiposRelacionProcesados);
         } else {
             setTiposRelacion([]);
