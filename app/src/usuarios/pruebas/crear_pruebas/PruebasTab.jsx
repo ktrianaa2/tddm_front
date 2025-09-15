@@ -11,6 +11,9 @@ import {
   RocketOutlined
 } from '@ant-design/icons';
 
+import '../../../styles/tabs.css'
+
+
 const { Title, Paragraph } = Typography;
 
 const PruebasTab = ({ proyecto }) => {

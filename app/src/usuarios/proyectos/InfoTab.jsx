@@ -16,6 +16,7 @@ import {
   FileTextOutlined,
   SettingOutlined
 } from '@ant-design/icons';
+import '../../styles/tabs.css'
 
 const { Text, Paragraph, Title } = Typography;
 

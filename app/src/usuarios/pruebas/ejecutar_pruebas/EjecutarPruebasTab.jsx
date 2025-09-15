@@ -15,6 +15,7 @@ import {
   CloseCircleOutlined,
   ClockCircleOutlined
 } from '@ant-design/icons';
+import '../../../styles/tabs.css'
 
 const { Title, Paragraph, Text } = Typography;
 

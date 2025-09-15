@@ -1,172 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Button, List, Typography, Tag, message, Spin, Modal, Row, Col } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, BookOutlined, ReloadOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
-import HistoriasUsuarioFormContainer from './HistoriasUsuarioFormContainer'; import { getStoredToken, API_ENDPOINTS, postJSONAuth, getWithAuth, putJSONAuth, deleteWithAuth } from '../../../../config';
+import React, { useState } from 'react';
+import { Card, Button, Typography, message, Spin, Modal, Row, Col } from 'antd';
+import { PlusOutlined, BookOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import HistoriasUsuarioFormContainer from './HistoriasUsuarioFormContainer';
 import HistoriaUsuarioItem from './HistoriaUsuarioItem';
+import { getStoredToken, API_ENDPOINTS, postJSONAuth, getWithAuth, putJSONAuth, deleteWithAuth } from '../../../../config';
 import '../../../styles/forms.css';
 import '../../../styles/buttons.css';
 
 const { Title, Text } = Typography;
 const { confirm } = Modal;
 
-const HistoriasUsuarioSection = ({ proyectoId }) => {
-  const [historias, setHistorias] = useState([]);
+const HistoriasUsuarioSection = ({
+  proyectoId,
+  historiasUsuario,
+  catalogos,
+  loading,
+  loadingCatalogos,
+  onActualizar
+}) => {
   const [editing, setEditing] = useState(null); // null = lista, {} = creando, {datos} = editando
-  const [loading, setLoading] = useState(false);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
-
-  // ESTADOS PARA CATÁLOGOS
-  const [catalogos, setCatalogos] = useState(null);
-  const [loadingCatalogos, setLoadingCatalogos] = useState(false);
-  const [errorCatalogos, setErrorCatalogos] = useState(null);
-
-  // Mapeo de colores para prioridades
-  const prioridadColors = {
-    'critica': '#ff4d4f',
-    'alta': '#fa8c16',
-    'media': '#fadb14',
-    'baja': '#52c41a',
-    'muy-alta': '#ff4d4f',
-    'muy-baja': '#87d068'
-  };
-
-  // Mapeo de colores para estados
-  const estadoColors = {
-    'pendiente': '#d9d9d9',
-    'en-progreso': '#1890ff',
-    'en-desarrollo': '#1890ff',
-    'en-revision': '#fa8c16',
-    'completada': '#52c41a',
-    'completado': '#52c41a',
-    'cancelada': '#ff4d4f',
-    'cancelado': '#ff4d4f',
-    'bloqueada': '#ff4d4f'
-  };
-
-  // Mapeo de colores para unidades de estimación
-  const estimacionColors = {
-    'story-points': '#1890ff',
-    'horas': '#52c41a',
-    'dias': '#fa8c16',
-    'costo': '#722ed1'
-  };
-
-  const cargarCatalogos = async () => {
-    setLoadingCatalogos(true);
-    setErrorCatalogos(null);
-
-    try {
-      const token = getStoredToken();
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-
-      const [prioridadesResponse, estadosResponse, estimacionResponse] = await Promise.allSettled([
-        getWithAuth(API_ENDPOINTS.PRIORIDADES, token),
-        getWithAuth(API_ENDPOINTS.ESTADOS_ELEMENTO, token),
-        getWithAuth(API_ENDPOINTS.TIPOS_ESTIMACION, token)
-      ]);
-
-      const catalogosData = {
-        prioridades: [],
-        estados: [],
-        unidades_estimacion: []
-      };
-
-      // Procesar prioridades
-      if (prioridadesResponse.status === 'fulfilled' && prioridadesResponse.value) {
-        const prioridadesData = prioridadesResponse.value.prioridades || prioridadesResponse.value.data || prioridadesResponse.value;
-        if (Array.isArray(prioridadesData)) {
-          catalogosData.prioridades = prioridadesData.map(prioridad => ({
-            id: prioridad.id || prioridad.prioridad_id,
-            nombre: prioridad.nombre,
-            key: prioridad.key || prioridad.nombre?.toLowerCase().replace(/[\s_-]+/g, '-'),
-            descripcion: prioridad.descripcion || '',
-            nivel: prioridad.nivel,
-            activo: prioridad.activo !== false
-          }));
-        }
-      }
-
-      // Procesar estados (filtrar para historias de usuario)
-      if (estadosResponse.status === 'fulfilled' && estadosResponse.value) {
-        const estadosData = estadosResponse.value.estados_elemento || estadosResponse.value.estados || estadosResponse.value.data || estadosResponse.value;
-        if (Array.isArray(estadosData)) {
-          const estadosHistorias = estadosData.filter(estado =>
-            estado.tipo === 'historia_usuario' || !estado.tipo
-          );
-          catalogosData.estados = estadosHistorias.map(estado => ({
-            id: estado.id || estado.estado_id,
-            nombre: estado.nombre,
-            key: estado.key || estado.nombre?.toLowerCase().replace(/[\s_-]+/g, '-'),
-            descripcion: estado.descripcion || '',
-            tipo: estado.tipo,
-            activo: estado.activo !== false
-          }));
-        }
-      }
-
-      // Procesar unidades de estimación
-      if (estimacionResponse.status === 'fulfilled' && estimacionResponse.value) {
-        const estimacionData = estimacionResponse.value.tipos_estimacion || estimacionResponse.value.data || estimacionResponse.value;
-        if (Array.isArray(estimacionData)) {
-          catalogosData.unidades_estimacion = estimacionData.map(estimacion => ({
-            id: estimacion.id || estimacion.estimacion_id,
-            nombre: estimacion.nombre,
-            key: estimacion.key || estimacion.nombre?.toLowerCase().replace(/[\s_-]+/g, '-'),
-            descripcion: estimacion.descripcion || '',
-            activo: estimacion.activo !== false
-          }));
-        }
-      }
-
-      setCatalogos(catalogosData);
-
-    } catch (error) {
-      setErrorCatalogos(error.message);
-      message.error(`Error al cargar catálogos: ${error.message}`);
-    } finally {
-      setLoadingCatalogos(false);
-    }
-  };
-
-  // Cargar historias de usuario del proyecto
-  const cargarHistorias = async () => {
-    if (!proyectoId) return;
-
-    setLoading(true);
-    try {
-      const token = getStoredToken();
-      const response = await getWithAuth(`${API_ENDPOINTS.LISTAR_HISTORIAS_USUARIO}/${proyectoId}/`, token);
-      const historiasData = response.historias || response.historias_usuario || response.data || [];
-
-      const historiasProcessed = historiasData.map(historia => ({
-        id: historia.id,
-        descripcion_historia: historia.descripcion || historia.titulo || '',
-        actor_rol: historia.actor_rol || '',
-        funcionalidad_accion: historia.funcionalidad_accion || '',
-        beneficio_razon: historia.beneficio_razon || '',
-        criterios_aceptacion: historia.criterios_aceptacion || '',
-        dependencias_relaciones: historia.dependencias_relaciones || '',
-        componentes_relacionados: historia.componentes_relacionados || '',
-        valor_negocio: historia.valor_negocio,
-        notas_adicionales: historia.notas_adicionales || '',
-        proyecto_id: historia.proyecto_id,
-        fecha_creacion: historia.fecha_creacion,
-        prioridad: historia.prioridad,
-        estado: historia.estado,
-        estimacion_valor: historia.estimacion_valor,
-        unidad_estimacion: historia.unidad_estimacion,
-        estimaciones: historia.estimaciones || []
-      }));
-      setHistorias(historiasProcessed);
-    } catch (error) {
-      message.error(`Error al cargar historias de usuario: ${error.message}`);
-      setHistorias([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const cargarHistoriaParaEdicion = async (historiaId) => {
     setLoadingSubmit(true);
@@ -180,8 +33,11 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
       }
 
       const historiaBackend = response.historia;
+
       // Función helper para mapear keys a IDs
       const mapearKeyAId = (keyOrId, catalogo, tipoCatalogo = '') => {
+        if (!keyOrId || !catalogo || !Array.isArray(catalogo)) return null;
+
         const keyOrIdStr = keyOrId.toString();
 
         // 1. Buscar por ID exacto primero
@@ -256,10 +112,9 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
 
       // Procesar múltiples estimaciones
       if (historiaBackend.estimaciones && Array.isArray(historiaBackend.estimaciones) && historiaBackend.estimaciones.length > 0) {
-
         historiaBackend.estimaciones.forEach((est, index) => {
-
           let unidadId = null;
+
           if (est.tipo_estimacion_id) {
             // Verificar que existe en nuestro catálogo
             const unidadExiste = catalogos.unidades_estimacion?.find(u => u.id.toString() === est.tipo_estimacion_id.toString());
@@ -286,7 +141,6 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
       }
       // Procesar estimación única (formato legacy)
       else if (historiaBackend.estimacion_valor && historiaBackend.unidad_estimacion) {
-
         const unidadId = mapearKeyAId(historiaBackend.unidad_estimacion, catalogos.unidades_estimacion, 'Unidad Estimación');
 
         if (unidadId) {
@@ -308,15 +162,6 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
       setLoadingSubmit(false);
     }
   };
-
-  useEffect(() => {
-    if (proyectoId) {
-      if (!catalogos) {
-        cargarCatalogos();
-      }
-      cargarHistorias();
-    }
-  }, [proyectoId]);
 
   const handleGuardar = async (values) => {
     if (!proyectoId) {
@@ -356,6 +201,7 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
         proyecto_id: parseInt(proyectoId),
         estimaciones: []
       };
+
       if (values.estimaciones && Array.isArray(values.estimaciones) && values.estimaciones.length > 0) {
         const estimacionesValidas = values.estimaciones
           .filter(est => {
@@ -399,8 +245,8 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
         message.success(response.mensaje || 'Historia de usuario creada exitosamente');
       }
 
-      // Recargar las historias para ver los cambios
-      await cargarHistorias();
+      // Llamar al callback para actualizar los datos en el componente padre
+      onActualizar();
       setEditing(null);
 
     } catch (error) {
@@ -410,9 +256,6 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
     }
   };
 
-
-
-  // Manejar eliminación de historia
   const handleEliminar = (historia) => {
     confirm({
       title: 'Confirmar Eliminación',
@@ -437,7 +280,7 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
             token
           );
           message.success(response.mensaje || 'Historia de usuario eliminada exitosamente');
-          await cargarHistorias();
+          onActualizar();
         } catch (error) {
           message.error(`Error al eliminar historia de usuario: ${error.message}`);
         }
@@ -454,31 +297,14 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
 
     if (!catalogosDisponibles) {
       message.error('Los catálogos necesarios no están disponibles. Reintentando carga...');
-      await cargarCatalogos();
       return;
     }
 
     await cargarHistoriaParaEdicion(historia.id);
   };
 
-  // Funciones helper para obtener colores
-  const getColorPrioridad = (prioridad) => {
-    return prioridadColors[prioridad] || '#d9d9d9';
-  };
-
-  const getColorEstado = (estado) => {
-    return estadoColors[estado] || '#d9d9d9';
-  };
-
-  const getColorEstimacion = (unidad) => {
-    return estimacionColors[unidad] || '#d9d9d9';
-  };
-
-  const getEtiquetaFormateada = (valor) => {
-    if (!valor) return '';
-    return valor.split('-').map(word =>
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
+  const handleCancelar = () => {
+    setEditing(null);
   };
 
   // Extraer el título de la descripción de la historia (primeras palabras hasta 50 caracteres)
@@ -487,19 +313,6 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
     return descripcionHistoria.length > 50
       ? `${descripcionHistoria.substring(0, 50)}...`
       : descripcionHistoria;
-  };
-
-  // Manejar cancelación
-  const handleCancelar = () => {
-    setEditing(null);
-  };
-
-  // Recargar tanto catálogos como historias
-  const handleRecargarTodo = async () => {
-    await Promise.all([
-      cargarCatalogos(),
-      cargarHistorias()
-    ]);
   };
 
   if (!proyectoId) {
@@ -525,19 +338,14 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
   }
 
   // MOSTRAR ERROR SI NO SE PUDIERON CARGAR LOS CATÁLOGOS
-  if (errorCatalogos && !catalogos) {
+  if (!catalogos) {
     return (
       <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
         <ExclamationCircleOutlined style={{ fontSize: "3rem", color: "#ff4d4f", marginBottom: "1rem" }} />
         <Title level={4} type="danger">Error al cargar catálogos</Title>
-        <Text type="secondary" style={{ display: 'block', marginBottom: '1rem' }}>{errorCatalogos}</Text>
-        <Button
-          type="primary"
-          onClick={cargarCatalogos}
-          loading={loadingCatalogos}
-        >
-          Reintentar
-        </Button>
+        <Text type="secondary" style={{ display: 'block', marginBottom: '1rem' }}>
+          Los catálogos necesarios no están disponibles
+        </Text>
       </Card>
     );
   }
@@ -549,7 +357,7 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
           initialValues={editing?.id ? editing : {}}
           onSubmit={handleGuardar}
           onCancel={handleCancelar}
-          historiasExistentes={historias}
+          historiasExistentes={historiasUsuario}
           proyectoId={proyectoId}
           loading={loadingSubmit}
           catalogosExternos={catalogos}
@@ -564,36 +372,25 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
                 Gestión de Historias de Usuario
               </Title>
               <Text type="secondary">
-                {historias.length} historia{historias.length !== 1 ? "s" : ""} de usuario
+                {historiasUsuario.length} historia{historiasUsuario.length !== 1 ? "s" : ""} de usuario
               </Text>
             </div>
 
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={handleRecargarTodo}
-                loading={loading || loadingCatalogos}
-                className="btn btn-secondary"
-              >
-                Actualizar
-              </Button>
-
-              <Button
-                className="btn btn-primary"
-                icon={<PlusOutlined />}
-                onClick={() => {
-                  // Verificar que los catálogos estén disponibles antes de crear
-                  if (!catalogos || !catalogos.prioridades || catalogos.prioridades.length === 0) {
-                    message.error('Los catálogos necesarios no están disponibles. Por favor, actualiza la página.');
-                    return;
-                  }
-                  setEditing({}); // Objeto vacío para crear nuevo
-                }}
-                disabled={loading || loadingCatalogos || !catalogos}
-              >
-                Agregar Historia de Usuario
-              </Button>
-            </div>
+            <Button
+              className="btn btn-primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                // Verificar que los catálogos estén disponibles antes de crear
+                if (!catalogos || !catalogos.prioridades || catalogos.prioridades.length === 0) {
+                  message.error('Los catálogos necesarios no están disponibles. Por favor, actualiza la página.');
+                  return;
+                }
+                setEditing({}); // Objeto vacío para crear nuevo
+              }}
+              disabled={loading || loadingCatalogos || !catalogos}
+            >
+              Agregar Historia de Usuario
+            </Button>
           </div>
 
           {/* Loading */}
@@ -607,7 +404,7 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
           ) : (
             <>
               {/* Lista de historias */}
-              {historias.length === 0 ? (
+              {historiasUsuario.length === 0 ? (
                 <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
                   <BookOutlined style={{ fontSize: "3rem", color: "var(--text-disabled)", marginBottom: "1rem" }} />
                   <Title level={4} type="secondary">No hay historias de usuario definidas</Title>
@@ -615,7 +412,7 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
                 </Card>
               ) : (
                 <Row gutter={[16, 16]}>
-                  {historias.map((historia) => (
+                  {historiasUsuario.map((historia) => (
                     <Col key={historia.id} xs={24} sm={24} md={12} lg={8} xl={8} xxl={6}>
                       <HistoriaUsuarioItem
                         key={historia.id}

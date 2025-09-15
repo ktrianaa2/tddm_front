@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, Button, Typography, message, Spin, Modal, Row, Col } from "antd";
 import { PlusOutlined, ReloadOutlined, ExclamationCircleOutlined, UserOutlined } from "@ant-design/icons";
 import CasosUsoFormContainer from "./CasosUsoFormContainer";
-import CasoUsoItem from "./CasoUsoItem"; // Importar el nuevo componente
+import CasoUsoItem from "./CasoUsoItem";
 import { getStoredToken, API_ENDPOINTS, postJSONAuth, getWithAuth, putJSONAuth, deleteWithAuth } from "../../../../config";
 import '../../../styles/forms.css';
 import '../../../styles/buttons.css';
@@ -10,134 +10,18 @@ import '../../../styles/buttons.css';
 const { Title, Text } = Typography;
 const { confirm } = Modal;
 
-const CasosUsoSection = ({ proyectoId }) => {
-  const [casosUso, setCasosUso] = useState([]);
+const CasosUsoSection = ({
+  proyectoId,
+  casosUso,
+  catalogos,
+  loading,
+  loadingCatalogos,
+  onActualizar
+}) => {
   const [editing, setEditing] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
-  const [catalogos, setCatalogos] = useState(null);
-  const [loadingCatalogos, setLoadingCatalogos] = useState(false);
-  const [errorCatalogos, setErrorCatalogos] = useState(null);
 
-  const cargarCatalogos = async () => {
-    setLoadingCatalogos(true);
-    setErrorCatalogos(null);
-
-    try {
-      const token = getStoredToken();
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-
-      const [prioridadesResponse, estadosResponse, tiposRelacionResponse] = await Promise.allSettled([
-        getWithAuth(API_ENDPOINTS.PRIORIDADES, token),
-        getWithAuth(API_ENDPOINTS.ESTADOS_ELEMENTO, token),
-        getWithAuth(API_ENDPOINTS.TIPOS_RELACION_CU, token)
-      ]);
-
-      const catalogosData = {
-        prioridades: [],
-        estados: [],
-        tipos_relacion: []
-      };
-
-      // Procesar prioridades
-      if (prioridadesResponse.status === 'fulfilled' && prioridadesResponse.value) {
-        const prioridadesData = prioridadesResponse.value.prioridades || prioridadesResponse.value.data || prioridadesResponse.value;
-        if (Array.isArray(prioridadesData)) {
-          catalogosData.prioridades = prioridadesData.map(prioridad => ({
-            id: prioridad.id || prioridad.prioridad_id,
-            nombre: prioridad.nombre,
-            key: prioridad.key || prioridad.nombre?.toLowerCase().replace(/[\s_-]+/g, '-'),
-            descripcion: prioridad.descripcion || '',
-            nivel: prioridad.nivel,
-            activo: prioridad.activo !== false
-          }));
-        }
-      }
-
-      // Procesar tipos de relación para casos de uso
-      if (tiposRelacionResponse.status === 'fulfilled' && tiposRelacionResponse.value) {
-        const tiposRelacionData = tiposRelacionResponse.value.tipos_relacion_cu || tiposRelacionResponse.value.tipos_relacion || tiposRelacionResponse.value.data || tiposRelacionResponse.value;
-        if (Array.isArray(tiposRelacionData)) {
-          catalogosData.tipos_relacion = tiposRelacionData.map(tipoRelacion => ({
-            id: tipoRelacion.id || tipoRelacion.relacion_id,
-            nombre: tipoRelacion.nombre,
-            key: tipoRelacion.key || tipoRelacion.nombre?.toLowerCase().replace(/[\s_-]+/g, '-'),
-            descripcion: tipoRelacion.descripcion || '',
-            activo: tipoRelacion.activo !== false
-          }));
-        }
-      }
-
-      // Procesar estados (filtrar solo para casos de uso)
-      if (estadosResponse.status === 'fulfilled' && estadosResponse.value) {
-        const estadosData = estadosResponse.value.estados_elemento || estadosResponse.value.estados || estadosResponse.value.data || estadosResponse.value;
-        if (Array.isArray(estadosData)) {
-          const estadosCasosdeUso = estadosData.filter(estado =>
-            estado.tipo === 'caso_uso' || !estado.tipo
-          );
-          catalogosData.estados = estadosCasosdeUso.map(estado => ({
-            id: estado.id || estado.estado_id,
-            nombre: estado.nombre,
-            key: estado.key || estado.nombre?.toLowerCase().replace(/[\s_-]+/g, '-'),
-            descripcion: estado.descripcion || '',
-            tipo: estado.tipo,
-            activo: estado.activo !== false
-          }));
-        }
-      }
-
-      setCatalogos(catalogosData);
-
-    } catch (error) {
-      setErrorCatalogos(error.message);
-      message.error(`Error al cargar catálogos: ${error.message}`);
-    } finally {
-      setLoadingCatalogos(false);
-    }
-  };
-
-  const cargarCasosUso = async () => {
-    if (!proyectoId) return;
-
-    setLoading(true);
-    try {
-      const token = getStoredToken();
-      const response = await getWithAuth(`${API_ENDPOINTS.LISTAR_CASOS_USO}/${proyectoId}/`, token);
-      const casosUsoData = response.data || [];
-
-      if (!Array.isArray(casosUsoData)) {
-        setCasosUso([]);
-        return;
-      }
-
-      const casosUsoProcessed = casosUsoData.map(cu => ({
-        id: cu.id,
-        nombre: cu.nombre,
-        descripcion: cu.descripcion,
-        actores: cu.actores,
-        precondiciones: cu.precondiciones,
-        flujo_principal: cu.flujo_principal,
-        flujos_alternativos: cu.flujos_alternativos,
-        postcondiciones: cu.postcondiciones,
-        prioridad: cu.prioridad,
-        estado: cu.estado,
-        proyecto_id: cu.proyecto_id,
-        fecha_creacion: cu.fecha_creacion,
-        relaciones: cu.relaciones || []
-      }));
-
-      setCasosUso(casosUsoProcessed);
-    } catch (error) {
-      message.error(`Error al cargar casos de uso: ${error.message}`);
-      setCasosUso([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  //Cargar un caso de uso específico para edición
+  // Cargar un caso de uso específico para edición
   const cargarCasoUsoParaEdicion = async (casoUsoId) => {
     setLoadingSubmit(true);
 
@@ -189,15 +73,6 @@ const CasosUsoSection = ({ proyectoId }) => {
     }
   };
 
-  useEffect(() => {
-    if (proyectoId) {
-      if (!catalogos) {
-        cargarCatalogos();
-      }
-      cargarCasosUso();
-    }
-  }, [proyectoId]);
-
   const handleGuardar = async (values) => {
     if (!proyectoId) {
       message.error('No se ha especificado el ID del proyecto');
@@ -222,7 +97,7 @@ const CasosUsoSection = ({ proyectoId }) => {
         prioridad_id: values.prioridad ? parseInt(values.prioridad) : null,
         estado_id: values.estado ? parseInt(values.estado) : null,
         relaciones: (values.relaciones || [])
-          .filter(rel => rel.casoUsoRelacionado && rel.tipo) // Solo enviar relaciones completas
+          .filter(rel => rel.casoUsoRelacionado && rel.tipo)
           .map(rel => {
             return {
               casoUsoRelacionado: parseInt(rel.casoUsoRelacionado),
@@ -231,7 +106,6 @@ const CasosUsoSection = ({ proyectoId }) => {
             };
           })
       };
-
 
       let response;
 
@@ -247,7 +121,8 @@ const CasosUsoSection = ({ proyectoId }) => {
         message.success(response.mensaje || 'Caso de uso creado exitosamente');
       }
 
-      await cargarCasosUso();
+      // Llamar al callback para actualizar los datos en el componente padre
+      onActualizar();
       setEditing(null);
 
     } catch (error) {
@@ -281,7 +156,7 @@ const CasosUsoSection = ({ proyectoId }) => {
             token
           );
           message.success(response.mensaje || 'Caso de uso eliminado exitosamente');
-          await cargarCasosUso();
+          onActualizar();
         } catch (error) {
           message.error(`Error al eliminar caso de uso: ${error.message}`);
         }
@@ -297,7 +172,6 @@ const CasosUsoSection = ({ proyectoId }) => {
 
     if (!catalogosDisponibles) {
       message.error('Los catálogos necesarios no están disponibles. Reintentando carga...');
-      await cargarCatalogos();
       return;
     }
 
@@ -306,13 +180,6 @@ const CasosUsoSection = ({ proyectoId }) => {
 
   const handleCancelar = () => {
     setEditing(null);
-  };
-
-  const handleRecargarTodo = async () => {
-    await Promise.all([
-      cargarCatalogos(),
-      cargarCasosUso()
-    ]);
   };
 
   // Verificar si los catálogos están disponibles
@@ -343,19 +210,14 @@ const CasosUsoSection = ({ proyectoId }) => {
   }
 
   // MOSTRAR ERROR SI NO SE PUDIERON CARGAR LOS CATÁLOGOS
-  if (errorCatalogos && !catalogos) {
+  if (!catalogos) {
     return (
       <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
         <ExclamationCircleOutlined style={{ fontSize: "3rem", color: "#ff4d4f", marginBottom: "1rem" }} />
         <Title level={4} type="danger">Error al cargar catálogos</Title>
-        <Text type="secondary" style={{ display: 'block', marginBottom: '1rem' }}>{errorCatalogos}</Text>
-        <Button
-          type="primary"
-          onClick={cargarCatalogos}
-          loading={loadingCatalogos}
-        >
-          Reintentar
-        </Button>
+        <Text type="secondary" style={{ display: 'block', marginBottom: '1rem' }}>
+          Los catálogos necesarios no están disponibles
+        </Text>
       </Card>
     );
   }
@@ -386,31 +248,20 @@ const CasosUsoSection = ({ proyectoId }) => {
               </Text>
             </div>
 
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={handleRecargarTodo}
-                loading={loading || loadingCatalogos}
-                className="btn btn-secondary"
-              >
-                Actualizar
-              </Button>
-
-              <Button
-                className="btn btn-primary"
-                icon={<PlusOutlined />}
-                onClick={() => {
-                  if (!catalogosDisponibles) {
-                    message.error('Los catálogos necesarios no están disponibles. Por favor, actualiza la página.');
-                    return;
-                  }
-                  setEditing({});
-                }}
-                disabled={loading || loadingCatalogos || !catalogosDisponibles}
-              >
-                Agregar Caso de Uso
-              </Button>
-            </div>
+            <Button
+              className="btn btn-primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                if (!catalogosDisponibles) {
+                  message.error('Los catálogos necesarios no están disponibles. Por favor, actualiza la página.');
+                  return;
+                }
+                setEditing({});
+              }}
+              disabled={loading || loadingCatalogos || !catalogosDisponibles}
+            >
+              Agregar Caso de Uso
+            </Button>
           </div>
 
           {/* Loading */}
