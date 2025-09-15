@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Card, Button, List, Typography, Tag, message, Spin, Modal } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, ReloadOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
+import { Card, Button, Typography, message, Spin, Modal, Row, Col } from "antd";
+import { PlusOutlined, FileTextOutlined, ReloadOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import RequisitosFormContainer from "./RequisitosFormContainer";
+import RequisitoItem from "./RequisitoItem"; // Importar el nuevo componente
 import { getStoredToken, API_ENDPOINTS, postJSONAuth, getWithAuth, putJSONAuth, deleteWithAuth } from "../../../../config";
 import '../../../styles/forms.css';
 import '../../../styles/buttons.css';
@@ -19,33 +20,6 @@ const RequisitosSection = ({ proyectoId }) => {
     const [catalogos, setCatalogos] = useState(null);
     const [loadingCatalogos, setLoadingCatalogos] = useState(false);
     const [errorCatalogos, setErrorCatalogos] = useState(null);
-
-    // Mapeo de colores para tipos de requisito
-    const tipoColors = {
-        'funcional': '#1890ff',
-        'no-funcional': '#52c41a',
-        'negocio': '#fa8c16',
-        'tecnico': '#722ed1',
-        'sistema': '#13c2c2',
-        'interfaz': '#eb2f96'
-    };
-
-    // Mapeo de colores para prioridades
-    const prioridadColors = {
-        'critica': '#ff4d4f',
-        'alta': '#fa8c16',
-        'media': '#fadb14',
-        'baja': '#52c41a'
-    };
-
-    // Mapeo de colores para estados
-    const estadoColors = {
-        'pendiente': '#d9d9d9',
-        'en-desarrollo': '#1890ff',
-        'en-revision': '#fa8c16',
-        'completado': '#52c41a',
-        'cancelado': '#ff4d4f'
-    };
 
     const cargarCatalogos = async () => {
         setLoadingCatalogos(true);
@@ -240,7 +214,6 @@ const RequisitosSection = ({ proyectoId }) => {
             // Procesar relaciones si existen
             if (Array.isArray(relacionesData) && relacionesData.length > 0) {
                 requisitoParaEditar.relaciones_requisitos = relacionesData.map(rel => {
-
                     return {
                         id: rel.id || `temp_${Date.now()}_${Math.random()}`,
                         requisito_id: (rel.requisito_id || rel.requisito_relacionado_id || '').toString(),
@@ -248,7 +221,6 @@ const RequisitosSection = ({ proyectoId }) => {
                         descripcion: rel.descripcion || ''
                     };
                 });
-
             }
 
             setEditing(requisitoParaEditar);
@@ -299,7 +271,6 @@ const RequisitosSection = ({ proyectoId }) => {
                     }))
             };
 
-
             let response;
 
             if (editing && editing.id) {
@@ -314,7 +285,6 @@ const RequisitosSection = ({ proyectoId }) => {
                 response = await postJSONAuth(API_ENDPOINTS.CREAR_REQUISITO, dataToSend, token);
                 message.success(response.mensaje || 'Requisito creado exitosamente');
             }
-
 
             await cargarRequisitos();
             setEditing(null);
@@ -368,32 +338,11 @@ const RequisitosSection = ({ proyectoId }) => {
 
         if (!catalogosDisponibles) {
             message.error('Los catálogos necesarios no están disponibles. Reintentando carga...');
-
             await cargarCatalogos();
             return;
         }
 
         await cargarRequisitoParaEdicion(requisito.id);
-    };
-
-    // Funciones helper para obtener colores (sin cambios)
-    const getColorTipo = (tipo) => {
-        return tipoColors[tipo] || '#d9d9d9';
-    };
-
-    const getColorPrioridad = (prioridad) => {
-        return prioridadColors[prioridad] || '#d9d9d9';
-    };
-
-    const getColorEstado = (estado) => {
-        return estadoColors[estado] || '#d9d9d9';
-    };
-
-    const getEtiquetaFormateada = (valor) => {
-        if (!valor) return '';
-        return valor.split('-').map(word =>
-            word.charAt(0).toUpperCase() + word.slice(1)
-        ).join(' ');
     };
 
     // Manejar cancelación
@@ -521,103 +470,20 @@ const RequisitosSection = ({ proyectoId }) => {
                                     <Text type="secondary">Comienza agregando el primer requisito de este proyecto</Text>
                                 </Card>
                             ) : (
-                                <Card>
-                                    <List
-                                        dataSource={requisitos}
-                                        renderItem={(req) => (
-                                            <List.Item
-                                                key={req.id}
-                                                actions={[
-                                                    <Button
-                                                        className="btn btn-info btn-card"
-                                                        icon={<EditOutlined />}
-                                                        onClick={() => handleEditar(req)}
-                                                        size="small"
-                                                        loading={loadingSubmit}
-                                                        disabled={!catalogos} // DESHABILITADO si no hay catálogos
-                                                    >
-                                                        Editar
-                                                    </Button>,
-                                                    <Button
-                                                        className="btn btn-danger btn-card"
-                                                        icon={<DeleteOutlined />}
-                                                        onClick={() => handleEliminar(req)}
-                                                        size="small"
-                                                        disabled={loadingSubmit}
-                                                    >
-                                                        Eliminar
-                                                    </Button>
-                                                ]}
-                                            >
-                                                <List.Item.Meta
-                                                    title={
-                                                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                                                            <Text strong>{req.nombre}</Text>
-                                                            <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
-                                                                {req.tipo && (
-                                                                    <Tag
-                                                                        color={getColorTipo(req.tipo)}
-                                                                        style={{ fontSize: "10px", margin: 0 }}
-                                                                    >
-                                                                        {getEtiquetaFormateada(req.tipo)}
-                                                                    </Tag>
-                                                                )}
-                                                                {req.prioridad && (
-                                                                    <Tag
-                                                                        color={getColorPrioridad(req.prioridad)}
-                                                                        style={{ fontSize: "10px", margin: 0 }}
-                                                                    >
-                                                                        {getEtiquetaFormateada(req.prioridad)}
-                                                                    </Tag>
-                                                                )}
-                                                                {req.estado && (
-                                                                    <Tag
-                                                                        color={getColorEstado(req.estado)}
-                                                                        style={{ fontSize: "10px", margin: 0 }}
-                                                                    >
-                                                                        {getEtiquetaFormateada(req.estado)}
-                                                                    </Tag>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    }
-                                                    description={
-                                                        <div>
-                                                            <Text type="secondary" style={{ fontSize: '0.9em' }}>
-                                                                {req.descripcion}
-                                                            </Text>
-                                                            {req.criterios && (
-                                                                <div style={{ marginTop: "0.5rem" }}>
-                                                                    <Text style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-                                                                        <strong>Criterios:</strong> {req.criterios.length > 100 ? `${req.criterios.substring(0, 100)}...` : req.criterios}
-                                                                    </Text>
-                                                                </div>
-                                                            )}
-                                                            {req.origen && (
-                                                                <div style={{ marginTop: "0.25rem" }}>
-                                                                    <Text style={{ fontSize: "11px", color: "var(--text-disabled)" }}>
-                                                                        Origen: {req.origen}
-                                                                    </Text>
-                                                                </div>
-                                                            )}
-                                                            {req.fecha_creacion && (
-                                                                <div style={{ marginTop: "0.25rem" }}>
-                                                                    <Text style={{ fontSize: "11px", color: "var(--text-disabled)" }}>
-                                                                        Creado: {new Date(req.fecha_creacion).toLocaleDateString('es-ES', {
-                                                                            year: 'numeric',
-                                                                            month: 'short',
-                                                                            day: 'numeric'
-                                                                        })}
-                                                                    </Text>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    }
-                                                />
-                                            </List.Item>
-                                        )}
-                                    />
-                                </Card>
+                                <Row gutter={[16, 16]}>
+                                    {requisitos.map((requisito) => (
+                                        <Col key={requisito.id} xs={24} sm={24} md={12} lg={8} xl={8} xxl={6}>
+                                            <RequisitoItem
+                                                key={requisito.id}
+                                                requisito={requisito}
+                                                onEditar={handleEditar}
+                                                onEliminar={handleEliminar}
+                                                loading={loadingSubmit}
+                                                catalogosDisponibles={!!catalogos}
+                                            />
+                                        </Col>
+                                    ))}
+                                </Row>
                             )}
                         </>
                     )}

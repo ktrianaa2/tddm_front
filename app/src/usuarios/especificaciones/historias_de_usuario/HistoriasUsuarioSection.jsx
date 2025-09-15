@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, List, Typography, Tag, message, Spin, Modal } from 'antd';
+import { Card, Button, List, Typography, Tag, message, Spin, Modal, Row, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, BookOutlined, ReloadOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import HistoriasUsuarioFormContainer from './HistoriasUsuarioFormContainer'; import { getStoredToken, API_ENDPOINTS, postJSONAuth, getWithAuth, putJSONAuth, deleteWithAuth } from '../../../../config';
+import HistoriaUsuarioItem from './HistoriaUsuarioItem';
 import '../../../styles/forms.css';
 import '../../../styles/buttons.css';
 
@@ -182,7 +183,7 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
       // Función helper para mapear keys a IDs
       const mapearKeyAId = (keyOrId, catalogo, tipoCatalogo = '') => {
         const keyOrIdStr = keyOrId.toString();
-  
+
         // 1. Buscar por ID exacto primero
         let found = catalogo.find(item => item.id?.toString() === keyOrIdStr);
         if (found) {
@@ -264,7 +265,7 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
             const unidadExiste = catalogos.unidades_estimacion?.find(u => u.id.toString() === est.tipo_estimacion_id.toString());
             if (unidadExiste) {
               unidadId = est.tipo_estimacion_id.toString();
-            } 
+            }
           }
           // Fallback: buscar por nombre
           else if (est.tipo_estimacion_nombre) {
@@ -374,7 +375,7 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
           });
 
         dataToSend.estimaciones = estimacionesValidas;
-      } 
+      }
 
       // Mantener compatibilidad con formato legacy si solo hay una estimación
       if (dataToSend.estimaciones.length === 1) {
@@ -613,107 +614,24 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
                   <Text type="secondary">Comienza agregando la primera historia de usuario de tu proyecto</Text>
                 </Card>
               ) : (
-                <Card>
-                  <List
-                    dataSource={historias}
-                    renderItem={(historia) => (
-                      <List.Item
+                <Row gutter={[16, 16]}>
+                  {historias.map((historia) => (
+                    <Col key={historia.id} xs={24} sm={24} md={12} lg={8} xl={8} xxl={6}>
+                      <HistoriaUsuarioItem
                         key={historia.id}
-                        actions={[
-                          <Button
-                            className="btn btn-info btn-card"
-                            icon={<EditOutlined />}
-                            onClick={() => handleEditar(historia)}
-                            size="small"
-                            loading={loadingSubmit}
-                            disabled={!catalogos} // DESHABILITADO si no hay catálogos
-                          >
-                            Editar
-                          </Button>,
-                          <Button
-                            className="btn btn-danger btn-card"
-                            icon={<DeleteOutlined />}
-                            onClick={() => handleEliminar(historia)}
-                            size="small"
-                            disabled={loadingSubmit}
-                          >
-                            Eliminar
-                          </Button>
-                        ]}
-                      >
-                        <List.Item.Meta
-                          title={
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                              <Text strong>{extraerTitulo(historia.descripcion_historia)}</Text>
-                              <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
-                                {historia.prioridad && (
-                                  <Tag
-                                    color={getColorPrioridad(historia.prioridad)}
-                                    style={{ fontSize: "10px", margin: 0 }}
-                                  >
-                                    {getEtiquetaFormateada(historia.prioridad)}
-                                  </Tag>
-                                )}
-                                {historia.estado && (
-                                  <Tag
-                                    color={getColorEstado(historia.estado)}
-                                    style={{ fontSize: "10px", margin: 0 }}
-                                  >
-                                    {getEtiquetaFormateada(historia.estado)}
-                                  </Tag>
-                                )}
-                                {(historia.unidad_estimacion && historia.estimacion_valor) && (
-                                  <Tag
-                                    color={getColorEstimacion(historia.unidad_estimacion)}
-                                    style={{ fontSize: "10px", margin: 0 }}
-                                  >
-                                    {historia.estimacion_valor} {historia.unidad_estimacion === 'story-points' ? 'SP' :
-                                      historia.unidad_estimacion === 'horas' ? 'hrs' :
-                                        historia.unidad_estimacion === 'dias' ? 'días' : '$'}
-                                  </Tag>
-                                )}
-                              </div>
-                            </div>
-                          }
-                          description={
-                            <div>
-                              <Text type="secondary" style={{ fontSize: '0.9em', fontStyle: 'italic' }}>
-                                {historia.descripcion_historia?.length > 150
-                                  ? `${historia.descripcion_historia.substring(0, 150)}...`
-                                  : historia.descripcion_historia}
-                              </Text>
-                              {historia.actor_rol && (
-                                <div style={{ marginTop: "0.5rem" }}>
-                                  <Text style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-                                    <strong>Actor:</strong> {historia.actor_rol}
-                                  </Text>
-                                </div>
-                              )}
-                              {historia.valor_negocio && (
-                                <div style={{ marginTop: "0.25rem" }}>
-                                  <Text style={{ fontSize: "11px", color: "var(--text-disabled)" }}>
-                                    Valor de Negocio: {historia.valor_negocio}/100
-                                  </Text>
-                                </div>
-                              )}
-                              {historia.fecha_creacion && (
-                                <div style={{ marginTop: "0.25rem" }}>
-                                  <Text style={{ fontSize: "11px", color: "var(--text-disabled)" }}>
-                                    Creado: {new Date(historia.fecha_creacion).toLocaleDateString('es-ES', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric'
-                                    })}
-                                  </Text>
-                                </div>
-                              )}
-                            </div>
-                          }
-                        />
-                      </List.Item>
-                    )}
-                  />
-                </Card>
+                        historia={historia}
+                        onEditar={handleEditar}
+                        onEliminar={handleEliminar}
+                        loading={loadingSubmit}
+                        catalogosDisponibles={catalogos &&
+                          Array.isArray(catalogos.prioridades) && catalogos.prioridades.length > 0 &&
+                          Array.isArray(catalogos.estados) && catalogos.estados.length > 0 &&
+                          Array.isArray(catalogos.unidades_estimacion) && catalogos.unidades_estimacion.length > 0
+                        }
+                      />
+                    </Col>
+                  ))}
+                </Row>
               )}
             </>
           )}

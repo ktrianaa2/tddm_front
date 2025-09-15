@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Card, Button, List, Typography, Tag, message, Spin, Modal } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, ReloadOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
+import { Card, Button, Typography, message, Spin, Modal, Row, Col } from "antd";
+import { PlusOutlined, ReloadOutlined, ExclamationCircleOutlined, UserOutlined } from "@ant-design/icons";
 import CasosUsoFormContainer from "./CasosUsoFormContainer";
+import CasoUsoItem from "./CasoUsoItem"; // Importar el nuevo componente
 import { getStoredToken, API_ENDPOINTS, postJSONAuth, getWithAuth, putJSONAuth, deleteWithAuth } from "../../../../config";
 import '../../../styles/forms.css';
 import '../../../styles/buttons.css';
@@ -17,15 +18,6 @@ const CasosUsoSection = ({ proyectoId }) => {
   const [catalogos, setCatalogos] = useState(null);
   const [loadingCatalogos, setLoadingCatalogos] = useState(false);
   const [errorCatalogos, setErrorCatalogos] = useState(null);
-
-  // Mapeo de colores para prioridades
-  const prioridadColors = {
-    'muy-alta': '#ff4d4f',
-    'alta': '#fa8c16',
-    'media': '#1890ff',
-    'baja': '#52c41a',
-    'muy-baja': '#d9d9d9'
-  };
 
   const cargarCatalogos = async () => {
     setLoadingCatalogos(true);
@@ -227,6 +219,7 @@ const CasosUsoSection = ({ proyectoId }) => {
         requisitos_especiales: values.requisitos_especiales || '',
         riesgos_consideraciones: values.riesgos_consideraciones || '',
         proyecto_id: proyectoId,
+        prioridad_id: values.prioridad ? parseInt(values.prioridad) : null,
         estado_id: values.estado ? parseInt(values.estado) : null,
         relaciones: (values.relaciones || [])
           .filter(rel => rel.casoUsoRelacionado && rel.tipo) // Solo enviar relaciones completas
@@ -297,7 +290,6 @@ const CasosUsoSection = ({ proyectoId }) => {
   };
 
   const handleEditar = async (casoUso) => {
-
     // Verificar que los catálogos estén disponibles
     const catalogosDisponibles = catalogos &&
       Array.isArray(catalogos.prioridades) && catalogos.prioridades.length > 0 &&
@@ -312,17 +304,6 @@ const CasosUsoSection = ({ proyectoId }) => {
     await cargarCasoUsoParaEdicion(casoUso.id);
   };
 
-  const getColorPrioridad = (prioridad) => {
-    return prioridadColors[prioridad] || '#d9d9d9';
-  };
-
-  const getEtiquetaFormateada = (valor) => {
-    if (!valor) return '';
-    return valor.split('-').map(word =>
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
-  };
-
   const handleCancelar = () => {
     setEditing(null);
   };
@@ -333,6 +314,11 @@ const CasosUsoSection = ({ proyectoId }) => {
       cargarCasosUso()
     ]);
   };
+
+  // Verificar si los catálogos están disponibles
+  const catalogosDisponibles = catalogos &&
+    Array.isArray(catalogos.prioridades) && catalogos.prioridades.length > 0 &&
+    Array.isArray(catalogos.estados) && catalogos.estados.length > 0;
 
   if (!proyectoId) {
     return (
@@ -414,13 +400,13 @@ const CasosUsoSection = ({ proyectoId }) => {
                 className="btn btn-primary"
                 icon={<PlusOutlined />}
                 onClick={() => {
-                  if (!catalogos || !catalogos.prioridades || catalogos.prioridades.length === 0) {
+                  if (!catalogosDisponibles) {
                     message.error('Los catálogos necesarios no están disponibles. Por favor, actualiza la página.');
                     return;
                   }
                   setEditing({});
                 }}
-                disabled={loading || loadingCatalogos || !catalogos}
+                disabled={loading || loadingCatalogos || !catalogosDisponibles}
               >
                 Agregar Caso de Uso
               </Button>
@@ -445,94 +431,19 @@ const CasosUsoSection = ({ proyectoId }) => {
                   <Text type="secondary">Comienza agregando el primer caso de uso de este proyecto</Text>
                 </Card>
               ) : (
-                <Card>
-                  <List
-                    dataSource={casosUso}
-                    renderItem={(cu) => (
-                      <List.Item
-                        key={cu.id}
-                        actions={[
-                          <Button
-                            className="btn btn-info btn-card"
-                            icon={<EditOutlined />}
-                            onClick={() => handleEditar(cu)}
-                            size="small"
-                            loading={loadingSubmit}
-                            disabled={!catalogos}
-                          >
-                            Editar
-                          </Button>,
-                          <Button
-                            className="btn btn-danger btn-card"
-                            icon={<DeleteOutlined />}
-                            onClick={() => handleEliminar(cu)}
-                            size="small"
-                            disabled={loadingSubmit}
-                          >
-                            Eliminar
-                          </Button>
-                        ]}
-                      >
-                        <List.Item.Meta
-                          title={
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                              <Text strong>{cu.nombre}</Text>
-                              <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
-                                {cu.prioridad && (
-                                  <Tag
-                                    color={getColorPrioridad(cu.prioridad)}
-                                    style={{ fontSize: "10px", margin: 0 }}
-                                  >
-                                    {getEtiquetaFormateada(cu.prioridad)}
-                                  </Tag>
-                                )}
-                              </div>
-                            </div>
-                          }
-                          description={
-                            <div>
-                              <Text type="secondary" style={{ fontSize: '0.9em' }}>
-                                {cu.descripcion}
-                              </Text>
-                              {cu.actores && (
-                                <div style={{ marginTop: "0.5rem" }}>
-                                  <Text style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-                                    <strong>Actores:</strong> {cu.actores.length > 100 ? `${cu.actores.substring(0, 100)}...` : cu.actores}
-                                  </Text>
-                                </div>
-                              )}
-                              {cu.flujo_principal && Array.isArray(cu.flujo_principal) && cu.flujo_principal.length > 0 && (
-                                <div style={{ marginTop: "0.25rem" }}>
-                                  <Text style={{ fontSize: "11px", color: "var(--text-disabled)" }}>
-                                    Flujo principal: {cu.flujo_principal.length} paso{cu.flujo_principal.length !== 1 ? "s" : ""}
-                                  </Text>
-                                </div>
-                              )}
-                              {cu.relaciones && Array.isArray(cu.relaciones) && cu.relaciones.length > 0 && (
-                                <div style={{ marginTop: "0.25rem" }}>
-                                  <Text style={{ fontSize: "11px", color: "var(--text-disabled)" }}>
-                                    Relaciones: {cu.relaciones.length}
-                                  </Text>
-                                </div>
-                              )}
-                              {cu.fecha_creacion && (
-                                <div style={{ marginTop: "0.25rem" }}>
-                                  <Text style={{ fontSize: "11px", color: "var(--text-disabled)" }}>
-                                    Creado: {new Date(cu.fecha_creacion).toLocaleDateString('es-ES', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric'
-                                    })}
-                                  </Text>
-                                </div>
-                              )}
-                            </div>
-                          }
-                        />
-                      </List.Item>
-                    )}
-                  />
-                </Card>
+                <Row gutter={[16, 16]}>
+                  {casosUso.map((casoUso) => (
+                    <Col key={casoUso.id} xs={24} sm={24} md={12} lg={8} xl={8} xxl={6}>
+                      <CasoUsoItem
+                        casoUso={casoUso}
+                        onEditar={handleEditar}
+                        onEliminar={handleEliminar}
+                        loading={loadingSubmit}
+                        catalogosDisponibles={catalogosDisponibles}
+                      />
+                    </Col>
+                  ))}
+                </Row>
               )}
             </>
           )}

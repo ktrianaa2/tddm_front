@@ -4,11 +4,14 @@
 @import 'antd/dist/reset.css';
 
 /* Importar estilos simplificados */
-@import './styles/theme.css';
-@import './styles/navbar.css';
+@import './styles/buttons.css';
 @import './styles/dashboard.css';
-@import './styles/project-card.css';
 @import './styles/forms.css';
+@import './styles/login.css';
+@import './styles/navbar.css';
+@import './styles/project-card.css';
+@import './styles/item-card.css';
+@import './styles/theme.css';
 
 /* === ESTILOS GLOBALES === */
 * {
@@ -116,7 +119,7 @@ textarea:focus-visible {
 }
 
 /* Formularios */
-.ant-form-item-label > label {
+.ant-form-item-label>label {
   color: var(--text-primary) !important;
 }
 
@@ -130,18 +133,18 @@ textarea:focus-visible {
   color: var(--text-primary) !important;
 }
 
-.ant-table-thead > tr > th {
+.ant-table-thead>tr>th {
   background: var(--bg-gray) !important;
   color: var(--text-primary) !important;
   border-bottom: 1px solid var(--border-color) !important;
 }
 
-.ant-table-tbody > tr > td {
+.ant-table-tbody>tr>td {
   border-bottom: 1px solid var(--border-color) !important;
   color: var(--text-secondary) !important;
 }
 
-.ant-table-tbody > tr:hover > td {
+.ant-table-tbody>tr:hover>td {
   background: var(--bg-gray) !important;
 }
 
@@ -176,7 +179,7 @@ textarea:focus-visible {
   .mobile-only {
     display: block;
   }
-  
+
   .desktop-only {
     display: none;
   }
@@ -188,11 +191,11 @@ textarea:focus-visible {
     transform: none;
     box-shadow: var(--shadow-sm);
   }
-  
+
   .navbar-avatar:hover {
     transform: none;
   }
-  
+
   button:hover {
     transform: none;
   }
