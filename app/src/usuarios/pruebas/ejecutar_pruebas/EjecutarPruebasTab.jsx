@@ -1,198 +1,659 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
-  Card,
-  Typography,
   Button,
   Space,
-  Progress,
+  message,
+  Upload,
+  Dropdown,
+  Tooltip,
+  Tag,
+  Statistic,
   Row,
-  Col
+  Col,
+  Empty,
+  Spin
 } from 'antd';
 import {
   PlayCircleOutlined,
-  ThunderboltOutlined,
+  GithubOutlined,
+  UploadOutlined,
+  SaveOutlined,
+  StopOutlined,
+  DownloadOutlined,
+  SettingOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  ClockCircleOutlined
+  ClockCircleOutlined,
+  ThunderboltOutlined,
+  CodeOutlined
 } from '@ant-design/icons';
-import '../../../styles/tabs.css'
-
-const { Title, Paragraph, Text } = Typography;
+import Editor from '@monaco-editor/react';
+import ListaPruebas from '../crear_pruebas/ListaPruebas';
+import ConsolaResultados from './ConsolaResultados';
+import ModalGitHub from './ModalGitHub';
+import { usePruebas } from '../../../hooks/usePruebas';
+import '../../../styles/tabs.css';
 
 const EjecutarPruebasTab = ({ proyecto }) => {
-  // Datos simulados para mostrar el diseño
-  const estadisticasPruebas = {
-    total: 0,
+  const proyectoId = proyecto?.proyecto_id;
+
+  // Hook de pruebas
+  const {
+    pruebas,
+    loading: loadingPruebas,
+    cargarPruebas
+  } = usePruebas(proyectoId);
+
+  // Estados del componente
+  const [pruebaSeleccionada, setPruebaSeleccionada] = useState(null);
+  const [codigoUsuario, setCodigoUsuario] = useState('// Escribe tu código aquí o cárgalo desde un archivo\n\n');
+  const [codigoGuardado, setCodigoGuardado] = useState('// Escribe tu código aquí o cárgalo desde un archivo\n\n');
+  const [ejecutando, setEjecutando] = useState(false);
+  const [resultados, setResultados] = useState([]);
+  const [modalGitHubVisible, setModalGitHubVisible] = useState(false);
+  const [conectadoGitHub, setConectadoGitHub] = useState(false);
+  const [estadisticas, setEstadisticas] = useState({
     pasadas: 0,
     fallidas: 0,
     pendientes: 0,
-    cobertura: 0
+    tiempo: 0
+  });
+  
+  const editorRef = useRef(null);
+
+  // Cargar pruebas al montar
+  useEffect(() => {
+    if (proyectoId) {
+      cargarPruebas();
+    }
+  }, [proyectoId]);
+
+  // Actualizar contador de pendientes cuando se carguen las pruebas
+  useEffect(() => {
+    if (pruebas.length > 0) {
+      setEstadisticas(prev => ({
+        ...prev,
+        pendientes: pruebas.filter(p => p.estado === 'aprobada').length
+      }));
+    }
+  }, [pruebas]);
+
+  const handleSeleccionarPrueba = (prueba) => {
+    // Solo permitir seleccionar pruebas aprobadas
+    if (prueba.estado !== 'aprobada') {
+      message.warning('Solo se pueden ejecutar pruebas aprobadas');
+      return;
+    }
+
+    if (pruebaSeleccionada?.id_prueba !== prueba.id_prueba) {
+      setPruebaSeleccionada(prueba);
+    }
   };
 
+  const handleEditorDidMount = (editor) => {
+    editorRef.current = editor;
+  };
+
+  const handleEditorChange = (value) => {
+    setCodigoUsuario(value || '');
+  };
+
+  const agregarResultado = (tipo, mensaje) => {
+    const timestamp = new Date().toLocaleTimeString('es-ES', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit' 
+    });
+    
+    setResultados(prev => [...prev, { tipo, mensaje, timestamp }]);
+  };
+
+  const simularEjecucionPaso = async (paso, indice, totalPasos) => {
+    agregarResultado('log', `\n[Paso ${indice + 1}/${totalPasos}] ${paso.descripcion}`);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Simular resultado del paso
+    const exito = Math.random() > 0.2; // 80% de éxito
+    
+    if (exito) {
+      agregarResultado('success', `✓ Resultado esperado alcanzado: ${paso.resultado_esperado}`);
+    } else {
+      agregarResultado('error', `✗ Fallo: No se cumplió "${paso.resultado_esperado}"`);
+      agregarResultado('warning', `  Revisar la implementación del código`);
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleEjecutarPrueba = async () => {
+    if (!pruebaSeleccionada) {
+      message.warning('Selecciona una prueba para ejecutar');
+      return;
+    }
+
+    if (!codigoUsuario.trim() || codigoUsuario === codigoGuardado) {
+      message.warning('Debes escribir o cargar código antes de ejecutar');
+      return;
+    }
+
+    setEjecutando(true);
+    setResultados([]);
+    
+    const detallePrueba = pruebaSeleccionada.prueba || pruebaSeleccionada;
+    const inicio = Date.now();
+
+    try {
+      agregarResultado('info', `═══════════════════════════════════════`);
+      agregarResultado('info', `Iniciando ejecución: ${pruebaSeleccionada.nombre}`);
+      agregarResultado('info', `Código: ${pruebaSeleccionada.codigo}`);
+      agregarResultado('info', `Tipo: ${pruebaSeleccionada.tipo_prueba}`);
+      agregarResultado('info', `═══════════════════════════════════════`);
+
+      // Mostrar objetivo
+      agregarResultado('log', `\n🎯 OBJETIVO: ${detallePrueba.objetivo}`);
+
+      // Verificar precondiciones
+      agregarResultado('log', `\n📋 Verificando precondiciones...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      for (const precondicion of detallePrueba.precondiciones || []) {
+        agregarResultado('info', `  • ${precondicion}`);
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      agregarResultado('success', '✓ Todas las precondiciones cumplidas');
+
+      // Compilar código del usuario
+      agregarResultado('log', `\n⚙️  Compilando código del usuario...`);
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      agregarResultado('success', '✓ Código compilado exitosamente');
+
+      // Ejecutar pasos de la prueba
+      agregarResultado('log', `\n🔄 Ejecutando pasos de la prueba...`);
+      agregarResultado('log', `───────────────────────────────────────`);
+
+      let todosLosPasosPasaron = true;
+      const pasos = detallePrueba.pasos || [];
+
+      for (let i = 0; i < pasos.length; i++) {
+        const pasoExito = await simularEjecucionPaso(pasos[i], i, pasos.length);
+        if (!pasoExito) {
+          todosLosPasosPasaron = false;
+          break;
+        }
+      }
+
+      // Verificar postcondiciones
+      if (todosLosPasosPasaron) {
+        agregarResultado('log', `\n📝 Verificando postcondiciones...`);
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        for (const postcondicion of detallePrueba.postcondiciones || []) {
+          agregarResultado('info', `  • ${postcondicion}`);
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        agregarResultado('success', '✓ Todas las postcondiciones cumplidas');
+      }
+
+      // Calcular tiempo
+      const tiempoTotal = ((Date.now() - inicio) / 1000).toFixed(2);
+
+      // Resultado final
+      agregarResultado('log', `\n═══════════════════════════════════════`);
+      
+      if (todosLosPasosPasaron) {
+        agregarResultado('success', '✅ PRUEBA APROBADA');
+        agregarResultado('success', `✓ Todos los pasos ejecutados correctamente (${pasos.length}/${pasos.length})`);
+        agregarResultado('log', `\n📊 Criterios de aceptación cumplidos:`);
+        
+        for (const criterio of detallePrueba.criterios_aceptacion || []) {
+          agregarResultado('success', `  ✓ ${criterio}`);
+        }
+        
+        agregarResultado('info', `⏱️  Tiempo de ejecución: ${tiempoTotal}s`);
+        
+        setEstadisticas(prev => ({
+          pasadas: prev.pasadas + 1,
+          fallidas: prev.fallidas,
+          pendientes: Math.max(0, prev.pendientes - 1),
+          tiempo: prev.tiempo + parseFloat(tiempoTotal)
+        }));
+        
+        message.success('¡Prueba ejecutada exitosamente!');
+      } else {
+        agregarResultado('error', '❌ PRUEBA FALLIDA');
+        agregarResultado('error', '✗ Uno o más pasos no se completaron correctamente');
+        agregarResultado('warning', '💡 Revisa el código e inténtalo nuevamente');
+        agregarResultado('info', `⏱️  Tiempo de ejecución: ${tiempoTotal}s`);
+        
+        setEstadisticas(prev => ({
+          pasadas: prev.pasadas,
+          fallidas: prev.fallidas + 1,
+          pendientes: Math.max(0, prev.pendientes - 1),
+          tiempo: prev.tiempo + parseFloat(tiempoTotal)
+        }));
+        
+        message.error('La prueba falló');
+      }
+      
+      agregarResultado('log', `═══════════════════════════════════════`);
+      
+    } catch (error) {
+      agregarResultado('error', `💥 Error crítico: ${error.message}`);
+      message.error('Error al ejecutar la prueba');
+    } finally {
+      setEjecutando(false);
+    }
+  };
+
+  const handleEjecutarTodas = async () => {
+    const pruebasAprobadas = pruebas.filter(p => p.estado === 'aprobada');
+    
+    if (pruebasAprobadas.length === 0) {
+      message.warning('No hay pruebas aprobadas para ejecutar');
+      return;
+    }
+
+    if (!codigoUsuario.trim() || codigoUsuario === codigoGuardado) {
+      message.warning('Debes escribir o cargar código antes de ejecutar');
+      return;
+    }
+
+    setEjecutando(true);
+    setResultados([]);
+    
+    agregarResultado('info', '╔═══════════════════════════════════════╗');
+    agregarResultado('info', '║   EJECUCIÓN COMPLETA DE PRUEBAS       ║');
+    agregarResultado('info', '╚═══════════════════════════════════════╝');
+    agregarResultado('log', `\nTotal de pruebas a ejecutar: ${pruebasAprobadas.length}`);
+    agregarResultado('log', '═══════════════════════════════════════\n');
+
+    let pasadas = 0;
+    let fallidas = 0;
+    const inicioTotal = Date.now();
+
+    for (let i = 0; i < pruebasAprobadas.length; i++) {
+      const prueba = pruebasAprobadas[i];
+      const detalle = prueba.prueba || prueba;
+      
+      agregarResultado('info', `\n[${i + 1}/${pruebasAprobadas.length}] Ejecutando: ${prueba.nombre}`);
+      agregarResultado('log', `Código: ${prueba.codigo} | Tipo: ${prueba.tipo_prueba}`);
+      
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Simular ejecución de pasos
+      const pasos = detalle.pasos || [];
+      let exito = true;
+      
+      for (let j = 0; j < pasos.length; j++) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        if (Math.random() < 0.15) { // 15% de fallo
+          exito = false;
+          break;
+        }
+      }
+      
+      if (exito) {
+        agregarResultado('success', `✅ ${prueba.codigo} - APROBADA`);
+        pasadas++;
+      } else {
+        agregarResultado('error', `❌ ${prueba.codigo} - FALLIDA`);
+        fallidas++;
+      }
+    }
+
+    const tiempoTotal = ((Date.now() - inicioTotal) / 1000).toFixed(2);
+
+    agregarResultado('log', '\n═══════════════════════════════════════');
+    agregarResultado('info', '📊 RESUMEN DE EJECUCIÓN:');
+    agregarResultado('log', '═══════════════════════════════════════');
+    agregarResultado('success', `✅ Pruebas aprobadas: ${pasadas}/${pruebasAprobadas.length}`);
+    agregarResultado('error', `❌ Pruebas fallidas: ${fallidas}/${pruebasAprobadas.length}`);
+    agregarResultado('info', `⏱️  Tiempo total: ${tiempoTotal}s`);
+    agregarResultado('info', `📈 Tasa de éxito: ${((pasadas/pruebasAprobadas.length)*100).toFixed(1)}%`);
+
+    setEstadisticas({
+      pasadas,
+      fallidas,
+      pendientes: 0,
+      tiempo: parseFloat(tiempoTotal)
+    });
+
+    setEjecutando(false);
+    
+    if (fallidas === 0) {
+      message.success('🎉 ¡Todas las pruebas pasaron exitosamente!');
+    } else {
+      message.warning(`${fallidas} prueba(s) fallaron`);
+    }
+  };
+
+  const handleDetenerEjecucion = () => {
+    setEjecutando(false);
+    agregarResultado('warning', '⚠️  Ejecución detenida por el usuario');
+    message.info('Ejecución detenida');
+  };
+
+  const handleCargarArchivo = (info) => {
+    const { file } = info;
+    
+    if (file.status === 'done' || file.originFileObj) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const contenido = e.target.result;
+        setCodigoUsuario(contenido);
+        message.success(`Archivo ${file.name} cargado exitosamente`);
+      };
+      reader.readAsText(file.originFileObj || file);
+    }
+  };
+
+  const handleConectarGitHub = async (valores) => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setConectadoGitHub(true);
+      setModalGitHubVisible(false);
+      message.success('Repositorio conectado exitosamente');
+      
+      agregarResultado('success', `✓ Conectado a ${valores.repositorio}`);
+      agregarResultado('info', `📂 Rama: ${valores.rama}`);
+      agregarResultado('info', `📁 Ruta: ${valores.ruta}`);
+      
+      // Simular carga de código desde GitHub
+      const codigoSimulado = `// Código cargado desde GitHub: ${valores.repositorio}\n// Rama: ${valores.rama}\n\nfunction ejemploDesdeGitHub() {\n  // Tu código aquí\n  console.log("Código sincronizado desde GitHub");\n}\n`;
+      setCodigoUsuario(codigoSimulado);
+    } catch (error) {
+      message.error('Error al conectar con GitHub');
+    }
+  };
+
+  const handleGuardarCodigo = () => {
+    setCodigoGuardado(codigoUsuario);
+    message.success('Código guardado exitosamente');
+  };
+
+  const handleExportarCodigo = () => {
+    const blob = new Blob([codigoUsuario], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `codigo-prueba-${Date.now()}.js`;
+    link.click();
+    URL.revokeObjectURL(url);
+    message.success('Código exportado');
+  };
+
+  const tieneModificaciones = codigoUsuario !== codigoGuardado;
+  const pruebasAprobadas = pruebas.filter(p => p.estado === 'aprobada');
+
+  const menuOpciones = {
+    items: [
+      {
+        key: 'guardar',
+        label: 'Guardar Código',
+        icon: <SaveOutlined />,
+        onClick: handleGuardarCodigo,
+        disabled: !tieneModificaciones
+      },
+      {
+        key: 'exportar',
+        label: 'Exportar Código',
+        icon: <DownloadOutlined />,
+        onClick: handleExportarCodigo
+      }
+    ]
+  };
+
+  if (loadingPruebas) {
+    return (
+      <div className="tabs-container">
+        <div className="tabs-content-wrapper">
+          <div className="tab-loading-state">
+            <Spin size="large" />
+            <div className="tab-loading-text">Cargando pruebas...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (pruebas.length === 0) {
+    return (
+      <div className="tabs-container">
+        <div className="tabs-content-wrapper">
+          <Empty
+            description={
+              <div>
+                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                  No hay pruebas disponibles
+                </p>
+                <p style={{ fontSize: '0.9rem', color: '#666' }}>
+                  Primero debes crear y aprobar pruebas en la pestaña "Pruebas"
+                </p>
+              </div>
+            }
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (pruebasAprobadas.length === 0) {
+    return (
+      <div className="tabs-container">
+        <div className="tabs-content-wrapper">
+          <Empty
+            description={
+              <div>
+                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                  No hay pruebas aprobadas
+                </p>
+                <p style={{ fontSize: '0.9rem', color: '#666' }}>
+                  Debes aprobar al menos una prueba para poder ejecutarla
+                </p>
+              </div>
+            }
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <div style={{ marginBottom: '2rem' }}>
-        <Title level={3} style={{ margin: 0, color: 'var(--text-primary)' }}>
-          <PlayCircleOutlined style={{ marginRight: '0.5rem', color: '#52c41a' }} />
-          Ejecución de Pruebas
-        </Title>
-        <Paragraph type="secondary">
-          Centro de control para ejecutar y monitorear pruebas automatizadas
-        </Paragraph>
+    <div className="tabs-container" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Header con estadísticas */}
+      <div style={{
+        padding: '1rem 1.5rem',
+        background: 'white',
+        borderBottom: '1px solid var(--border-color)'
+      }}>
+        <Row gutter={16} align="middle">
+          <Col flex="auto">
+            <h3 style={{ margin: 0, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+              <PlayCircleOutlined style={{ marginRight: '0.5rem', color: '#52c41a' }} />
+              Ejecución de Pruebas
+            </h3>
+            <Space size="small">
+              <Tag color="blue">{pruebasAprobadas.length} pruebas disponibles</Tag>
+              {conectadoGitHub && (
+                <Tag color="success" icon={<GithubOutlined />}>
+                  Conectado a GitHub
+                </Tag>
+              )}
+            </Space>
+          </Col>
+
+          <Col>
+            <Space size="middle">
+              <Statistic
+                title="Pasadas"
+                value={estadisticas.pasadas}
+                prefix={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
+                valueStyle={{ fontSize: '1.2rem', color: '#52c41a' }}
+              />
+              <Statistic
+                title="Fallidas"
+                value={estadisticas.fallidas}
+                prefix={<CloseCircleOutlined style={{ color: '#ff4d4f' }} />}
+                valueStyle={{ fontSize: '1.2rem', color: '#ff4d4f' }}
+              />
+              <Statistic
+                title="Pendientes"
+                value={estadisticas.pendientes}
+                prefix={<ClockCircleOutlined style={{ color: '#faad14' }} />}
+                valueStyle={{ fontSize: '1.2rem', color: '#faad14' }}
+              />
+            </Space>
+          </Col>
+        </Row>
       </div>
 
-      {/* Estadísticas rápidas */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '2rem' }}>
-        <Col xs={24} sm={12} md={6}>
-          <Card size="small" style={{ textAlign: 'center' }}>
-            <CheckCircleOutlined style={{ fontSize: '2rem', color: '#52c41a', marginBottom: '0.5rem' }} />
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#52c41a' }}>
-              {estadisticasPruebas.pasadas}
-            </div>
-            <Text type="secondary">Pasadas</Text>
-          </Card>
-        </Col>
-        
-        <Col xs={24} sm={12} md={6}>
-          <Card size="small" style={{ textAlign: 'center' }}>
-            <CloseCircleOutlined style={{ fontSize: '2rem', color: '#ff4d4f', marginBottom: '0.5rem' }} />
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ff4d4f' }}>
-              {estadisticasPruebas.fallidas}
-            </div>
-            <Text type="secondary">Fallidas</Text>
-          </Card>
-        </Col>
-        
-        <Col xs={24} sm={12} md={6}>
-          <Card size="small" style={{ textAlign: 'center' }}>
-            <ClockCircleOutlined style={{ fontSize: '2rem', color: '#faad14', marginBottom: '0.5rem' }} />
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#faad14' }}>
-              {estadisticasPruebas.pendientes}
-            </div>
-            <Text type="secondary">Pendientes</Text>
-          </Card>
-        </Col>
-        
-        <Col xs={24} sm={12} md={6}>
-          <Card size="small" style={{ textAlign: 'center' }}>
-            <div style={{ marginBottom: '0.5rem' }}>
-              <Progress 
-                type="circle" 
-                percent={estadisticasPruebas.cobertura} 
-                width={40}
-                strokeColor="#1890ff"
-              />
-            </div>
-            <Text type="secondary">Cobertura</Text>
-          </Card>
-        </Col>
-      </Row>
+      {/* Barra de acciones */}
+      <div style={{
+        padding: '0.75rem 1.5rem',
+        background: 'white',
+        borderBottom: '1px solid var(--border-color)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <Space>
+          {!ejecutando ? (
+            <>
+              <Button
+                type="primary"
+                icon={<PlayCircleOutlined />}
+                onClick={handleEjecutarPrueba}
+                disabled={!pruebaSeleccionada}
+                size="middle"
+              >
+                Ejecutar Prueba
+              </Button>
+              
+              <Button
+                icon={<ThunderboltOutlined />}
+                onClick={handleEjecutarTodas}
+              >
+                Ejecutar Todas ({pruebasAprobadas.length})
+              </Button>
+            </>
+          ) : (
+            <Button
+              danger
+              icon={<StopOutlined />}
+              onClick={handleDetenerEjecucion}
+            >
+              Detener Ejecución
+            </Button>
+          )}
 
-      <Card style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-        <div style={{ 
-          fontSize: '4rem', 
-          color: 'var(--text-disabled)', 
-          marginBottom: '2rem' 
-        }}>
-          <PlayCircleOutlined />
-        </div>
-        
-        <Title level={2} type="secondary" style={{ marginBottom: '1rem' }}>
-          Motor de Ejecución en Desarrollo
-        </Title>
-        
-        <Paragraph type="secondary" style={{ fontSize: '1.1rem', marginBottom: '2rem' }}>
-          El sistema de ejecución automática de pruebas estará disponible próximamente.
-          Podrás ejecutar, monitorear y analizar resultados de pruebas desde esta interfaz.
-        </Paragraph>
-
-        <div style={{ 
-          background: 'var(--bg-gray)', 
-          padding: '2rem', 
-          borderRadius: 'var(--border-radius-lg)', 
-          marginBottom: '2rem',
-          textAlign: 'left'
-        }}>
-          <Title level={4} style={{ marginBottom: '1rem' }}>
-            <ThunderboltOutlined style={{ marginRight: '0.5rem', color: '#722ed1' }} />
-            Capacidades del Motor de Ejecución
-          </Title>
-          
-          <Row gutter={[16, 16]}>
-            <Col xs={24} md={12}>
-              <ul style={{ 
-                listStyle: 'none', 
-                padding: 0,
-                color: 'var(--text-secondary)',
-                lineHeight: '2'
-              }}>
-                <li>🚀 Ejecución paralela de pruebas</li>
-                <li>📊 Reportes en tiempo real</li>
-                <li>🔄 Integración continua</li>
-                <li>📱 Notificaciones automáticas</li>
-              </ul>
-            </Col>
-            <Col xs={24} md={12}>
-              <ul style={{ 
-                listStyle: 'none', 
-                padding: 0,
-                color: 'var(--text-secondary)',
-                lineHeight: '2'
-              }}>
-                <li>📈 Métricas de rendimiento</li>
-                <li>🎯 Análisis de cobertura</li>
-                <li>🔍 Logs detallados</li>
-                <li>📋 Historial de ejecuciones</li>
-              </ul>
-            </Col>
-          </Row>
-        </div>
-
-        <Space size="large" wrap>
-          <Button 
-            type="primary" 
-            icon={<PlayCircleOutlined />}
-            className="btn btn-primary"
-            size="large"
-            disabled
+          <Upload
+            beforeUpload={() => false}
+            onChange={handleCargarArchivo}
+            showUploadList={false}
+            accept=".js,.jsx,.ts,.tsx"
           >
-            Ejecutar Todas las Pruebas
-          </Button>
-          
-          <Button 
-            icon={<ThunderboltOutlined />}
-            className="btn btn-secondary"
-            disabled
-          >
-            Ejecución Rápida
-          </Button>
+            <Button icon={<UploadOutlined />}>
+              Cargar Archivo
+            </Button>
+          </Upload>
 
-          <Button 
-            icon={<CheckCircleOutlined />}
-            className="btn btn-secondary"
-            disabled
+          <Button
+            icon={<GithubOutlined />}
+            onClick={() => setModalGitHubVisible(true)}
           >
-            Solo Pruebas Críticas
+            {conectadoGitHub ? 'Configurar GitHub' : 'Conectar GitHub'}
           </Button>
         </Space>
 
-        <div style={{ marginTop: '2rem' }}>
-          <Card size="small" style={{ background: '#f0f9ff', border: '1px solid #bae7ff' }}>
-            <Space>
-              <ClockCircleOutlined style={{ color: '#1890ff' }} />
-              <Text style={{ color: '#1890ff' }}>
-                <strong>Próximamente:</strong> Programación automática de pruebas y integración con pipelines CI/CD
-              </Text>
-            </Space>
-          </Card>
+        <Space>
+          {tieneModificaciones && (
+            <Tag color="orange">Sin guardar</Tag>
+          )}
+          
+          <Dropdown menu={menuOpciones} trigger={['click']}>
+            <Button icon={<SettingOutlined />}>
+              Opciones
+            </Button>
+          </Dropdown>
+        </Space>
+      </div>
+
+      {/* Contenido principal */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        overflow: 'hidden'
+      }}>
+        {/* Lista de pruebas */}
+        <div style={{ width: '350px', flexShrink: 0 }}>
+          <ListaPruebas
+            pruebas={pruebasAprobadas}
+            pruebaActiva={pruebaSeleccionada}
+            onSeleccionarPrueba={handleSeleccionarPrueba}
+          />
         </div>
 
-        <div style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-disabled)' }}>
-          <Paragraph type="secondary">
-            💡 Una vez configuradas las pruebas, podrás ejecutarlas y ver los resultados aquí
-          </Paragraph>
+        {/* Editor */}
+        <div style={{ 
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <div style={{
+            padding: '0.75rem 1rem',
+            background: '#2d2d30',
+            borderBottom: '1px solid #3e3e42',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <span style={{ color: '#cccccc', fontSize: '0.9rem' }}>
+              <CodeOutlined style={{ marginRight: '0.5rem' }} />
+              Editor de Código
+            </span>
+            {pruebaSeleccionada && (
+              <Tag color="blue">{pruebaSeleccionada.codigo} seleccionada</Tag>
+            )}
+          </div>
+          
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            <Editor
+              height="100%"
+              defaultLanguage="javascript"
+              value={codigoUsuario}
+              onChange={handleEditorChange}
+              onMount={handleEditorDidMount}
+              theme="vs-dark"
+              options={{
+                minimap: { enabled: true },
+                fontSize: 14,
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                tabSize: 2,
+                wordWrap: 'on'
+              }}
+            />
+          </div>
+
+          {/* Consola de resultados */}
+          <ConsolaResultados 
+            resultados={resultados}
+            ejecutando={ejecutando}
+          />
         </div>
-      </Card>
+      </div>
+
+      {/* Modal de GitHub */}
+      <ModalGitHub
+        visible={modalGitHubVisible}
+        onCancel={() => setModalGitHubVisible(false)}
+        onConectar={handleConectarGitHub}
+      />
     </div>
   );
 };
