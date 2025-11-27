@@ -1,7 +1,9 @@
 // config.js - Configuración actualizada con endpoints de requisitos y funciones PUT/DELETE
 
 // URL base de tu API
-export const API_BASE_URL = 'http://localhost:8000'; // URL de API
+//export const API_BASE_URL = 'http://localhost:8000'; // URL de API
+
+export const API_BASE_URL = 'https://tddm-back.onrender.com'; // URL de API
 
 // Endpoints de la API
 export const API_ENDPOINTS = {
