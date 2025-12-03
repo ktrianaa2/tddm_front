@@ -8,6 +8,9 @@ import {
 
 const ItemPrueba = ({ prueba, isActive, onClick }) => {
   const getTipoConfig = (tipo) => {
+    // Normalizar el tipo a minúsculas para comparación
+    const tipoNormalizado = tipo?.toLowerCase() || '';
+
     const configs = {
       unitaria: {
         icon: <ExperimentOutlined />,
@@ -25,10 +28,13 @@ const ItemPrueba = ({ prueba, isActive, onClick }) => {
         label: 'Componente'
       }
     };
-    return configs[tipo] || configs.unitaria;
+
+    return configs[tipoNormalizado] || configs.unitaria;
   };
 
-  const config = getTipoConfig(prueba.tipo);
+  // Usar tipo_prueba o tipo como fallback
+  const tipoPrueba = prueba.tipo_prueba || prueba.tipo || 'unitaria';
+  const config = getTipoConfig(tipoPrueba);
 
   return (
     <div
@@ -41,9 +47,6 @@ const ItemPrueba = ({ prueba, isActive, onClick }) => {
         border: isActive ? '2px solid var(--primary-color)' : '2px solid transparent',
         marginBottom: '0.5rem',
         transition: 'all 0.2s ease',
-        ':hover': {
-          background: 'var(--bg-gray)'
-        }
       }}
       onMouseEnter={(e) => {
         if (!isActive) {
@@ -56,19 +59,19 @@ const ItemPrueba = ({ prueba, isActive, onClick }) => {
         }
       }}
     >
-      <div style={{ 
-        display: 'flex', 
+      <div style={{
+        display: 'flex',
         alignItems: 'flex-start',
         gap: '0.5rem'
       }}>
-        <div style={{ 
-          fontSize: '1.2rem', 
+        <div style={{
+          fontSize: '1.2rem',
           color: config.color,
           marginTop: '0.2rem'
         }}>
           {config.icon}
         </div>
-        
+
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontSize: '0.9rem',
@@ -81,23 +84,23 @@ const ItemPrueba = ({ prueba, isActive, onClick }) => {
           }}>
             {prueba.nombre}
           </div>
-          
-          <div style={{ 
-            display: 'flex', 
+
+          <div style={{
+            display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
             flexWrap: 'wrap'
           }}>
-            <Tag 
+            <Tag
               color={config.color}
-              style={{ 
+              style={{
                 margin: 0,
                 fontSize: '0.75rem'
               }}
             >
               {config.label}
             </Tag>
-            
+
             <span style={{
               fontSize: '0.75rem',
               color: 'var(--text-secondary)'

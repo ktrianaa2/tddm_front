@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import VistaEspecificaciones from './VistaEspecificaciones';
+import VistaResumenPruebas from './VistaResumenPruebas';
 import ListaPruebas from './ListaPruebas';
 import EditorPrueba from './EditorPrueba';
 import ModalAdvertencia from './ModalAdvertencia';
@@ -11,7 +12,7 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
   const proyectoId = proyecto?.proyecto_id;
 
   // Estados
-  const [vistaActual, setVistaActual] = useState('inicial');
+  const [vistaActual, setVistaActual] = useState('inicial'); // 'inicial', 'resumen', 'editor'
   const [pruebaSeleccionada, setPruebaSeleccionada] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [generandoPruebas, setGenerandoPruebas] = useState(false);
@@ -28,9 +29,12 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
   const {
     loading: loadingPruebas,
     pruebas,
+    contadores,
+    generarPrueba, // Función real de generación con IA
     cargarPruebas,
-    recargarPruebas, // ✅ Función para recargar manualmente
-    setPruebas
+    recargarPruebas,
+    eliminarPrueba,
+    guardarPrueba
   } = usePruebas(proyectoId);
 
   const loading = externalLoading || loadingEspecificaciones || loadingPruebas;
@@ -57,26 +61,25 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     }))
   ];
 
-  // ✅ Carga inicial - SOLO UNA VEZ
+  // Cargar datos al montar
   useEffect(() => {
     if (proyectoId) {
       cargarEspecificaciones();
       cargarPruebas();
     }
-  }, [proyectoId]); // ✅ Solo depende de proyectoId
+  }, [proyectoId]);
 
-  // ✅ Cambiar de vista cuando hay pruebas - SOLO UNA VEZ
+  // Determinar vista inicial basada en si hay pruebas
   useEffect(() => {
     if (pruebas.length > 0 && vistaActual === 'inicial') {
-      setVistaActual('pruebas');
-      setPruebaSeleccionada(pruebas[0]);
+      setVistaActual('resumen');
     }
-  }, [pruebas.length]); // ✅ Solo depende de la cantidad de pruebas
+  }, [pruebas.length]);
 
   // Handlers
   const handleRecargarTodo = () => {
     cargarEspecificaciones();
-    recargarPruebas(); // ✅ Usar la función de recarga manual
+    recargarPruebas();
   };
 
   const handleIniciarGeneracionPruebas = () => {
@@ -92,67 +95,86 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     setGenerandoPruebas(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Llamar a la función real de generación con IA
+      const resultado = await generarPrueba();
 
-      if (pruebas.length === 0) {
-        // Simulación: cargar pruebas de ejemplo
-        await recargarPruebas();
+      if (resultado && resultado.total_pruebas > 0) {
+        setVistaActual('resumen');
+
+        message.success({
+          content: `🎉 ${resultado.total_pruebas} prueba${resultado.total_pruebas > 1 ? 's' : ''} generada${resultado.total_pruebas > 1 ? 's' : ''} exitosamente con IA`,
+          duration: 5,
+        });
+      } else {
+        message.warning('No se pudieron generar pruebas. Verifica que el proyecto tenga especificaciones válidas.');
       }
-      
-      setVistaActual('pruebas');
-      message.success('Pruebas generadas exitosamente con IA (Simulación)');
     } catch (error) {
-      message.error('Error al generar las pruebas');
-      console.error(error);
+      console.error('Error en la generación de pruebas:', error);
+      message.error({
+        content: 'Error al generar las pruebas. Intenta nuevamente.',
+        duration: 4,
+      });
     } finally {
       setGenerandoPruebas(false);
     }
+  };
+
+  const handleCrearPrueba = () => {
+    // Aquí podrías abrir un modal de creación o navegar a la vista de editor
+    message.info('Funcionalidad de crear prueba manual - Por implementar');
+  };
+
+  const handleEditarPrueba = (prueba) => {
+    setPruebaSeleccionada(prueba);
+    setVistaActual('editor');
   };
 
   const handleSeleccionarPrueba = (prueba) => {
     setPruebaSeleccionada(prueba);
   };
 
+  const handleVolverAResumen = () => {
+    setPruebaSeleccionada(null);
+    setVistaActual('resumen');
+  };
+
   const handleEliminarPrueba = async (prueba) => {
     try {
-      setPruebas(pruebas.filter(p => p.id_prueba !== prueba.id_prueba));
-      message.success('Prueba eliminada exitosamente');
-      
-      // ✅ Si eliminamos la prueba seleccionada, seleccionar otra
+      await eliminarPrueba(prueba.id_prueba);
+
+      // Si era la prueba seleccionada, volver a resumen
       if (pruebaSeleccionada?.id_prueba === prueba.id_prueba) {
-        const pruebasRestantes = pruebas.filter(p => p.id_prueba !== prueba.id_prueba);
-        setPruebaSeleccionada(pruebasRestantes.length > 0 ? pruebasRestantes[0] : null);
+        handleVolverAResumen();
+      }
+
+      // Si no quedan pruebas, volver a vista inicial
+      if (pruebas.length === 1) { // Solo quedaba esta que se eliminó
+        setVistaActual('inicial');
       }
     } catch (error) {
-      message.error('Error al eliminar la prueba');
+      console.error('Error al eliminar la prueba:', error);
     }
   };
 
   const handleAprobarPrueba = async (prueba) => {
     try {
-      const pruebaAprobada = { ...prueba, estado: 'aprobada' };
-      setPruebas(pruebas.map(p => p.id_prueba === prueba.id_prueba ? pruebaAprobada : p));
-
-      if (pruebaSeleccionada?.id_prueba === prueba.id_prueba) {
-        setPruebaSeleccionada(pruebaAprobada);
-      }
-      
+      const pruebaAprobada = { ...prueba, estado: 'Aprobada' };
+      setPruebaSeleccionada(pruebaAprobada);
+      await guardarPrueba(pruebaAprobada);
       message.success('Prueba aprobada exitosamente');
     } catch (error) {
-      message.error('Error al aprobar la prueba');
+      console.error('Error al aprobar la prueba:', error);
+      setPruebaSeleccionada(prueba);
     }
   };
 
   const handleGuardarCambios = async (pruebaActualizada) => {
     try {
-      setPruebas(pruebas.map(p => 
-        p.id_prueba === pruebaActualizada.id_prueba ? pruebaActualizada : p
-      ));
+      await guardarPrueba(pruebaActualizada);
       setPruebaSeleccionada(pruebaActualizada);
-      
       message.success('Cambios guardados exitosamente');
     } catch (error) {
-      message.error('Error al guardar los cambios');
+      console.error('Error al guardar los cambios:', error);
     }
   };
 
@@ -163,20 +185,28 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
   const handleRegenerarPrueba = async (prueba) => {
     try {
       setGenerandoPruebas(true);
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const nuevaPrueba = {
-        ...prueba,
-        nombre: `${prueba.nombre} (Regenerada)`,
-        estado: 'borrador',
-      };
-      setPruebas(pruebas.map(p => p.id_prueba === prueba.id_prueba ? nuevaPrueba : p));
-      setPruebaSeleccionada(nuevaPrueba);
 
-      message.success('Prueba regenerada exitosamente');
+      message.loading('Regenerando prueba con IA...', 0);
+
+      // Llamar a la función de generación
+      // Esto generará nuevas pruebas basadas en las especificaciones actuales
+      const resultado = await generarPrueba();
+
+      message.destroy();
+
+      if (resultado && resultado.total_pruebas > 0) {
+        await recargarPruebas();
+        message.success('Pruebas regeneradas exitosamente');
+
+        // Volver a la vista de resumen para ver las nuevas pruebas
+        handleVolverAResumen();
+      } else {
+        message.warning('No se pudo regenerar la prueba');
+      }
     } catch (error) {
+      message.destroy();
       message.error('Error al regenerar la prueba');
+      console.error(error);
     } finally {
       setGenerandoPruebas(false);
     }
@@ -213,7 +243,8 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
             <Spin size="large" />
             <p style={{
               marginTop: '1.5rem',
-              fontSize: '1.1rem',
+              fontSize: '1.2rem',
+              fontWeight: 600,
               color: 'var(--text-secondary)'
             }}>
               🤖 Generando pruebas con IA...
@@ -221,9 +252,15 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
             <p style={{
               marginTop: '0.5rem',
               fontSize: '0.95rem',
-              color: 'var(--text-tertiary)'
+              color: 'var(--text-tertiary)',
+              textAlign: 'center',
+              maxWidth: '500px'
             }}>
-              Analizando todas las especificaciones en conjunto
+              Analizando {todasEspecificaciones.length} especificación{todasEspecificaciones.length !== 1 ? 'es' : ''} del proyecto
+              <br />
+              <small style={{ color: '#999', marginTop: '0.5rem', display: 'block' }}>
+                Este proceso puede tomar algunos segundos...
+              </small>
             </p>
           </div>
         </div>
@@ -231,10 +268,10 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     );
   }
 
-  // Vistas principales
-  return (
-    <>
-      {vistaActual === 'inicial' && pruebas.length === 0 ? (
+  // Renderizar vista según el estado actual
+  if (vistaActual === 'inicial') {
+    return (
+      <>
         <VistaEspecificaciones
           especificaciones={todasEspecificaciones}
           requisitos={requisitos}
@@ -244,43 +281,63 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
           onRecargar={handleRecargarTodo}
           onIniciarPruebas={handleIniciarGeneracionPruebas}
         />
-      ) : (
-        <div className="tabs-container">
-          <div className="tabs-content-wrapper">
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '400px 1fr',
-              gap: '1.5rem',
-              height: 'calc(100vh - 200px)',
-              minHeight: '600px'
-            }}>
-              <ListaPruebas
-                pruebas={pruebas}
-                pruebaActiva={pruebaSeleccionada}
-                onSeleccionarPrueba={handleSeleccionarPrueba}
-              />
+        <ModalAdvertencia
+          visible={modalVisible}
+          onCancel={() => setModalVisible(false)}
+          onConfirm={handleConfirmarGeneracion}
+          loading={false}
+          especificacionesCount={todasEspecificaciones.length}
+        />
+      </>
+    );
+  }
 
-              <EditorPrueba
-                prueba={pruebaSeleccionada}
-                onEliminar={handleEliminarPrueba}
-                onAprobar={handleAprobarPrueba}
-                onGuardarCambios={handleGuardarCambios}
-                onDescartarCambios={handleDescartarCambios}
-                onRegenerar={handleRegenerarPrueba}
-              />
-            </div>
+  if (vistaActual === 'resumen') {
+    return (
+      <VistaResumenPruebas
+        pruebas={pruebas}
+        contadores={contadores}
+        loading={loading}
+        onRecargar={recargarPruebas}
+        onCrearPrueba={handleCrearPrueba}
+        onEditarPrueba={handleEditarPrueba}
+      />
+    );
+  }
+
+  if (vistaActual === 'editor') {
+    return (
+      <div className="tabs-container">
+        <div className="tabs-content-wrapper">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '400px 1fr',
+            gap: '1.5rem',
+            height: 'calc(100vh - 200px)',
+            minHeight: '600px'
+          }}>
+            <ListaPruebas
+              pruebas={pruebas}
+              pruebaActiva={pruebaSeleccionada}
+              onSeleccionarPrueba={handleSeleccionarPrueba}
+              onVolver={handleVolverAResumen}
+            />
+
+            <EditorPrueba
+              prueba={pruebaSeleccionada}
+              onEliminar={handleEliminarPrueba}
+              onAprobar={handleAprobarPrueba}
+              onGuardarCambios={handleGuardarCambios}
+              onDescartarCambios={handleDescartarCambios}
+              onRegenerar={handleRegenerarPrueba}
+            />
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      <ModalAdvertencia
-        visible={modalVisible}
-        onCancel={() => setModalVisible(false)}
-        onConfirm={handleConfirmarGeneracion}
-        loading={false}
-      />
-    </>
-  );
+  return null;
 };
 
 export default PruebasTab;

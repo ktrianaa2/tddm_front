@@ -1,9 +1,9 @@
 // config.js - Configuración actualizada con endpoints de requisitos y funciones PUT/DELETE
 
 // URL base de tu API
-//export const API_BASE_URL = 'http://localhost:8000'; // URL de API
+export const API_BASE_URL = 'http://localhost:8000'; // URL de API
 
-export const API_BASE_URL = 'https://tddm-back.onrender.com'; // URL de API
+// export const API_BASE_URL = 'https://tddm-back.onrender.com'; // URL de API
 
 // Endpoints de la API
 export const API_ENDPOINTS = {
@@ -17,6 +17,24 @@ export const API_ENDPOINTS = {
   CREAR_PROYECTO: '/app/proyectos/crear/',
   EDITAR_PROYECTO: '/app/proyectos/editar',      // Se concatena /:id en el componente
   ELIMINAR_PROYECTO: '/app/proyectos/eliminar',  // Se concatena /:id en el componente
+
+   // Tipos de Prueba
+  TIPOS_PRUEBA: '/app/pruebas/tipos-prueba/listar/',
+  TIPOS_PRUEBA_CREAR: '/app/pruebas/tipos-prueba/crear/',
+  TIPOS_PRUEBA_OBTENER: '/app/pruebas/tipos-prueba/obtener', // Se concatena /:id en el componente
+  TIPOS_PRUEBA_ACTUALIZAR: '/app/pruebas/tipos-prueba/editar', // Se concatena /:id en el componente
+  TIPOS_PRUEBA_ELIMINAR: '/app/pruebas/tipos-prueba/eliminar', // Se concatena /:id en el componente
+
+  // Pruebas
+  CREAR_PRUEBA: '/app/pruebas/crear/',
+  LISTAR_PRUEBAS: '/app/pruebas/listar', // Se concatena /:proyecto_id en el componente
+  OBTENER_PRUEBA: '/app/pruebas/obtener', // Se concatena /:prueba_id en el componente
+  ACTUALIZAR_PRUEBA: '/app/pruebas/editar', // Se concatena /:prueba_id en el componente
+  ELIMINAR_PRUEBA: '/app/pruebas/eliminar', // Se concatena /:prueba_id en el componente
+  
+  // Generación de Pruebas con IA
+  GENERAR_PRUEBAS_IA: '/app/chat/generar-pruebas', // Se concatena /:proyecto_id en el componente
+  PREVISUALIZAR_PRUEBAS_IA: '/app/chat/previsualizar-pruebas', // Se concatena /:proyecto_id en el componente
 
   // Tipos de Requisito
   TIPOS_REQUISITO: '/app/catalogos/listar/',

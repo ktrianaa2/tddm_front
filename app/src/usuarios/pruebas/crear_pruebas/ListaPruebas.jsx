@@ -7,23 +7,30 @@ const ListaPruebas = ({ pruebas, pruebaActiva, onSeleccionarPrueba }) => {
   const [busqueda, setBusqueda] = useState('');
   const [tipoFiltro, setTipoFiltro] = useState('todas');
 
-  // Contar por tipo (usando la propiedad 'tipo' que se mapea en el hook)
+  // Función helper para obtener el tipo de prueba
+  const getTipoPrueba = (prueba) => {
+    const tipo = (prueba.tipo_prueba || prueba.tipo || '').toLowerCase();
+    return tipo;
+  };
+
+  // Contar por tipo
   const contadores = {
     todas: pruebas.length,
-    unitaria: pruebas.filter(p => p.tipo === 'unitaria').length,
-    sistema: pruebas.filter(p => p.tipo === 'sistema').length,
-    componente: pruebas.filter(p => p.tipo === 'componente').length
+    unitaria: pruebas.filter(p => getTipoPrueba(p) === 'unitaria').length,
+    sistema: pruebas.filter(p => getTipoPrueba(p) === 'sistema').length,
+    componente: pruebas.filter(p => getTipoPrueba(p) === 'componente').length
   };
-    
-  // Filtrar pruebas (usando la propiedad 'tipo' que se mapea en el hook)
+
+  // Filtrar pruebas
   const pruebasFiltradas = pruebas.filter(prueba => {
-    const coincideBusqueda = 
-      prueba.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      prueba.codigo.toLowerCase().includes(busqueda.toLowerCase());
-    
-    const coincideTipo = 
-      tipoFiltro === 'todas' || prueba.tipo === tipoFiltro;
-    
+    const coincideBusqueda =
+      (prueba.nombre || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+      (prueba.codigo || '').toLowerCase().includes(busqueda.toLowerCase());
+
+    const tipoPrueba = getTipoPrueba(prueba);
+    const coincideTipo =
+      tipoFiltro === 'todas' || tipoPrueba === tipoFiltro;
+
     return coincideBusqueda && coincideTipo;
   });
 
@@ -85,7 +92,7 @@ const ListaPruebas = ({ pruebas, pruebaActiva, onSeleccionarPrueba }) => {
         }}>
           Pruebas Generadas
         </h3>
-        
+
         <Input
           prefix={<SearchOutlined />}
           placeholder="Buscar prueba..."
@@ -116,9 +123,9 @@ const ListaPruebas = ({ pruebas, pruebaActiva, onSeleccionarPrueba }) => {
         {pruebasFiltradas.length > 0 ? (
           pruebasFiltradas.map(prueba => (
             <ItemPrueba
-              key={prueba.id_prueba} // Usamos id_prueba como key
+              key={prueba.id_prueba || prueba.id}
               prueba={prueba}
-              isActive={pruebaActiva?.id_prueba === prueba.id_prueba} // Usamos id_prueba para activo
+              isActive={pruebaActiva?.id_prueba === prueba.id_prueba}
               onClick={() => onSeleccionarPrueba(prueba)}
             />
           ))

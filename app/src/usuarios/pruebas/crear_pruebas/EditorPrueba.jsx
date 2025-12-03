@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Button, Empty, Space, Popconfirm, message } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Button, Empty, Space, Popconfirm, message, Tag } from 'antd';
 import {
     DeleteOutlined,
     CheckOutlined,
@@ -20,8 +20,9 @@ const EditorPrueba = ({
     const [codigo, setCodigo] = useState('');
     const [codigoOriginal, setCodigoOriginal] = useState('');
     const [hasChanges, setHasChanges] = useState(false);
+    const [guardando, setGuardando] = useState(false);
 
-    // 💡 Función para formatear la prueba
+    // 💡 Función para formatear la prueba en código
     const formatearPrueba = (prueba) => {
         if (!prueba) return '';
 
@@ -37,7 +38,6 @@ const EditorPrueba = ({
         const asercionesComentarios = detalle.criterios_aceptacion?.map(c =>
             `        // Criterio de Aceptación: ${c}`
         ).join('\n') || '        // Añadir aserciones';
-
 
         return `// ${detalle.nombre || prueba.nombre}
 // Código: ${prueba.codigo}
@@ -76,44 +76,95 @@ ${asercionesComentarios}
 /*
  * ESPECIFICACIÓN RELACIONADA:
  * ${prueba.especificacion_relacionada || 'N/A'}
- * * DATOS DE PRUEBA:
- * - Caso válido: ${detalle.datos_prueba?.ejemplos[0]?.caso || 'N/A'}
- * - Caso límite: ${detalle.datos_prueba?.ejemplos[1]?.caso || 'N/A'}
+ * 
+ * DATOS DE PRUEBA:
+ * - Caso válido: ${detalle.datos_prueba?.ejemplos?.[0]?.caso || 'N/A'}
+ * - Caso límite: ${detalle.datos_prueba?.ejemplos?.[1]?.caso || 'N/A'}
+ * - Caso inválido: ${detalle.datos_prueba?.ejemplos?.[2]?.caso || 'N/A'}
  */`;
     };
-    // ----------------------------------------------------
 
+    // Cargar código cuando cambia la prueba
     useEffect(() => {
         if (prueba) {
-            const codigoFormateado = formatearPrueba(prueba);
-            setCodigo(codigoFormateado);
-            setCodigoOriginal(codigoFormateado);
+            // Si ya existe código editado, usar ese, sino formatear la prueba
+            const codigoExistente = prueba.codigo_editado || formatearPrueba(prueba);
+            setCodigo(codigoExistente);
+            setCodigoOriginal(codigoExistente);
             setHasChanges(false);
         }
-    }, [prueba]);
+    }, [prueba?.id_prueba]); // Solo recargar si cambia el ID de la prueba
 
+    // Manejar cambios en el editor
     const handleEditorChange = (value) => {
         setCodigo(value || '');
         setHasChanges(value !== codigoOriginal);
     };
 
-    const handleGuardar = () => {
-        const pruebaAActualizar = {
-            ...prueba,
-            codigo_editado: codigo
-        };
+    // Guardar cambios
+    const handleGuardar = useCallback(async () => {
+        if (!hasChanges || guardando) return;
 
-        onGuardarCambios(pruebaAActualizar);
-        setCodigoOriginal(codigo);
-        setHasChanges(false);
-    };
+        setGuardando(true);
+        try {
+            // Preparar la prueba actualizada con el código editado
+            const pruebaActualizada = {
+                ...prueba,
+                // Mantener el objeto prueba original pero agregar el código editado
+                prueba: {
+                    ...(prueba.prueba || {}),
+                    codigo_editado: codigo,
+                    fecha_ultima_edicion: new Date().toISOString()
+                }
+            };
 
+            await onGuardarCambios(pruebaActualizada);
+
+            // Actualizar el código original solo si se guardó exitosamente
+            setCodigoOriginal(codigo);
+            setHasChanges(false);
+            message.success('Cambios guardados exitosamente');
+        } catch (error) {
+            console.error('Error al guardar:', error);
+            message.error('Error al guardar los cambios');
+        } finally {
+            setGuardando(false);
+        }
+    }, [codigo, codigoOriginal, hasChanges, prueba, onGuardarCambios, guardando]);
+
+    // Descartar cambios
     const handleDescartar = () => {
         setCodigo(codigoOriginal);
         setHasChanges(false);
         onDescartarCambios();
     };
 
+    // Manejar atajo de teclado Ctrl+S
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // Ctrl+S o Cmd+S (Mac)
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                if (hasChanges && !guardando) {
+                    handleGuardar();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [hasChanges, guardando, handleGuardar]);
+
+    // Aprobar prueba
+    const handleAprobar = async () => {
+        if (hasChanges) {
+            message.warning('Guarda los cambios antes de aprobar la prueba');
+            return;
+        }
+        await onAprobar(prueba);
+    };
+
+    // Estado vacío
     if (!prueba) {
         return (
             <div style={{
@@ -142,6 +193,19 @@ ${asercionesComentarios}
         );
     }
 
+    // Obtener color según el estado
+    const getEstadoTag = (estado) => {
+        const estados = {
+            'borrador': { color: 'default', text: 'Borrador' },
+            'pendiente': { color: 'warning', text: 'Pendiente' },
+            'aprobada': { color: 'success', text: 'Aprobada' },
+            'rechazada': { color: 'error', text: 'Rechazada' }
+        };
+        return estados[estado?.toLowerCase()] || { color: 'default', text: estado || 'Sin estado' };
+    };
+
+    const estadoTag = getEstadoTag(prueba.estado);
+
     return (
         <div style={{
             background: 'white',
@@ -152,101 +216,57 @@ ${asercionesComentarios}
             flexDirection: 'column',
             height: '100%'
         }}>
-
-            {/* Header: solo texto */}
+            {/* Header */}
             <div style={{
                 padding: '1.5rem',
                 borderBottom: '1px solid #f0f0f0',
                 background: '#fafafa'
             }}>
-                <h3 style={{
-                    margin: '0 0 0.5rem 0',
-                    fontSize: '1.2rem',
-                    fontWeight: 600
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'start',
+                    marginBottom: '0.5rem'
                 }}>
-                    {prueba.nombre}
-                </h3>
+                    <h3 style={{
+                        margin: 0,
+                        fontSize: '1.2rem',
+                        fontWeight: 600
+                    }}>
+                        {prueba.nombre}
+                    </h3>
+                    <Tag color={estadoTag.color}>{estadoTag.text}</Tag>
+                </div>
 
                 <div style={{
                     display: 'flex',
                     gap: '1rem',
                     fontSize: '0.9rem',
-                    color: '#666'
+                    color: '#666',
+                    flexWrap: 'wrap'
                 }}>
                     <span><strong>Código:</strong> {prueba.codigo}</span>
-                    <span><strong>Tipo:</strong> {prueba.tipo}</span>
+                    <span><strong>Tipo:</strong> {prueba.tipo || prueba.tipo_prueba}</span>
+
+                    {prueba.fecha_actualizacion && (
+                        <span>
+                            <strong>Actualizada:</strong> {new Date(prueba.fecha_actualizacion).toLocaleDateString()}
+                        </span>
+                    )}
 
                     {hasChanges && (
-                        <span style={{ color: '#ff9800', fontWeight: 500 }}>
-                            ● Cambios sin guardar
+                        <span style={{
+                            color: '#ff9800',
+                            fontWeight: 500,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                        }}>
+                            <span style={{ fontSize: '1.2rem' }}>●</span> Cambios sin guardar
                         </span>
                     )}
                 </div>
             </div>
-
-            {/* Footer: botones abajo */}
-            <div style={{
-                padding: '1rem',
-                borderTop: '1px solid #f0f0f0',
-                background: '#fff',
-                marginTop: 'auto'
-            }}>
-                <Space wrap>
-
-                    <Popconfirm
-                        title="¿Regenerar esta prueba?"
-                        description="Se perderán los cambios no guardados"
-                        onConfirm={() => onRegenerar(prueba)}
-                        okText="Sí, regenerar"
-                        cancelText="Cancelar"
-                    >
-                        <Button icon={<ReloadOutlined />} disabled={hasChanges}>
-                            Regenerar
-                        </Button>
-                    </Popconfirm>
-
-                    <Button
-                        icon={<CloseOutlined />}
-                        onClick={handleDescartar}
-                        disabled={!hasChanges}
-                    >
-                        Descartar Cambios
-                    </Button>
-
-                    <Button
-                        type="primary"
-                        icon={<SaveOutlined />}
-                        onClick={handleGuardar}
-                        disabled={!hasChanges}
-                    >
-                        Guardar Cambios
-                    </Button>
-
-                    <Button
-                        type="primary"
-                        icon={<CheckOutlined />}
-                        style={{ background: '#52c41a', borderColor: '#52c41a' }}
-                        onClick={() => onAprobar(prueba)}
-                    >
-                        Aprobar
-                    </Button>
-
-                    <Popconfirm
-                        title="¿Eliminar esta prueba?"
-                        description="Esta acción no se puede deshacer"
-                        onConfirm={() => onEliminar(prueba)}
-                        okText="Sí, eliminar"
-                        cancelText="Cancelar"
-                        okButtonProps={{ danger: true }}
-                    >
-                        <Button danger icon={<DeleteOutlined />}>
-                            Eliminar
-                        </Button>
-                    </Popconfirm>
-
-                </Space>
-            </div>
-
 
             {/* Editor Monaco */}
             <div style={{ flex: 1, overflow: 'hidden' }}>
@@ -270,12 +290,13 @@ ${asercionesComentarios}
                         renderWhitespace: 'selection',
                         bracketPairColorization: {
                             enabled: true
-                        }
+                        },
+                        readOnly: guardando
                     }}
                 />
             </div>
 
-            {/* Footer con información adicional */}
+            {/* Footer con información */}
             <div style={{
                 padding: '1rem 1.5rem',
                 borderTop: '1px solid #f0f0f0',
@@ -283,14 +304,82 @@ ${asercionesComentarios}
                 fontSize: '0.85rem',
                 color: '#666'
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>
-                        💡 Usa Ctrl+S para guardar cambios
+                        💡 <kbd>Ctrl+S</kbd> para guardar cambios
                     </span>
                     <span>
-                        Generada automáticamente con IA
+                        {prueba.especificacion_relacionada && `📋 ${prueba.especificacion_relacionada}`}
                     </span>
                 </div>
+            </div>
+
+            {/* Barra de acciones */}
+            <div style={{
+                padding: '1rem 1.5rem',
+                borderTop: '1px solid #f0f0f0',
+                background: '#fff'
+            }}>
+                <Space wrap>
+                    <Popconfirm
+                        title="¿Regenerar esta prueba?"
+                        description="Se perderán los cambios no guardados"
+                        onConfirm={() => onRegenerar(prueba)}
+                        okText="Sí, regenerar"
+                        cancelText="Cancelar"
+                        disabled={hasChanges}
+                    >
+                        <Button
+                            icon={<ReloadOutlined />}
+                            disabled={hasChanges}
+                            title={hasChanges ? 'Guarda los cambios antes de regenerar' : 'Regenerar prueba con IA'}
+                        >
+                            Regenerar
+                        </Button>
+                    </Popconfirm>
+
+                    <Button
+                        icon={<CloseOutlined />}
+                        onClick={handleDescartar}
+                        disabled={!hasChanges}
+                    >
+                        Descartar
+                    </Button>
+
+                    <Button
+                        type="primary"
+                        icon={<SaveOutlined />}
+                        onClick={handleGuardar}
+                        disabled={!hasChanges}
+                        loading={guardando}
+                    >
+                        Guardar
+                    </Button>
+
+                    <Button
+                        type="primary"
+                        icon={<CheckOutlined />}
+                        style={{ background: '#52c41a', borderColor: '#52c41a' }}
+                        onClick={handleAprobar}
+                        disabled={hasChanges}
+                        title={hasChanges ? 'Guarda los cambios antes de aprobar' : 'Aprobar prueba'}
+                    >
+                        Aprobar
+                    </Button>
+
+                    <Popconfirm
+                        title="¿Eliminar esta prueba?"
+                        description="Esta acción no se puede deshacer"
+                        onConfirm={() => onEliminar(prueba)}
+                        okText="Sí, eliminar"
+                        cancelText="Cancelar"
+                        okButtonProps={{ danger: true }}
+                    >
+                        <Button danger icon={<DeleteOutlined />}>
+                            Eliminar
+                        </Button>
+                    </Popconfirm>
+                </Space>
             </div>
         </div>
     );
