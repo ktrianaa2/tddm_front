@@ -240,10 +240,6 @@ export const usePruebas = (proyectoId) => {
             setPruebas(pruebasTransformadas);
             setPruebasCargadas(true);
 
-            if (pruebasTransformadas.length > 0) {
-                message.success(`${pruebasTransformadas.length} prueba${pruebasTransformadas.length > 1 ? 's' : ''} cargada${pruebasTransformadas.length > 1 ? 's' : ''}`, 2);
-            }
-
         } catch (error) {
             const errorMsg = error.message || 'Error al cargar pruebas';
             message.error(errorMsg);

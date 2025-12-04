@@ -15,6 +15,8 @@ import {
   BookOutlined,
   RocketOutlined
 } from '@ant-design/icons';
+import '../../../styles/tabs.css';
+import '../../../styles/buttons.css';
 
 const VistaEspecificaciones = ({
   especificaciones,
@@ -31,7 +33,6 @@ const VistaEspecificaciones = ({
     if (tipo === 'requisito' && item.requisito_id) return `req-${item.requisito_id}`;
     if (tipo === 'caso_uso' && item.caso_uso_id) return `cu-${item.caso_uso_id}`;
     if (tipo === 'historia_usuario' && item.historia_id) return `hu-${item.historia_id}`;
-    // Fallback: usar índice si no hay ID
     return `${tipo}-${Math.random().toString(36).substr(2, 9)}`;
   };
 
@@ -39,7 +40,6 @@ const VistaEspecificaciones = ({
   const obtenerRelaciones = () => {
     const relaciones = [];
 
-    // Relacionar casos de uso con requisitos
     casosUso.forEach(cu => {
       if (cu.requisito_id) {
         const req = requisitos.find(r => r.requisito_id === cu.requisito_id);
@@ -52,7 +52,6 @@ const VistaEspecificaciones = ({
       }
     });
 
-    // Relacionar historias de usuario con casos de uso
     historiasUsuario.forEach(hu => {
       if (hu.caso_uso_id) {
         const cu = casosUso.find(c => c.caso_uso_id === hu.caso_uso_id);
@@ -80,324 +79,388 @@ const VistaEspecificaciones = ({
   };
 
   return (
-    <div className="tabs-container">
-      <div className="tabs-content-wrapper">
-        {/* Header */}
-        <div className="tab-header">
-          <div className="tab-header-content">
-            <h3 className="tab-title">
-              <BugOutlined style={{ marginRight: '0.5rem' }} />
-              Especificaciones del Proyecto
-            </h3>
-            <p className="tab-subtitle">
-              Revisa las especificaciones antes de generar las pruebas
-            </p>
-          </div>
-          <div className="tab-header-actions">
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={onRecargar}
-              loading={loading}
-              style={{ marginRight: '0.5rem' }}
-            >
-              Actualizar
-            </Button>
-            <Button
-              icon={<RocketOutlined />}
-              type="primary"
-              onClick={onIniciarPruebas}
-              disabled={especificaciones.length === 0}
-            >
-              Iniciar Generación de Pruebas
-            </Button>
-          </div>
+    <>
+      {/* Header usando clases de tabs.css */}
+      <div className="tab-header">
+        <div className="tab-header-content">
+          <h3 className="tab-title">
+            <BugOutlined style={{ marginRight: 'var(--space-sm)' }} />
+            Especificaciones del Proyecto
+          </h3>
+          <p className="tab-subtitle">
+            Revisa las especificaciones antes de generar las pruebas
+          </p>
         </div>
+        <div className="tab-header-actions">
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={onRecargar}
+            loading={loading}
+            className="btn btn-secondary"
+          >
+            Actualizar
+          </Button>
+          <Button
+            icon={<RocketOutlined />}
+            type="primary"
+            onClick={onIniciarPruebas}
+            disabled={especificaciones.length === 0}
+            className="btn btn-primary"
+          >
+            Iniciar Generación de Pruebas
+          </Button>
+        </div>
+      </div>
 
-        <div className="tab-main-content">
+      {/* Contenido principal usando clases de tabs.css */}
+      <div className="tab-main-content">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '400px 1fr',
+          gap: 'var(--space-xl)',
+          height: 'calc(100vh - 250px)',
+          minHeight: '600px'
+        }}>
+          {/* Columna Izquierda: Lista de Especificaciones */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: '400px 1fr',
-            gap: '1.5rem',
-            height: 'calc(100vh - 250px)',
-            minHeight: '600px'
+            background: 'var(--bg-card)',
+            borderRadius: 'var(--border-radius-lg)',
+            padding: 'var(--space-xl)',
+            boxShadow: 'var(--shadow-md)',
+            border: '1px solid var(--border-color)',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
           }}>
-            {/* Columna Izquierda: Lista de Especificaciones */}
             <div style={{
-              background: 'white',
-              borderRadius: '8px',
-              padding: '1.5rem',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-              overflow: 'hidden',
               display: 'flex',
-              flexDirection: 'column'
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 'var(--space-md)'
             }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '1rem'
+              <h4 style={{
+                margin: 0,
+                fontSize: 'var(--font-size-lg)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text-primary)'
               }}>
-                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>
-                  Especificaciones
-                </h4>
-                <Badge count={especificaciones.length} showZero />
+                Especificaciones
+              </h4>
+              <Badge count={especificaciones.length} showZero />
+            </div>
+
+            {especificaciones.length === 0 ? (
+              <div className="tab-empty-state">
+                <Empty description="No hay especificaciones disponibles" />
               </div>
+            ) : (
+              <div style={{ flex: 1, overflow: 'auto' }}>
+                <List
+                  dataSource={especificaciones}
+                  loading={loading}
+                  renderItem={(item, index) => {
+                    const icons = {
+                      requisito: <FileTextOutlined />,
+                      caso_uso: <UserOutlined />,
+                      historia_usuario: <BookOutlined />
+                    };
 
-              {especificaciones.length === 0 ? (
-                <Empty
-                  description="No hay especificaciones disponibles"
-                  style={{ marginTop: '3rem' }}
+                    const uniqueKey = obtenerIdUnico(item, item.tipo_especificacion) || `spec-${index}`;
+
+                    return (
+                      <List.Item
+                        key={uniqueKey}
+                        style={{
+                          padding: 'var(--space-md)',
+                          marginBottom: 'var(--space-sm)',
+                          background: 'var(--bg-hover)',
+                          borderRadius: 'var(--border-radius)',
+                          border: '1px solid var(--border-color)',
+                          cursor: 'default',
+                          transition: 'all var(--transition-normal)'
+                        }}
+                      >
+                        <List.Item.Meta
+                          avatar={
+                            <div style={{
+                              width: '40px',
+                              height: '40px',
+                              borderRadius: 'var(--border-radius)',
+                              background: item.color === 'blue' ? '#e6f4ff' :
+                                item.color === 'green' ? '#f6ffed' : '#f9f0ff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: getColorByType(item.tipo_especificacion),
+                              fontSize: '1.2rem'
+                            }}>
+                              {icons[item.tipo_especificacion]}
+                            </div>
+                          }
+                          title={
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'start'
+                            }}>
+                              <span style={{
+                                fontSize: 'var(--font-size-sm)',
+                                fontWeight: 'var(--font-weight-medium)',
+                                marginRight: 'var(--space-sm)',
+                                color: 'var(--text-primary)'
+                              }}>
+                                {item.nombre || item.descripcion_historia?.substring(0, 50) || 'Sin nombre'}
+                              </span>
+                              <Tag color={item.color} style={{ margin: 0 }}>
+                                {item.tipo_label}
+                              </Tag>
+                            </div>
+                          }
+                          description={
+                            <div style={{
+                              fontSize: 'var(--font-size-sm)',
+                              marginTop: 'var(--space-sm)',
+                              color: 'var(--text-secondary)'
+                            }}>
+                              {item.tipo_especificacion === 'requisito' && (
+                                <span>{item.descripcion?.substring(0, 80) || 'Sin descripción'}...</span>
+                              )}
+                              {item.tipo_especificacion === 'caso_uso' && (
+                                <span>{item.descripcion?.substring(0, 80) || 'Sin descripción'}...</span>
+                              )}
+                              {item.tipo_especificacion === 'historia_usuario' && (
+                                <span>Como {item.actor_rol || 'usuario'}, quiero {item.funcionalidad_accion?.substring(0, 50) || 'realizar una acción'}...</span>
+                              )}
+                            </div>
+                          }
+                        />
+                      </List.Item>
+                    );
+                  }}
                 />
-              ) : (
-                <div style={{ flex: 1, overflow: 'auto' }}>
-                  <List
-                    dataSource={especificaciones}
-                    loading={loading}
-                    renderItem={(item, index) => {
-                      const icons = {
-                        requisito: <FileTextOutlined />,
-                        caso_uso: <UserOutlined />,
-                        historia_usuario: <BookOutlined />
-                      };
+              </div>
+            )}
+          </div>
 
-                      // Generar key única
-                      const uniqueKey = obtenerIdUnico(item, item.tipo_especificacion) || `spec-${index}`;
+          {/* Columna Derecha: Diagrama de Relaciones */}
+          <div style={{
+            background: 'var(--bg-card)',
+            borderRadius: 'var(--border-radius-lg)',
+            padding: 'var(--space-xl)',
+            boxShadow: 'var(--shadow-md)',
+            border: '1px solid var(--border-color)',
+            overflow: 'auto'
+          }}>
+            <h4 style={{
+              margin: '0 0 var(--space-xl) 0',
+              fontSize: 'var(--font-size-lg)',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: 'var(--text-primary)'
+            }}>
+              Relaciones entre Especificaciones
+            </h4>
 
-                      return (
-                        <List.Item
-                          key={uniqueKey}
+            {especificaciones.length === 0 ? (
+              <div className="tab-empty-state">
+                <Empty description="No hay especificaciones para mostrar relaciones" />
+              </div>
+            ) : (
+              <div style={{ position: 'relative', minHeight: '500px' }}>
+                {/* Nodos de Requisitos */}
+                {requisitos.length > 0 && (
+                  <div style={{ marginBottom: 'var(--space-2xl)' }}>
+                    <div style={{
+                      fontSize: 'var(--font-size-sm)',
+                      fontWeight: 'var(--font-weight-semibold)',
+                      color: 'var(--text-tertiary)',
+                      marginBottom: 'var(--space-md)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      REQUISITOS
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 'var(--space-md)',
+                      justifyContent: 'center'
+                    }}>
+                      {requisitos.map((req, index) => (
+                        <div
+                          key={obtenerIdUnico(req, 'requisito') || `req-${index}`}
                           style={{
-                            padding: '0.75rem',
-                            marginBottom: '0.5rem',
-                            background: '#f9fafb',
-                            borderRadius: '8px',
-                            border: '1px solid #e5e7eb',
+                            padding: 'var(--space-md)',
+                            background: '#e6f4ff',
+                            border: '2px solid #1890ff',
+                            borderRadius: 'var(--border-radius)',
+                            minWidth: '150px',
+                            maxWidth: '200px',
+                            textAlign: 'center',
+                            transition: 'all var(--transition-normal)',
                             cursor: 'default'
                           }}
                         >
-                          <List.Item.Meta
-                            avatar={
-                              <div style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '8px',
-                                background: item.color === 'blue' ? '#e6f4ff' :
-                                  item.color === 'green' ? '#f6ffed' : '#f9f0ff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: getColorByType(item.tipo_especificacion),
-                                fontSize: '1.2rem'
-                              }}>
-                                {icons[item.tipo_especificacion]}
-                              </div>
-                            }
-                            title={
-                              <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'start'
-                              }}>
-                                <span style={{
-                                  fontSize: '0.95rem',
-                                  fontWeight: 500,
-                                  marginRight: '0.5rem'
-                                }}>
-                                  {item.nombre || item.descripcion_historia?.substring(0, 50) || 'Sin nombre'}
-                                </span>
-                                <Tag color={item.color} style={{ margin: 0 }}>
-                                  {item.tipo_label}
-                                </Tag>
-                              </div>
-                            }
-                            description={
-                              <div style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>
-                                {item.tipo_especificacion === 'requisito' && (
-                                  <span>{item.descripcion?.substring(0, 80) || 'Sin descripción'}...</span>
-                                )}
-                                {item.tipo_especificacion === 'caso_uso' && (
-                                  <span>{item.descripcion?.substring(0, 80) || 'Sin descripción'}...</span>
-                                )}
-                                {item.tipo_especificacion === 'historia_usuario' && (
-                                  <span>Como {item.actor_rol || 'usuario'}, quiero {item.funcionalidad_accion?.substring(0, 50) || 'realizar una acción'}...</span>
-                                )}
-                              </div>
-                            }
-                          />
-                        </List.Item>
-                      );
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Columna Derecha: Diagrama de Relaciones */}
-            <div style={{
-              background: 'white',
-              borderRadius: '8px',
-              padding: '1.5rem',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-              overflow: 'auto'
-            }}>
-              <h4 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', fontWeight: 600 }}>
-                Relaciones entre Especificaciones
-              </h4>
-
-              {especificaciones.length === 0 ? (
-                <Empty
-                  description="No hay especificaciones para mostrar relaciones"
-                  style={{ marginTop: '3rem' }}
-                />
-              ) : (
-                <div style={{ position: 'relative', minHeight: '500px' }}>
-                  {/* Nodos de Requisitos */}
-                  {requisitos.length > 0 && (
-                    <div style={{ marginBottom: '4rem' }}>
-                      <div style={{
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        color: '#666',
-                        marginBottom: '1rem'
-                      }}>
-                        REQUISITOS
-                      </div>
-                      <div style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '1rem',
-                        justifyContent: 'center'
-                      }}>
-                        {requisitos.map((req, index) => (
-                          <div
-                            key={obtenerIdUnico(req, 'requisito') || `req-${index}`}
-                            style={{
-                              padding: '1rem',
-                              background: '#e6f4ff',
-                              border: '2px solid #1890ff',
-                              borderRadius: '8px',
-                              minWidth: '150px',
-                              maxWidth: '200px',
-                              textAlign: 'center'
-                            }}
-                          >
-                            <FileTextOutlined style={{ fontSize: '1.5rem', color: '#1890ff', display: 'block', marginBottom: '0.5rem' }} />
-                            <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>
-                              {req.nombre || 'Requisito sin nombre'}
-                            </div>
+                          <FileTextOutlined style={{
+                            fontSize: '1.5rem',
+                            color: '#1890ff',
+                            display: 'block',
+                            marginBottom: 'var(--space-sm)'
+                          }} />
+                          <div style={{
+                            fontSize: 'var(--font-size-sm)',
+                            fontWeight: 'var(--font-weight-medium)',
+                            color: 'var(--text-primary)'
+                          }}>
+                            {req.nombre || 'Requisito sin nombre'}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Nodos de Casos de Uso */}
-                  {casosUso.length > 0 && (
-                    <div style={{ marginBottom: '4rem' }}>
-                      <div style={{
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        color: '#666',
-                        marginBottom: '1rem'
-                      }}>
-                        CASOS DE USO
-                      </div>
-                      <div style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '1rem',
-                        justifyContent: 'center'
-                      }}>
-                        {casosUso.map((cu, index) => (
-                          <div
-                            key={obtenerIdUnico(cu, 'caso_uso') || `cu-${index}`}
-                            style={{
-                              padding: '1rem',
-                              background: '#f6ffed',
-                              border: '2px solid #52c41a',
-                              borderRadius: '8px',
-                              minWidth: '150px',
-                              maxWidth: '200px',
-                              textAlign: 'center'
-                            }}
-                          >
-                            <UserOutlined style={{ fontSize: '1.5rem', color: '#52c41a', display: 'block', marginBottom: '0.5rem' }} />
-                            <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>
-                              {cu.nombre || 'Caso de uso sin nombre'}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Nodos de Historias de Usuario */}
-                  {historiasUsuario.length > 0 && (
-                    <div>
-                      <div style={{
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        color: '#666',
-                        marginBottom: '1rem'
-                      }}>
-                        HISTORIAS DE USUARIO
-                      </div>
-                      <div style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '1rem',
-                        justifyContent: 'center'
-                      }}>
-                        {historiasUsuario.map((hu, index) => (
-                          <div
-                            key={obtenerIdUnico(hu, 'historia_usuario') || `hu-${index}`}
-                            style={{
-                              padding: '1rem',
-                              background: '#f9f0ff',
-                              border: '2px solid #722ed1',
-                              borderRadius: '8px',
-                              minWidth: '150px',
-                              maxWidth: '200px',
-                              textAlign: 'center'
-                            }}
-                          >
-                            <BookOutlined style={{ fontSize: '1.5rem', color: '#722ed1', display: 'block', marginBottom: '0.5rem' }} />
-                            <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>
-                              {hu.descripcion_historia?.substring(0, 30) || 'Historia sin descripción'}...
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Información de relaciones */}
-                  {relaciones.length > 0 && (
-                    <Card
-                      style={{
-                        marginTop: '2rem',
-                        background: '#fafafa'
-                      }}
-                    >
-                      <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                        <strong>Relaciones detectadas:</strong> {relaciones.length}
-                        <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
-                          {relaciones.map((rel, idx) => (
-                            <div key={`rel-${idx}`} style={{ marginBottom: '0.25rem' }}>
-                              • {rel.desde.nombre} → {rel.hacia.nombre}
-                            </div>
-                          ))}
                         </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Nodos de Casos de Uso */}
+                {casosUso.length > 0 && (
+                  <div style={{ marginBottom: 'var(--space-2xl)' }}>
+                    <div style={{
+                      fontSize: 'var(--font-size-sm)',
+                      fontWeight: 'var(--font-weight-semibold)',
+                      color: 'var(--text-tertiary)',
+                      marginBottom: 'var(--space-md)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      CASOS DE USO
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 'var(--space-md)',
+                      justifyContent: 'center'
+                    }}>
+                      {casosUso.map((cu, index) => (
+                        <div
+                          key={obtenerIdUnico(cu, 'caso_uso') || `cu-${index}`}
+                          style={{
+                            padding: 'var(--space-md)',
+                            background: '#f6ffed',
+                            border: '2px solid #52c41a',
+                            borderRadius: 'var(--border-radius)',
+                            minWidth: '150px',
+                            maxWidth: '200px',
+                            textAlign: 'center',
+                            transition: 'all var(--transition-normal)',
+                            cursor: 'default'
+                          }}
+                        >
+                          <UserOutlined style={{
+                            fontSize: '1.5rem',
+                            color: '#52c41a',
+                            display: 'block',
+                            marginBottom: 'var(--space-sm)'
+                          }} />
+                          <div style={{
+                            fontSize: 'var(--font-size-sm)',
+                            fontWeight: 'var(--font-weight-medium)',
+                            color: 'var(--text-primary)'
+                          }}>
+                            {cu.nombre || 'Caso de uso sin nombre'}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Nodos de Historias de Usuario */}
+                {historiasUsuario.length > 0 && (
+                  <div>
+                    <div style={{
+                      fontSize: 'var(--font-size-sm)',
+                      fontWeight: 'var(--font-weight-semibold)',
+                      color: 'var(--text-tertiary)',
+                      marginBottom: 'var(--space-md)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      HISTORIAS DE USUARIO
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 'var(--space-md)',
+                      justifyContent: 'center'
+                    }}>
+                      {historiasUsuario.map((hu, index) => (
+                        <div
+                          key={obtenerIdUnico(hu, 'historia_usuario') || `hu-${index}`}
+                          style={{
+                            padding: 'var(--space-md)',
+                            background: '#f9f0ff',
+                            border: '2px solid #722ed1',
+                            borderRadius: 'var(--border-radius)',
+                            minWidth: '150px',
+                            maxWidth: '200px',
+                            textAlign: 'center',
+                            transition: 'all var(--transition-normal)',
+                            cursor: 'default'
+                          }}
+                        >
+                          <BookOutlined style={{
+                            fontSize: '1.5rem',
+                            color: '#722ed1',
+                            display: 'block',
+                            marginBottom: 'var(--space-sm)'
+                          }} />
+                          <div style={{
+                            fontSize: 'var(--font-size-sm)',
+                            fontWeight: 'var(--font-weight-medium)',
+                            color: 'var(--text-primary)'
+                          }}>
+                            {hu.descripcion_historia?.substring(0, 30) || 'Historia sin descripción'}...
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Información de relaciones */}
+                {relaciones.length > 0 && (
+                  <Card
+                    style={{
+                      marginTop: 'var(--space-xl)',
+                      background: 'var(--bg-hover)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: 'var(--border-radius)'
+                    }}
+                  >
+                    <div style={{
+                      fontSize: 'var(--font-size-sm)',
+                      color: 'var(--text-secondary)'
+                    }}>
+                      <strong style={{ color: 'var(--text-primary)' }}>
+                        Relaciones detectadas:
+                      </strong> {relaciones.length}
+                      <div style={{
+                        marginTop: 'var(--space-sm)',
+                        fontSize: 'var(--font-size-sm)'
+                      }}>
+                        {relaciones.map((rel, idx) => (
+                          <div key={`rel-${idx}`} style={{ marginBottom: 'var(--space-sm)' }}>
+                            • {rel.desde.nombre} → {rel.hacia.nombre}
+                          </div>
+                        ))}
                       </div>
-                    </Card>
-                  )}
-                </div>
-              )}
-            </div>
+                    </div>
+                  </Card>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

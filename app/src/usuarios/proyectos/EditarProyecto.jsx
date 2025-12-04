@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Form, Input, Select, Button, message, Typography } from "antd";
-import { ArrowLeftOutlined, SaveOutlined, EditOutlined } from '@ant-design/icons';
-import { getStoredToken, API_ENDPOINTS, postFormDataAuth } from "../../../config";
+import { Form, Input, Button, message, Typography } from "antd";
+import { ArrowLeftOutlined, SaveOutlined, EditOutlined, ProjectOutlined } from '@ant-design/icons';
 import '../../styles/forms.css';
 import '../../styles/buttons.css';
 
-const { Option } = Select;
 const { Title } = Typography;
 
-const EditarProyecto = ({ proyecto, onEditado, onBack }) => {
+const EditarProyecto = ({ proyecto, onEditado, onBack, editarProyecto }) => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
 
@@ -16,8 +14,7 @@ const EditarProyecto = ({ proyecto, onEditado, onBack }) => {
         if (proyecto) {
             form.setFieldsValue({
                 nombre: proyecto.nombre,
-                descripcion: proyecto.descripcion,
-                estado: proyecto.estado
+                descripcion: proyecto.descripcion
             });
         }
     }, [proyecto, form]);
@@ -29,22 +26,11 @@ const EditarProyecto = ({ proyecto, onEditado, onBack }) => {
         }
 
         setLoading(true);
-        const token = getStoredToken();
-        const formData = new FormData();
-        formData.append("nombre", values.nombre);
-        formData.append("descripcion", values.descripcion || "");
-        formData.append("estado", values.estado);
-
         try {
-            const res = await postFormDataAuth(
-                `${API_ENDPOINTS.EDITAR_PROYECTO}/${proyecto.proyecto_id}/`, 
-                formData, 
-                token
-            );
-            message.success(res.mensaje || "Proyecto actualizado exitosamente");
-            onEditado();
-        } catch (error) {
-            message.error(error.message);
+            const result = await editarProyecto(proyecto.proyecto_id, values);
+            if (result.success) {
+                onEditado();
+            }
         } finally {
             setLoading(false);
         }
@@ -73,10 +59,22 @@ const EditarProyecto = ({ proyecto, onEditado, onBack }) => {
     return (
         <div className={`form-container ${loading ? 'form-loading' : ''}`}>
             <div className="form-header">
-                <EditOutlined style={{ fontSize: '2rem', color: 'var(--warning-color)', marginBottom: '0.5rem' }} />
+                <div style={{
+                    width: '64px',
+                    height: '64px',
+                    background: 'linear-gradient(135deg, var(--warning-color), var(--warning-hover))',
+                    borderRadius: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '1rem',
+                    boxShadow: '0 4px 12px rgba(251, 191, 36, 0.3)'
+                }}>
+                    <EditOutlined style={{ fontSize: '2rem', color: 'white' }} />
+                </div>
                 <Title level={3} className="form-title">Editar Proyecto</Title>
                 <p className="form-subtitle">
-                    Modifica la información de "{proyecto.nombre}"
+                    Modifica la información de <strong>"{proyecto.nombre}"</strong>
                 </p>
             </div>
 
@@ -87,7 +85,11 @@ const EditarProyecto = ({ proyecto, onEditado, onBack }) => {
                 requiredMark={false}
             >
                 <Form.Item
-                    label="Nombre del Proyecto"
+                    label={
+                        <span style={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                            Nombre del Proyecto
+                        </span>
+                    }
                     name="nombre"
                     className="form-field"
                     rules={[
@@ -99,11 +101,16 @@ const EditarProyecto = ({ proyecto, onEditado, onBack }) => {
                     <Input
                         placeholder="Nombre del proyecto"
                         size="large"
+                        prefix={<ProjectOutlined style={{ color: 'var(--text-tertiary)' }} />}
                     />
                 </Form.Item>
 
                 <Form.Item
-                    label="Descripción"
+                    label={
+                        <span style={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                            Descripción <span style={{ color: 'var(--text-tertiary)', fontWeight: 'normal' }}>(opcional)</span>
+                        </span>
+                    }
                     name="descripcion"
                     className="form-field"
                     rules={[
@@ -112,42 +119,11 @@ const EditarProyecto = ({ proyecto, onEditado, onBack }) => {
                 >
                     <Input.TextArea
                         rows={4}
-                        placeholder="Descripción del proyecto (opcional)"
+                        placeholder="Descripción del proyecto..."
                         showCount
                         maxLength={500}
+                        style={{ resize: 'none' }}
                     />
-                </Form.Item>
-
-                <Form.Item
-                    label="Estado del Proyecto"
-                    name="estado"
-                    className="form-field"
-                    rules={[{ required: true, message: "El estado es requerido" }]}
-                >
-                    <Select size="large">
-                        <Option value="Requisitos">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{
-                                    width: '8px',
-                                    height: '8px',
-                                    backgroundColor: 'var(--primary-color)',
-                                    borderRadius: '50%'
-                                }}></span>
-                                Requisitos
-                            </div>
-                        </Option>
-                        <Option value="Generación">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{
-                                    width: '8px',
-                                    height: '8px',
-                                    backgroundColor: 'var(--success-color)',
-                                    borderRadius: '50%'
-                                }}></span>
-                                Generación
-                            </div>
-                        </Option>
-                    </Select>
                 </Form.Item>
 
                 <div className="form-actions">
@@ -156,6 +132,7 @@ const EditarProyecto = ({ proyecto, onEditado, onBack }) => {
                         onClick={handleCancel}
                         className="btn btn-secondary"
                         disabled={loading}
+                        size="large"
                     >
                         Cancelar
                     </Button>
@@ -164,6 +141,7 @@ const EditarProyecto = ({ proyecto, onEditado, onBack }) => {
                         loading={loading}
                         icon={<SaveOutlined />}
                         className="btn btn-primary"
+                        size="large"
                     >
                         {loading ? 'Guardando...' : 'Guardar Cambios'}
                     </Button>

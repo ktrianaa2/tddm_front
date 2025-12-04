@@ -18,6 +18,8 @@ import {
     ApiOutlined,
     AppstoreOutlined
 } from '@ant-design/icons';
+import '../../../styles/tabs.css';
+import '../../../styles/buttons.css';
 
 const VistaResumenPruebas = ({
     pruebas,
@@ -102,377 +104,378 @@ const VistaResumenPruebas = ({
     ];
 
     return (
-        <div className="tabs-container">
-            <div className="tabs-content-wrapper">
-                {/* Header */}
-                <div className="tab-header">
-                    <div className="tab-header-content">
-                        <h3 className="tab-title">
-                            <BugOutlined style={{ marginRight: '0.5rem' }} />
-                            Gestión de Pruebas
-                        </h3>
-                        <p className="tab-subtitle">
-                            Organiza y gestiona todos los casos de prueba de tu proyecto
-                        </p>
-                    </div>
-                    <div className="tab-header-actions">
-                        <Button
-                            icon={<PlusOutlined />}
-                            type="primary"
-                            onClick={onCrearPrueba}
-                            style={{ marginRight: '0.5rem' }}
-                        >
-                            Nueva Prueba
-                        </Button>
-                        <Button
-                            icon={<ReloadOutlined />}
-                            onClick={onRecargar}
-                            loading={loading}
-                            className="tab-refresh-btn"
-                        >
-                            Actualizar
-                        </Button>
-                    </div>
+        <>
+            {/* Header usando clases de tabs.css */}
+            <div className="tab-header">
+                <div className="tab-header-content">
+                    <h3 className="tab-title">
+                        <BugOutlined style={{ marginRight: 'var(--space-sm)' }} />
+                        Gestión de Pruebas
+                    </h3>
+                    <p className="tab-subtitle">
+                        Organiza y gestiona todos los casos de prueba de tu proyecto
+                    </p>
                 </div>
+                <div className="tab-header-actions">
+                    <Button
+                        icon={<PlusOutlined />}
+                        type="primary"
+                        onClick={onCrearPrueba}
+                        className="btn btn-primary"
+                    >
+                        Nueva Prueba
+                    </Button>
+                    <Button
+                        icon={<ReloadOutlined />}
+                        onClick={onRecargar}
+                        loading={loading}
+                        className="btn btn-secondary"
+                    >
+                        Actualizar
+                    </Button>
+                </div>
+            </div>
 
-                <div className="tab-main-content">
+            {/* Contenido principal usando clases de tabs.css */}
+            <div className="tab-main-content">
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '450px 1fr',
+                    gap: 'var(--space-xl)',
+                    height: 'calc(100vh - 250px)',
+                    minHeight: '600px'
+                }}>
+                    {/* Columna Izquierda: Lista de Pruebas */}
                     <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '450px 1fr',
-                        gap: '1.5rem',
-                        height: 'calc(100vh - 250px)',
-                        minHeight: '600px'
+                        background: 'var(--bg-card)',
+                        borderRadius: 'var(--border-radius-lg)',
+                        boxShadow: 'var(--shadow-md)',
+                        border: '1px solid var(--border-color)',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column'
                     }}>
-                        {/* Columna Izquierda: Lista de Pruebas */}
+                        {/* Header de la lista */}
                         <div style={{
-                            background: 'white',
-                            borderRadius: '8px',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                            overflow: 'hidden',
-                            display: 'flex',
-                            flexDirection: 'column'
+                            padding: 'var(--space-xl)',
+                            borderBottom: '1px solid var(--border-color)'
                         }}>
-                            {/* Header de la lista */}
                             <div style={{
-                                padding: '1.5rem',
-                                borderBottom: '1px solid #f0f0f0'
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: 'var(--space-md)'
                             }}>
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    marginBottom: '1rem'
+                                <h4 style={{
+                                    margin: 0,
+                                    fontSize: 'var(--font-size-lg)',
+                                    fontWeight: 'var(--font-weight-semibold)',
+                                    color: 'var(--text-primary)'
                                 }}>
-                                    <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>
-                                        Casos de Prueba
-                                    </h4>
-                                    <Badge count={pruebasFiltradas.length} showZero />
-                                </div>
-
-                                <Input
-                                    prefix={<SearchOutlined />}
-                                    placeholder="Buscar prueba..."
-                                    value={busqueda}
-                                    onChange={(e) => setBusqueda(e.target.value)}
-                                    allowClear
-                                />
+                                    Casos de Prueba
+                                </h4>
+                                <Badge count={pruebasFiltradas.length} showZero />
                             </div>
 
-                            {/* Tabs de filtro */}
-                            <Tabs
-                                activeKey={tipoFiltro}
-                                onChange={setTipoFiltro}
-                                items={tabs}
-                                size="small"
+                            <Input
+                                prefix={<SearchOutlined />}
+                                placeholder="Buscar prueba..."
+                                value={busqueda}
+                                onChange={(e) => setBusqueda(e.target.value)}
+                                allowClear
                                 style={{
-                                    padding: '0 1rem',
-                                    marginBottom: 0
+                                    background: 'var(--bg-hover)',
+                                    borderColor: 'var(--border-color)'
                                 }}
                             />
-
-                            {/* Lista scrolleable */}
-                            {pruebas.length === 0 ? (
-                                <Empty
-                                    description="No hay pruebas creadas"
-                                    style={{ marginTop: '3rem' }}
-                                />
-                            ) : pruebasFiltradas.length === 0 ? (
-                                <Empty
-                                    description="No se encontraron pruebas"
-                                    style={{ marginTop: '3rem' }}
-                                />
-                            ) : (
-                                <div style={{ flex: 1, overflow: 'auto', padding: '1rem' }}>
-                                    <List
-                                        dataSource={pruebasFiltradas}
-                                        loading={loading}
-                                        renderItem={(prueba) => {
-                                            const config = getTipoConfig(prueba.tipo_prueba);
-
-                                            return (
-                                                <List.Item
-                                                    style={{
-                                                        padding: '1rem',
-                                                        marginBottom: '0.75rem',
-                                                        background: '#f9fafb',
-                                                        borderRadius: '8px',
-                                                        border: '2px solid #e5e7eb',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s ease'
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        e.currentTarget.style.borderColor = config.color;
-                                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-                                                        e.currentTarget.style.transform = 'translateY(-2px)';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.borderColor = '#e5e7eb';
-                                                        e.currentTarget.style.boxShadow = 'none';
-                                                        e.currentTarget.style.transform = 'translateY(0)';
-                                                    }}
-                                                    onClick={() => onEditarPrueba(prueba)}
-                                                >
-                                                    <List.Item.Meta
-                                                        avatar={
-                                                            <div style={{
-                                                                width: '48px',
-                                                                height: '48px',
-                                                                borderRadius: '10px',
-                                                                background: config.bgColor,
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                color: config.color,
-                                                                fontSize: '1.5rem'
-                                                            }}>
-                                                                {config.icon}
-                                                            </div>
-                                                        }
-                                                        title={
-                                                            <div>
-                                                                <div style={{
-                                                                    fontSize: '1rem',
-                                                                    fontWeight: 500,
-                                                                    marginBottom: '0.25rem',
-                                                                    color: '#1f2937'
-                                                                }}>
-                                                                    {prueba.nombre}
-                                                                </div>
-                                                                <div style={{
-                                                                    display: 'flex',
-                                                                    gap: '0.5rem',
-                                                                    alignItems: 'center'
-                                                                }}>
-                                                                    <Tag color={config.color} style={{ margin: 0 }}>
-                                                                        {config.label}
-                                                                    </Tag>
-                                                                    <span style={{
-                                                                        fontSize: '0.75rem',
-                                                                        color: '#9ca3af'
-                                                                    }}>
-                                                                        {prueba.codigo}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        }
-                                                        description={
-                                                            prueba.descripcion && (
-                                                                <div style={{
-                                                                    fontSize: '0.85rem',
-                                                                    marginTop: '0.5rem',
-                                                                    color: '#6b7280'
-                                                                }}>
-                                                                    {prueba.descripcion.substring(0, 100)}...
-                                                                </div>
-                                                            )
-                                                        }
-                                                    />
-                                                </List.Item>
-                                            );
-                                        }}
-                                    />
-                                </div>
-                            )}
                         </div>
 
-                        {/* Columna Derecha: Resumen y Estadísticas */}
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '1.5rem',
-                            overflow: 'auto'
-                        }}>
-                            {/* Cards de Resumen */}
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                                gap: '1rem'
-                            }}>
-                                <Card
-                                    style={{
-                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                        color: 'white',
-                                        border: 'none'
-                                    }}
-                                >
-                                    <div style={{ textAlign: 'center' }}>
-                                        <ExperimentOutlined style={{ fontSize: '2rem', marginBottom: '0.5rem' }} />
-                                        <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>
-                                            {contadores.unitarias}
-                                        </div>
-                                        <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
-                                            Pruebas Unitarias
-                                        </div>
-                                    </div>
-                                </Card>
+                        {/* Tabs de filtro */}
+                        <Tabs
+                            activeKey={tipoFiltro}
+                            onChange={setTipoFiltro}
+                            items={tabs}
+                            size="small"
+                            style={{
+                                padding: '0 var(--space-md)',
+                                marginBottom: 0
+                            }}
+                        />
 
-                                <Card
-                                    style={{
-                                        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                                        color: 'white',
-                                        border: 'none'
-                                    }}
-                                >
-                                    <div style={{ textAlign: 'center' }}>
-                                        <ApiOutlined style={{ fontSize: '2rem', marginBottom: '0.5rem' }} />
-                                        <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>
-                                            {contadores.sistema}
-                                        </div>
-                                        <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
-                                            Pruebas de Sistema
-                                        </div>
-                                    </div>
-                                </Card>
-
-                                <Card
-                                    style={{
-                                        background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                                        color: 'white',
-                                        border: 'none'
-                                    }}
-                                >
-                                    <div style={{ textAlign: 'center' }}>
-                                        <AppstoreOutlined style={{ fontSize: '2rem', marginBottom: '0.5rem' }} />
-                                        <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>
-                                            {contadores.componentes}
-                                        </div>
-                                        <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
-                                            Pruebas de Componentes
-                                        </div>
-                                    </div>
-                                </Card>
+                        {/* Lista scrolleable */}
+                        {pruebas.length === 0 ? (
+                            <div className="tab-empty-state">
+                                <Empty description="No hay pruebas creadas" />
                             </div>
+                        ) : pruebasFiltradas.length === 0 ? (
+                            <div className="tab-empty-state">
+                                <Empty description="No se encontraron pruebas" />
+                            </div>
+                        ) : (
+                            <div style={{ flex: 1, overflow: 'auto', padding: 'var(--space-md)' }}>
+                                <List
+                                    dataSource={pruebasFiltradas}
+                                    loading={loading}
+                                    renderItem={(prueba) => {
+                                        const config = getTipoConfig(prueba.tipo_prueba);
 
-                            {/* Resumen Total */}
-                            <Card
-                                title="Resumen General de Pruebas"
-                                extra={
-                                    <Button
-                                        type="primary"
-                                        icon={<PlusOutlined />}
-                                        onClick={onCrearPrueba}
-                                    >
-                                        Nueva Prueba
-                                    </Button>
-                                }
-                            >
+                                        return (
+                                            <List.Item
+                                                style={{
+                                                    padding: 'var(--space-md)',
+                                                    marginBottom: 'var(--space-md)',
+                                                    background: 'var(--bg-hover)',
+                                                    borderRadius: 'var(--border-radius)',
+                                                    border: '2px solid var(--border-color)',
+                                                    cursor: 'pointer',
+                                                    transition: 'all var(--transition-normal)'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.borderColor = config.color;
+                                                    e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+                                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.borderColor = 'var(--border-color)';
+                                                    e.currentTarget.style.boxShadow = 'none';
+                                                    e.currentTarget.style.transform = 'translateY(0)';
+                                                }}
+                                                onClick={() => onEditarPrueba(prueba)}
+                                            >
+                                                <List.Item.Meta
+                                                    avatar={
+                                                        <div style={{
+                                                            width: '48px',
+                                                            height: '48px',
+                                                            borderRadius: 'var(--border-radius-lg)',
+                                                            background: config.bgColor,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            color: config.color,
+                                                            fontSize: '1.5rem'
+                                                        }}>
+                                                            {config.icon}
+                                                        </div>
+                                                    }
+                                                    title={
+                                                        <div>
+                                                            <div style={{
+                                                                fontSize: 'var(--font-size-base)',
+                                                                fontWeight: 'var(--font-weight-medium)',
+                                                                marginBottom: 'var(--space-sm)',
+                                                                color: 'var(--text-primary)'
+                                                            }}>
+                                                                {prueba.nombre}
+                                                            </div>
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                gap: 'var(--space-sm)',
+                                                                alignItems: 'center'
+                                                            }}>
+                                                                <Tag color={config.color} style={{ margin: 0 }}>
+                                                                    {config.label}
+                                                                </Tag>
+                                                                <span style={{
+                                                                    fontSize: 'var(--font-size-sm)',
+                                                                    color: 'var(--text-tertiary)'
+                                                                }}>
+                                                                    {prueba.codigo}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                    description={
+                                                        prueba.descripcion && (
+                                                            <div style={{
+                                                                fontSize: 'var(--font-size-sm)',
+                                                                marginTop: 'var(--space-sm)',
+                                                                color: 'var(--text-secondary)'
+                                                            }}>
+                                                                {prueba.descripcion.substring(0, 100)}...
+                                                            </div>
+                                                        )
+                                                    }
+                                                />
+                                            </List.Item>
+                                        );
+                                    }}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Columna Derecha: Resumen y Estadísticas */}
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 'var(--space-xl)',
+                        overflow: 'auto'
+                    }}>
+
+                        {/* Resumen Total usando clases CSS */}
+                        <Card
+                            title={
+                                <span style={{
+                                    color: 'var(--text-primary)',
+                                    fontSize: 'var(--font-size-lg)',
+                                    fontWeight: 'var(--font-weight-semibold)'
+                                }}>
+                                    Resumen General de Pruebas
+                                </span>
+                            }
+
+                            style={{
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: 'var(--border-radius-lg)'
+                            }}
+                        >
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: 'var(--space-md) 0'
+                            }}>
+                                <div>
+                                    <div style={{
+                                        fontSize: '3rem',
+                                        fontWeight: 'var(--font-weight-bold)',
+                                        color: 'var(--primary-color)'
+                                    }}>
+                                        {contadores.total}
+                                    </div>
+                                    <div style={{
+                                        fontSize: 'var(--font-size-base)',
+                                        color: 'var(--text-secondary)'
+                                    }}>
+                                        Total de Casos de Prueba
+                                    </div>
+                                </div>
+
                                 <div style={{
                                     display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: '1rem 0'
+                                    flexDirection: 'column',
+                                    gap: 'var(--space-md)'
                                 }}>
-                                    <div>
-                                        <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#1890ff' }}>
-                                            {contadores.total}
-                                        </div>
-                                        <div style={{ fontSize: '1rem', color: '#666' }}>
-                                            Total de Casos de Prueba
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 'var(--space-md)',
+                                        padding: 'var(--space-sm) var(--space-md)',
+                                        background: '#f6ffed',
+                                        borderRadius: 'var(--border-radius)'
+                                    }}>
+                                        <ExperimentOutlined style={{ fontSize: '1.5rem', color: '#52c41a' }} />
+                                        <div>
+                                            <div style={{
+                                                fontSize: '1.5rem',
+                                                fontWeight: 'var(--font-weight-bold)',
+                                                color: '#52c41a'
+                                            }}>
+                                                {contadores.unitarias}
+                                            </div>
+                                            <div style={{
+                                                fontSize: 'var(--font-size-sm)',
+                                                color: 'var(--text-secondary)'
+                                            }}>
+                                                Unitarias
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div style={{
                                         display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: '0.75rem'
+                                        alignItems: 'center',
+                                        gap: 'var(--space-md)',
+                                        padding: 'var(--space-sm) var(--space-md)',
+                                        background: '#e6f4ff',
+                                        borderRadius: 'var(--border-radius)'
                                     }}>
-                                        <div style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '1rem',
-                                            padding: '0.5rem 1rem',
-                                            background: '#f6ffed',
-                                            borderRadius: '6px'
-                                        }}>
-                                            <ExperimentOutlined style={{ fontSize: '1.5rem', color: '#52c41a' }} />
-                                            <div>
-                                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#52c41a' }}>
-                                                    {contadores.unitarias}
-                                                </div>
-                                                <div style={{ fontSize: '0.85rem', color: '#666' }}>Unitarias</div>
+                                        <ApiOutlined style={{ fontSize: '1.5rem', color: '#1890ff' }} />
+                                        <div>
+                                            <div style={{
+                                                fontSize: '1.5rem',
+                                                fontWeight: 'var(--font-weight-bold)',
+                                                color: '#1890ff'
+                                            }}>
+                                                {contadores.sistema}
+                                            </div>
+                                            <div style={{
+                                                fontSize: 'var(--font-size-sm)',
+                                                color: 'var(--text-secondary)'
+                                            }}>
+                                                Sistema
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <div style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '1rem',
-                                            padding: '0.5rem 1rem',
-                                            background: '#e6f4ff',
-                                            borderRadius: '6px'
-                                        }}>
-                                            <ApiOutlined style={{ fontSize: '1.5rem', color: '#1890ff' }} />
-                                            <div>
-                                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1890ff' }}>
-                                                    {contadores.sistema}
-                                                </div>
-                                                <div style={{ fontSize: '0.85rem', color: '#666' }}>Sistema</div>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 'var(--space-md)',
+                                        padding: 'var(--space-sm) var(--space-md)',
+                                        background: '#f9f0ff',
+                                        borderRadius: 'var(--border-radius)'
+                                    }}>
+                                        <AppstoreOutlined style={{ fontSize: '1.5rem', color: '#722ed1' }} />
+                                        <div>
+                                            <div style={{
+                                                fontSize: '1.5rem',
+                                                fontWeight: 'var(--font-weight-bold)',
+                                                color: '#722ed1'
+                                            }}>
+                                                {contadores.componentes}
                                             </div>
-                                        </div>
-
-                                        <div style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '1rem',
-                                            padding: '0.5rem 1rem',
-                                            background: '#f9f0ff',
-                                            borderRadius: '6px'
-                                        }}>
-                                            <AppstoreOutlined style={{ fontSize: '1.5rem', color: '#722ed1' }} />
-                                            <div>
-                                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#722ed1' }}>
-                                                    {contadores.componentes}
-                                                </div>
-                                                <div style={{ fontSize: '0.85rem', color: '#666' }}>Componentes</div>
+                                            <div style={{
+                                                fontSize: 'var(--font-size-sm)',
+                                                color: 'var(--text-secondary)'
+                                            }}>
+                                                Componentes
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </Card>
+                            </div>
+                        </Card>
 
-                            {/* Información de Ayuda */}
-                            <Card
-                                style={{
-                                    background: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
-                                    border: 'none'
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'start', gap: '1rem' }}>
-                                    <div style={{ fontSize: '2rem' }}>💡</div>
-                                    <div>
-                                        <h4 style={{ margin: '0 0 0.5rem 0' }}>¿Cómo gestionar tus pruebas?</h4>
-                                        <p style={{ margin: 0, fontSize: '0.9rem' }}>
-                                            Haz clic en cualquier prueba de la lista para editarla o visualizar su código.
-                                            También puedes crear nuevas pruebas usando el botón "Nueva Prueba".
-                                        </p>
-                                    </div>
+                        {/* Información de Ayuda usando variables CSS */}
+                        <Card
+                            style={{
+                                background: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+                                border: 'none',
+                                borderRadius: 'var(--border-radius-lg)'
+                            }}
+                        >
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'start',
+                                gap: 'var(--space-md)'
+                            }}>
+                                <div style={{ fontSize: '2rem' }}>💡</div>
+                                <div>
+                                    <h4 style={{
+                                        margin: '0 0 var(--space-sm) 0',
+                                        fontSize: 'var(--font-size-base)',
+                                        fontWeight: 'var(--font-weight-semibold)'
+                                    }}>
+                                        ¿Cómo gestionar tus pruebas?
+                                    </h4>
+                                    <p style={{
+                                        margin: 0,
+                                        fontSize: 'var(--font-size-sm)',
+                                        lineHeight: 'var(--line-height-normal)'
+                                    }}>
+                                        Haz clic en cualquier prueba de la lista para editarla o visualizar su código.
+                                        También puedes crear nuevas pruebas usando el botón "Nueva Prueba".
+                                    </p>
                                 </div>
-                            </Card>
-                        </div>
+                            </div>
+                        </Card>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 

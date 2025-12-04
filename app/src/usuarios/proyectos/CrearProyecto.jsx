@@ -1,32 +1,23 @@
 import React, { useState } from "react";
-import { Form, Input, Select, Button, message, Typography } from "antd";
+import { Form, Input, Button, Typography } from "antd";
 import { ArrowLeftOutlined, SaveOutlined, ProjectOutlined } from '@ant-design/icons';
-import { getStoredToken, API_ENDPOINTS, postFormDataAuth } from "../../../config";
 import '../../styles/forms.css';
 import '../../styles/buttons.css';
 
-const { Option } = Select;
 const { Title } = Typography;
 
-const CrearProyecto = ({ onCreado, onBack }) => {
+const CrearProyecto = ({ onCreado, onBack, crearProyecto }) => {
     const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
 
     const handleSubmit = async (values) => {
         setLoading(true);
-        const token = getStoredToken();
-        const formData = new FormData();
-        formData.append("nombre", values.nombre);
-        formData.append("descripcion", values.descripcion || "");
-        formData.append("estado", values.estado);
-
         try {
-            const res = await postFormDataAuth(API_ENDPOINTS.CREAR_PROYECTO, formData, token);
-            message.success(res.mensaje || "Proyecto creado exitosamente");
-            form.resetFields(); // Limpiar el formulario después de crear
-            onCreado();
-        } catch (error) {
-            message.error(error.message);
+            const result = await crearProyecto(values);
+            if (result.success) {
+                form.resetFields();
+                onCreado();
+            }
         } finally {
             setLoading(false);
         }
@@ -41,10 +32,22 @@ const CrearProyecto = ({ onCreado, onBack }) => {
     return (
         <div className={`form-container ${loading ? 'form-loading' : ''}`}>
             <div className="form-header">
-                <ProjectOutlined style={{ fontSize: '2rem', color: 'var(--secondary-color)', marginBottom: '0.5rem' }} />
+                <div style={{
+                    width: '64px',
+                    height: '64px',
+                    background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))',
+                    borderRadius: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '1rem',
+                    boxShadow: 'var(--shadow-primary)'
+                }}>
+                    <ProjectOutlined style={{ fontSize: '2rem', color: 'white' }} />
+                </div>
                 <Title level={3} className="form-title">Crear Nuevo Proyecto</Title>
                 <p className="form-subtitle">
-                    Completa la información básica para crear tu nuevo proyecto
+                    Completa la información para crear tu nuevo proyecto
                 </p>
             </div>
 
@@ -55,7 +58,11 @@ const CrearProyecto = ({ onCreado, onBack }) => {
                 requiredMark={false}
             >
                 <Form.Item
-                    label="Nombre del Proyecto"
+                    label={
+                        <span style={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                            Nombre del Proyecto
+                        </span>
+                    }
                     name="nombre"
                     className="form-field"
                     rules={[
@@ -65,13 +72,18 @@ const CrearProyecto = ({ onCreado, onBack }) => {
                     ]}
                 >
                     <Input
-                        placeholder="Ingrese un nombre descriptivo para su proyecto"
+                        placeholder="Ej: Sistema de Gestión de Inventario"
                         size="large"
+                        prefix={<ProjectOutlined style={{ color: 'var(--text-tertiary)' }} />}
                     />
                 </Form.Item>
 
                 <Form.Item
-                    label="Descripción"
+                    label={
+                        <span style={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-medium)' }}>
+                            Descripción <span style={{ color: 'var(--text-tertiary)', fontWeight: 'normal' }}>(opcional)</span>
+                        </span>
+                    }
                     name="descripcion"
                     className="form-field"
                     rules={[
@@ -80,45 +92,11 @@ const CrearProyecto = ({ onCreado, onBack }) => {
                 >
                     <Input.TextArea
                         rows={4}
-                        placeholder="Descripción opcional del proyecto (máximo 500 caracteres)"
+                        placeholder="Describe brevemente el propósito y alcance de tu proyecto..."
                         showCount
                         maxLength={500}
+                        style={{ resize: 'none' }}
                     />
-                </Form.Item>
-
-                <Form.Item
-                    label="Estado Inicial"
-                    name="estado"
-                    initialValue="Requisitos"
-                    className="form-field"
-                    rules={[
-                        { required: true, message: "Por favor seleccione un estado" }
-                    ]}
-                >
-                    <Select size="large">
-                        <Option value="Requisitos">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{
-                                    width: '8px',
-                                    height: '8px',
-                                    backgroundColor: 'var(--secondary-color)',
-                                    borderRadius: '50%'
-                                }}></span>
-                                Requisitos
-                            </div>
-                        </Option>
-                        <Option value="Generación">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{
-                                    width: '8px',
-                                    height: '8px',
-                                    backgroundColor: 'var(--success-color)',
-                                    borderRadius: '50%'
-                                }}></span>
-                                Generación
-                            </div>
-                        </Option>
-                    </Select>
                 </Form.Item>
 
                 <div className="form-actions">
@@ -127,6 +105,7 @@ const CrearProyecto = ({ onCreado, onBack }) => {
                         onClick={handleCancel}
                         className="btn btn-secondary"
                         disabled={loading}
+                        size="large"
                     >
                         Cancelar
                     </Button>
@@ -135,6 +114,7 @@ const CrearProyecto = ({ onCreado, onBack }) => {
                         loading={loading}
                         icon={<SaveOutlined />}
                         className="btn btn-primary"
+                        size="large"
                     >
                         {loading ? 'Creando...' : 'Crear Proyecto'}
                     </Button>

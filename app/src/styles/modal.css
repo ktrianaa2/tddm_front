@@ -1,0 +1,372 @@
+/* modal.css - Estilos para modales con soporte de tema claro/oscuro */
+
+/* === BASE MODAL === */
+.ant-modal-root {
+  z-index: 1000;
+}
+
+.ant-modal-mask {
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+[data-theme="dark"] .ant-modal-mask {
+  background-color: rgba(0, 0, 0, 0.65);
+}
+
+/* === CONTENEDOR PRINCIPAL === */
+.ant-modal-content {
+  background-color: var(--bg-card) !important;
+  border-radius: var(--border-radius-lg) !important;
+  box-shadow: var(--shadow-xl) !important;
+  border: 1px solid var(--border-color) !important;
+  overflow: hidden;
+}
+
+/* === HEADER === */
+.ant-modal-header {
+  background-color: var(--bg-card) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0 !important;
+  padding: var(--space-lg) !important;
+  margin-bottom: 0 !important;
+}
+
+.ant-modal-title {
+  color: var(--text-primary) !important;
+  font-size: var(--font-size-lg) !important;
+  font-weight: var(--font-weight-semibold) !important;
+  line-height: var(--line-height-tight) !important;
+}
+
+/* Botón de cerrar (X) */
+.ant-modal-close {
+  color: var(--text-secondary) !important;
+  transition: all var(--transition-normal) !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: var(--border-radius) !important;
+  top: var(--space-md) !important;
+  right: var(--space-md) !important;
+}
+
+.ant-modal-close:hover {
+  color: var(--text-primary) !important;
+  background-color: var(--bg-hover) !important;
+}
+
+.ant-modal-close-x {
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  font-size: 16px !important;
+}
+
+/* === BODY === */
+.ant-modal-body {
+  background-color: var(--bg-card) !important;
+  padding: var(--space-lg) !important;
+  color: var(--text-primary) !important;
+  font-size: var(--font-size-base) !important;
+  line-height: var(--line-height-normal) !important;
+}
+
+/* === FOOTER === */
+.ant-modal-footer {
+  background-color: var(--bg-card) !important;
+  border-top: 1px solid var(--border-color) !important;
+  border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg) !important;
+  padding: var(--space-md) var(--space-lg) !important;
+  margin-top: 0 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: var(--space-sm) !important;
+}
+
+.ant-modal-footer .ant-btn {
+  margin-left: 0 !important;
+}
+
+/* === ANIMACIONES === */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ant-modal {
+  animation: modalFadeIn var(--transition-normal);
+}
+
+/* === VARIANTES DE MODALES === */
+
+/* Modal de Advertencia */
+.modal-warning .ant-modal-header {
+  border-bottom: 2px solid var(--warning-color) !important;
+}
+
+/* Modal de Éxito */
+.modal-success .ant-modal-header {
+  border-bottom: 2px solid var(--success-color) !important;
+}
+
+/* Modal de Error */
+.modal-error .ant-modal-header {
+  border-bottom: 2px solid var(--error-color) !important;
+}
+
+/* Modal de Información */
+.modal-info .ant-modal-header {
+  border-bottom: 2px solid var(--info-color) !important;
+}
+
+/* === COMPONENTES INTERNOS DEL MODAL === */
+
+/* Warning Box */
+.warning-box {
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-color);
+  border-radius: var(--border-radius);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  transition: all var(--transition-normal);
+}
+
+.warning-box-title {
+  margin: 0 0 var(--space-sm) 0;
+  color: var(--warning-color);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.warning-box ul {
+  margin: var(--space-sm) 0 0 0;
+  padding-left: var(--space-lg);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.warning-box li {
+  margin: var(--space-sm) 0;
+  line-height: var(--line-height-normal);
+}
+
+/* Success Box */
+.success-box {
+  background: var(--success-bg);
+  border: 1px solid var(--success-color);
+  border-radius: var(--border-radius);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  transition: all var(--transition-normal);
+}
+
+.success-box-title {
+  margin: 0 0 var(--space-sm) 0;
+  color: var(--success-color);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* Error Box */
+.error-box {
+  background: var(--error-bg);
+  border: 1px solid var(--error-color);
+  border-radius: var(--border-radius);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  transition: all var(--transition-normal);
+}
+
+.error-box-title {
+  margin: 0 0 var(--space-sm) 0;
+  color: var(--error-color);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* Info Box */
+.info-box {
+  background: var(--info-bg);
+  border: 1px solid var(--info-color);
+  border-radius: var(--border-radius);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  transition: all var(--transition-normal);
+}
+
+.info-box-title {
+  margin: 0 0 var(--space-sm) 0;
+  color: var(--info-color);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* === TEXTO DENTRO DE MODALES === */
+.modal-text-primary {
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  margin-bottom: var(--space-md);
+}
+
+.modal-text-secondary {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  margin-bottom: var(--space-md);
+}
+
+.modal-text-small {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+/* === LISTA DE ITEMS === */
+.modal-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-md) 0;
+}
+
+.modal-list-item {
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.modal-list-item:last-child {
+  border-bottom: none;
+}
+
+.modal-list-item:hover {
+  background-color: var(--bg-hover);
+  padding-left: var(--space-sm);
+  border-radius: var(--border-radius);
+  transition: all var(--transition-fast);
+}
+
+/* === DIVISOR === */
+.modal-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: var(--space-lg) 0;
+  border: none;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .ant-modal {
+    max-width: calc(100vw - 32px) !important;
+    margin: 16px auto !important;
+  }
+
+  .ant-modal-header {
+    padding: var(--space-md) !important;
+  }
+
+  .ant-modal-body {
+    padding: var(--space-md) !important;
+  }
+
+  .ant-modal-footer {
+    padding: var(--space-sm) var(--space-md) !important;
+    flex-direction: column;
+  }
+
+  .ant-modal-footer .ant-btn {
+    width: 100%;
+  }
+}
+
+/* === TRANSICIONES SUAVES ENTRE TEMAS === */
+.ant-modal-content,
+.ant-modal-header,
+.ant-modal-body,
+.ant-modal-footer,
+.warning-box,
+.success-box,
+.error-box,
+.info-box {
+  transition: background-color var(--transition-normal),
+              color var(--transition-normal),
+              border-color var(--transition-normal);
+}
+
+/* === ESTADO DE LOADING === */
+.ant-modal-body.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* === SCROLLBAR PERSONALIZADO PARA MODALES === */
+.ant-modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ant-modal-body::-webkit-scrollbar-track {
+  background: var(--bg-container);
+  border-radius: var(--border-radius);
+}
+
+.ant-modal-body::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--border-radius);
+  transition: background var(--transition-fast);
+}
+
+.ant-modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+/* === FIX PARA ANT DESIGN CONFIRM MODALS === */
+.ant-modal-confirm .ant-modal-content {
+  background-color: var(--bg-card) !important;
+}
+
+.ant-modal-confirm .ant-modal-body {
+  padding: var(--space-lg) !important;
+}
+
+.ant-modal-confirm-body-wrapper {
+  color: var(--text-primary) !important;
+}
+
+.ant-modal-confirm-title {
+  color: var(--text-primary) !important;
+  font-weight: var(--font-weight-semibold) !important;
+}
+
+.ant-modal-confirm-content {
+  color: var(--text-secondary) !important;
+  margin-top: var(--space-sm) !important;
+}
+
+.ant-modal-confirm-btns {
+  margin-top: var(--space-lg) !important;
+  display: flex !important;
+  gap: var(--space-sm) !important;
+  justify-content: flex-end !important;
+}

@@ -1,4 +1,4 @@
-// config.js - Configuración actualizada con endpoints de requisitos y funciones PUT/DELETE
+// config.js - Configuración actualizada con endpoint cambiar-estado
 
 // URL base de tu API
 export const API_BASE_URL = 'http://localhost:8000'; // URL de API
@@ -16,6 +16,7 @@ export const API_ENDPOINTS = {
   OBTENER_PROYECTO: '/app/proyectos/obtener_proyecto', // Se concatena /:id en el componente
   CREAR_PROYECTO: '/app/proyectos/crear/',
   EDITAR_PROYECTO: '/app/proyectos/editar',      // Se concatena /:id en el componente
+  CAMBIAR_ESTADO_PROYECTO: '/app/proyectos/cambiar-estado', // Se concatena /:id en el componente
   ELIMINAR_PROYECTO: '/app/proyectos/eliminar',  // Se concatena /:id en el componente
 
    // Tipos de Prueba
@@ -254,7 +255,7 @@ export const postJSONAuth = async (endpoint, data, token) => {
   }
 };
 
-// PUT JSON con autenticación (JWT) - AGREGADA
+// PUT JSON con autenticación (JWT)
 export const putJSONAuth = async (endpoint, data, token) => {
   try {
     const response = await fetch(buildApiUrl(endpoint), {
@@ -291,7 +292,7 @@ export const putJSONAuth = async (endpoint, data, token) => {
   }
 };
 
-// DELETE con autenticación (JWT) - AGREGADA
+// DELETE con autenticación (JWT)
 export const deleteWithAuth = async (endpoint, token) => {
   try {
     const response = await fetch(buildApiUrl(endpoint), {

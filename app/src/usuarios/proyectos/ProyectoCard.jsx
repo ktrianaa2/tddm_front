@@ -1,10 +1,9 @@
 import React from "react";
-import { Card, Button, Tag, Typography } from "antd";
-import { EditOutlined, EyeOutlined, DeleteOutlined, CalendarOutlined } from '@ant-design/icons';
+import { Card, Button, Tag } from "antd";
+import { EditOutlined, DeleteOutlined, CalendarOutlined } from '@ant-design/icons';
 import '../../styles/project-card.css';
 import '../../styles/buttons.css';
-
-const { Text } = Typography;
+import '../../styles/tags.css';
 
 const ProyectoCard = ({ proyecto, onEditar, onEliminar, onVer }) => {
   const handleCardClick = () => {
@@ -21,8 +20,19 @@ const ProyectoCard = ({ proyecto, onEditar, onEliminar, onVer }) => {
     onEliminar(proyecto.proyecto_id);
   };
 
-  const handleViewClick = (e) => {
-    e.stopPropagation();
+  // Determinar la clase del tag según el estado
+  const getEstadoTagClass = (estado) => {
+    const estadoMap = {
+      "Requisitos": "tag-blue",
+      "Análisis": "tag-purple",
+      "Diseño": "tag-info",
+      "Desarrollo": "tag-warning",
+      "Pruebas": "tag-orange",
+      "Completado": "tag-success",
+      "En Pausa": "tag-secondary",
+      "Cancelado": "tag-danger"
+    };
+    return estadoMap[estado] || "tag-blue";
   };
 
   return (
@@ -42,7 +52,7 @@ const ProyectoCard = ({ proyecto, onEditar, onEliminar, onVer }) => {
 
         <div className="project-card-field">
           <span className="project-card-label">Estado:</span>
-          <Tag color={proyecto.estado === "Requisitos" ? "blue" : "green"}>
+          <Tag className={`tag ${getEstadoTagClass(proyecto.estado)}`}>
             {proyecto.estado}
           </Tag>
         </div>
@@ -55,13 +65,6 @@ const ProyectoCard = ({ proyecto, onEditar, onEliminar, onVer }) => {
       </div>
 
       <div className="project-card-actions">
-        <Button
-          icon={<EyeOutlined />}
-          className="btn btn-info btn-card"
-          onClick={handleViewClick}
-        >
-          Ver
-        </Button>
         <Button
           icon={<EditOutlined />}
           className="btn btn-primary btn-card"

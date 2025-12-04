@@ -1,0 +1,320 @@
+/* tags.css - Estilos unificados para tags con soporte de tema */
+
+/* === BASE === */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  border: none;
+  transition: all var(--transition-normal);
+  line-height: 1.5;
+}
+
+/* === VARIANTES DE COLOR === */
+
+/* Primario (morado) */
+.tag-primary {
+  background: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.tag-primary:hover {
+  background: var(--primary-color);
+  color: var(--text-white);
+  transform: translateY(-1px);
+}
+
+/* Éxito (verde) */
+.tag-success {
+  background: var(--success-light);
+  color: var(--success-color);
+}
+
+.tag-success:hover {
+  background: var(--success-color);
+  color: var(--text-white);
+  transform: translateY(-1px);
+}
+
+/* Advertencia (amarillo) */
+.tag-warning {
+  background: var(--warning-light);
+  color: var(--warning-color);
+}
+
+.tag-warning:hover {
+  background: var(--warning-color);
+  color: var(--text-white);
+  transform: translateY(-1px);
+}
+
+/* Peligro (rojo) */
+.tag-danger {
+  background: var(--error-light);
+  color: var(--error-color);
+}
+
+.tag-danger:hover {
+  background: var(--error-color);
+  color: var(--text-white);
+  transform: translateY(-1px);
+}
+
+/* Información (cyan) */
+.tag-info {
+  background: var(--info-light);
+  color: var(--info-color);
+}
+
+.tag-info:hover {
+  background: var(--info-color);
+  color: var(--text-white);
+  transform: translateY(-1px);
+}
+
+/* Secundario (gris) */
+.tag-secondary {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.tag-secondary:hover {
+  background: var(--bg-gray);
+  color: var(--text-primary);
+  border-color: var(--primary-color);
+}
+
+/* === VARIANTES ESPECÍFICAS PARA ESTADOS === */
+.tag-blue {
+  background: var(--info-light);
+  color: var(--info-color);
+}
+
+.tag-green {
+  background: var(--success-light);
+  color: var(--success-color);
+}
+
+.tag-orange {
+  background: var(--warning-light);
+  color: var(--warning-color);
+}
+
+.tag-red {
+  background: var(--error-light);
+  color: var(--error-color);
+}
+
+.tag-purple {
+  background: var(--primary-light);
+  color: var(--primary-color);
+}
+
+/* === TAMAÑOS === */
+.tag-sm {
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 12px;
+}
+
+.tag-lg {
+  padding: 6px 16px;
+  font-size: 14px;
+  border-radius: 24px;
+}
+
+/* === VARIANTES OUTLINE === */
+.tag-outline {
+  background: transparent;
+  border: 1.5px solid currentColor;
+}
+
+.tag-primary-outline {
+  background: transparent;
+  border: 1.5px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+.tag-primary-outline:hover {
+  background: var(--primary-color);
+  color: var(--text-white);
+}
+
+.tag-success-outline {
+  background: transparent;
+  border: 1.5px solid var(--success-color);
+  color: var(--success-color);
+}
+
+.tag-success-outline:hover {
+  background: var(--success-color);
+  color: var(--text-white);
+}
+
+.tag-warning-outline {
+  background: transparent;
+  border: 1.5px solid var(--warning-color);
+  color: var(--warning-color);
+}
+
+.tag-warning-outline:hover {
+  background: var(--warning-color);
+  color: var(--text-white);
+}
+
+.tag-danger-outline {
+  background: transparent;
+  border: 1.5px solid var(--error-color);
+  color: var(--error-color);
+}
+
+.tag-danger-outline:hover {
+  background: var(--error-color);
+  color: var(--text-white);
+}
+
+.tag-info-outline {
+  background: transparent;
+  border: 1.5px solid var(--info-color);
+  color: var(--info-color);
+}
+
+.tag-info-outline:hover {
+  background: var(--info-color);
+  color: var(--text-white);
+}
+
+/* === TAG CON PUNTO DE ESTADO === */
+.tag-with-dot {
+  position: relative;
+  padding-left: 20px;
+}
+
+.tag-with-dot::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* === TAG CLOSEABLE === */
+.tag-closeable {
+  padding-right: 8px;
+}
+
+.tag-close-icon {
+  margin-left: 4px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity var(--transition-normal);
+}
+
+.tag-close-icon:hover {
+  opacity: 1;
+}
+
+/* === FIX PARA ANT DESIGN === */
+.ant-tag.tag-primary {
+  background: var(--primary-light) !important;
+  color: var(--primary-color) !important;
+  border: none !important;
+}
+
+.ant-tag.tag-success {
+  background: var(--success-light) !important;
+  color: var(--success-color) !important;
+  border: none !important;
+}
+
+.ant-tag.tag-warning {
+  background: var(--warning-light) !important;
+  color: var(--warning-color) !important;
+  border: none !important;
+}
+
+.ant-tag.tag-danger {
+  background: var(--error-light) !important;
+  color: var(--error-color) !important;
+  border: none !important;
+}
+
+.ant-tag.tag-info {
+  background: var(--info-light) !important;
+  color: var(--info-color) !important;
+  border: none !important;
+}
+
+.ant-tag.tag-blue {
+  background: var(--info-light) !important;
+  color: var(--info-color) !important;
+  border: none !important;
+}
+
+.ant-tag.tag-green {
+  background: var(--success-light) !important;
+  color: var(--success-color) !important;
+  border: none !important;
+}
+
+.ant-tag.tag-orange {
+  background: var(--warning-light) !important;
+  color: var(--warning-color) !important;
+  border: none !important;
+}
+
+.ant-tag.tag-red {
+  background: var(--error-light) !important;
+  color: var(--error-color) !important;
+  border: none !important;
+}
+
+.ant-tag.tag-purple {
+  background: var(--primary-light) !important;
+  color: var(--primary-color) !important;
+  border: none !important;
+}
+
+/* === ANIMACIONES === */
+@keyframes tagFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.tag {
+  animation: tagFadeIn 0.2s ease-out;
+}
+
+/* === ACCESIBILIDAD === */
+.tag:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 480px) {
+  .tag {
+    font-size: 11px;
+    padding: 3px 10px;
+  }
+  
+  .tag-lg {
+    font-size: 13px;
+    padding: 5px 14px;
+  }
+}

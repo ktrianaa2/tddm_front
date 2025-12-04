@@ -13,11 +13,12 @@
   gap: 6px;
   cursor: pointer;
   font-size: var(--font-size-sm);
+  border: 1px solid transparent;
 }
 
 /* Estados globales */
 .btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none;
 }
@@ -33,16 +34,16 @@
 
 /* Primario (guardar, confirmar, crear) → morado */
 .btn-primary {
-  color: var(--primary-color);
-  background: rgba(139, 92, 246, 0.1);
-  border: 1px solid var(--primary-color);
+  color: var(--text-white);
+  background: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 .btn-primary:hover {
-  background: var(--primary-color);
-  color: var(--text-white);
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
 }
 
 /* Secundario (cancelar, cerrar, volver...) */
@@ -56,62 +57,124 @@
   border-color: var(--primary-color);
   color: var(--primary-color);
   background: var(--bg-gray);
+  transform: translateY(-1px);
 }
 
 /* Éxito (guardar, confirmar) */
 .btn-success {
-  color: var(--success-color);
-  background: var(--success-light);
-  border: 1px solid var(--success-color);
+  color: var(--text-white);
+  background: var(--success-color);
+  border-color: var(--success-color);
 }
 
 .btn-success:hover {
-  background: var(--success-color);
-  color: var(--text-white);
+  background: var(--success-hover);
+  border-color: var(--success-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
 }
 
 /* Advertencia (acciones de riesgo medio) */
 .btn-warning {
-  color: var(--warning-color);
-  background: var(--warning-light);
-  border: 1px solid var(--warning-color);
+  color: var(--text-white);
+  background: var(--warning-color);
+  border-color: var(--warning-color);
 }
 
 .btn-warning:hover {
-  background: var(--warning-color);
-  color: var(--text-white);
+  background: var(--warning-hover);
+  border-color: var(--warning-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
 }
 
 /* Peligro (eliminar, descartar, anular) */
 .btn-danger {
-  color: var(--error-color);
-  background: var(--error-light);
-  border: 1px solid var(--error-color);
+  color: var(--text-white);
+  background: var(--error-color);
+  border-color: var(--error-color);
 }
 
 .btn-danger:hover {
-  background: var(--error-color);
-  color: var(--text-white);
+  background: var(--error-hover);
+  border-color: var(--error-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 4px 12px rgba(251, 113, 133, 0.3);
 }
 
 /* Información (ver, detalles, más info) */
 .btn-info {
-  color: var(--info-color);
-  background: rgba(6, 182, 212, 0.1);
-  border: 1px solid var(--info-color);
+  color: var(--text-white);
+  background: var(--info-color);
+  border-color: var(--info-color);
 }
 
 .btn-info:hover {
+  background: var(--info-hover);
+  border-color: var(--info-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 211, 238, 0.3);
+}
+
+/* === VARIANTES OUTLINE (para uso alternativo) === */
+.btn-primary-outline {
+  color: var(--primary-color);
+  background: var(--primary-light);
+  border: 1.5px solid var(--primary-color);
+}
+
+.btn-primary-outline:hover {
+  background: var(--primary-color);
+  color: var(--text-white);
+  transform: translateY(-2px);
+}
+
+.btn-success-outline {
+  color: var(--success-color);
+  background: var(--success-bg);
+  border: 1.5px solid var(--success-color);
+}
+
+.btn-success-outline:hover {
+  background: var(--success-color);
+  color: var(--text-white);
+  transform: translateY(-2px);
+}
+
+.btn-warning-outline {
+  color: var(--warning-color);
+  background: var(--warning-bg);
+  border: 1.5px solid var(--warning-color);
+}
+
+.btn-warning-outline:hover {
+  background: var(--warning-color);
+  color: var(--text-white);
+  transform: translateY(-2px);
+}
+
+.btn-danger-outline {
+  color: var(--error-color);
+  background: var(--error-bg);
+  border: 1.5px solid var(--error-color);
+}
+
+.btn-danger-outline:hover {
+  background: var(--error-color);
+  color: var(--text-white);
+  transform: translateY(-2px);
+}
+
+.btn-info-outline {
+  color: var(--info-color);
+  background: var(--info-bg);
+  border: 1.5px solid var(--info-color);
+}
+
+.btn-info-outline:hover {
   background: var(--info-color);
   color: var(--text-white);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
 }
 
 /* === Tamaños === */
@@ -140,14 +203,14 @@
 
 /* === Fix para sobrescribir estilos de Ant Design === */
 .ant-btn.btn-primary {
-  background: rgba(139, 92, 246, 0.1) !important;
+  background: var(--primary-color) !important;
   border-color: var(--primary-color) !important;
-  color: var(--primary-color) !important;
+  color: var(--text-white) !important;
 }
 
 .ant-btn.btn-primary:hover {
-  background: var(--primary-color) !important;
-  border-color: var(--primary-color) !important;
+  background: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
   color: var(--text-white) !important;
 }
 
@@ -160,37 +223,109 @@
 .ant-btn.btn-secondary:hover {
   border-color: var(--primary-color) !important;
   color: var(--primary-color) !important;
+  background: var(--bg-gray) !important;
 }
 
 .ant-btn.btn-success {
-  background: var(--success-light) !important;
+  background: var(--success-color) !important;
   border-color: var(--success-color) !important;
-  color: var(--success-color) !important;
+  color: var(--text-white) !important;
 }
 
 .ant-btn.btn-success:hover {
-  background: var(--success-color) !important;
+  background: var(--success-hover) !important;
+  border-color: var(--success-hover) !important;
+  color: var(--text-white) !important;
+}
+
+.ant-btn.btn-warning {
+  background: var(--warning-color) !important;
+  border-color: var(--warning-color) !important;
+  color: var(--text-white) !important;
+}
+
+.ant-btn.btn-warning:hover {
+  background: var(--warning-hover) !important;
+  border-color: var(--warning-hover) !important;
   color: var(--text-white) !important;
 }
 
 .ant-btn.btn-danger {
-  background: var(--error-light) !important;
+  background: var(--error-color) !important;
   border-color: var(--error-color) !important;
-  color: var(--error-color) !important;
+  color: var(--text-white) !important;
 }
 
 .ant-btn.btn-danger:hover {
-  background: var(--error-color) !important;
+  background: var(--error-hover) !important;
+  border-color: var(--error-hover) !important;
   color: var(--text-white) !important;
 }
 
 .ant-btn.btn-info {
-  background: rgba(6, 182, 212, 0.1) !important;
+  background: var(--info-color) !important;
+  border-color: var(--info-color) !important;
+  color: var(--text-white) !important;
+}
+
+.ant-btn.btn-info:hover {
+  background: var(--info-hover) !important;
+  border-color: var(--info-hover) !important;
+  color: var(--text-white) !important;
+}
+
+/* === Fix para variantes outline con Ant Design === */
+.ant-btn.btn-primary-outline {
+  background: var(--primary-light) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+}
+
+.ant-btn.btn-primary-outline:hover {
+  background: var(--primary-color) !important;
+  color: var(--text-white) !important;
+}
+
+.ant-btn.btn-success-outline {
+  background: var(--success-bg) !important;
+  border-color: var(--success-color) !important;
+  color: var(--success-color) !important;
+}
+
+.ant-btn.btn-success-outline:hover {
+  background: var(--success-color) !important;
+  color: var(--text-white) !important;
+}
+
+.ant-btn.btn-warning-outline {
+  background: var(--warning-bg) !important;
+  border-color: var(--warning-color) !important;
+  color: var(--warning-color) !important;
+}
+
+.ant-btn.btn-warning-outline:hover {
+  background: var(--warning-color) !important;
+  color: var(--text-white) !important;
+}
+
+.ant-btn.btn-danger-outline {
+  background: var(--error-bg) !important;
+  border-color: var(--error-color) !important;
+  color: var(--error-color) !important;
+}
+
+.ant-btn.btn-danger-outline:hover {
+  background: var(--error-color) !important;
+  color: var(--text-white) !important;
+}
+
+.ant-btn.btn-info-outline {
+  background: var(--info-bg) !important;
   border-color: var(--info-color) !important;
   color: var(--info-color) !important;
 }
 
-.ant-btn.btn-info:hover {
+.ant-btn.btn-info-outline:hover {
   background: var(--info-color) !important;
   color: var(--text-white) !important;
 }

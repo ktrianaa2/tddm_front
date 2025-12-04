@@ -1,0 +1,34 @@
+/* gestion-tabs.css - Estilos específicos para los tabs de gestión de proyectos */
+
+/* === TABS DE ANT DESIGN === */
+.gestion-tabs .ant-tabs-nav {
+  background: var(--bg-card);
+  padding: 0;
+  margin: 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.gestion-tabs .ant-tabs-nav::before {
+  border-bottom: none;
+}
+
+.gestion-tabs .ant-tabs-nav-list {
+  width: 100%;
+  display: flex;
+}
+
+.gestion-tabs .ant-tabs-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+  color: var(--text-secondary);
+  padding: 16px 24px;
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-normal);
+  margin: 0;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 3px solid transparent;
+}

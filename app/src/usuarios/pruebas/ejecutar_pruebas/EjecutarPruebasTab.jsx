@@ -5,9 +5,7 @@ import {
   message,
   Upload,
   Dropdown,
-  Tooltip,
   Tag,
-  Statistic,
   Row,
   Col,
   Empty,
@@ -37,14 +35,12 @@ import '../../../styles/tabs.css';
 const EjecutarPruebasTab = ({ proyecto }) => {
   const proyectoId = proyecto?.proyecto_id;
 
-  // Hook de pruebas
   const {
     pruebas,
     loading: loadingPruebas,
     cargarPruebas
   } = usePruebas(proyectoId);
 
-  // Estados del componente
   const [pruebaSeleccionada, setPruebaSeleccionada] = useState(null);
   const [codigoUsuario, setCodigoUsuario] = useState('// Escribe tu código aquí o cárgalo desde un archivo\n\n');
   const [codigoGuardado, setCodigoGuardado] = useState('// Escribe tu código aquí o cárgalo desde un archivo\n\n');
@@ -58,17 +54,15 @@ const EjecutarPruebasTab = ({ proyecto }) => {
     pendientes: 0,
     tiempo: 0
   });
-  
+
   const editorRef = useRef(null);
 
-  // Cargar pruebas al montar
   useEffect(() => {
     if (proyectoId) {
       cargarPruebas();
     }
   }, [proyectoId]);
 
-  // Actualizar contador de pendientes cuando se carguen las pruebas
   useEffect(() => {
     if (pruebas.length > 0) {
       setEstadisticas(prev => ({
@@ -79,7 +73,6 @@ const EjecutarPruebasTab = ({ proyecto }) => {
   }, [pruebas]);
 
   const handleSeleccionarPrueba = (prueba) => {
-    // Solo permitir seleccionar pruebas aprobadas
     if (prueba.estado !== 'aprobada') {
       message.warning('Solo se pueden ejecutar pruebas aprobadas');
       return;
@@ -99,22 +92,21 @@ const EjecutarPruebasTab = ({ proyecto }) => {
   };
 
   const agregarResultado = (tipo, mensaje) => {
-    const timestamp = new Date().toLocaleTimeString('es-ES', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      second: '2-digit' 
+    const timestamp = new Date().toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
     });
-    
+
     setResultados(prev => [...prev, { tipo, mensaje, timestamp }]);
   };
 
   const simularEjecucionPaso = async (paso, indice, totalPasos) => {
     agregarResultado('log', `\n[Paso ${indice + 1}/${totalPasos}] ${paso.descripcion}`);
     await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Simular resultado del paso
-    const exito = Math.random() > 0.2; // 80% de éxito
-    
+
+    const exito = Math.random() > 0.2;
+
     if (exito) {
       agregarResultado('success', `✓ Resultado esperado alcanzado: ${paso.resultado_esperado}`);
     } else {
@@ -122,7 +114,7 @@ const EjecutarPruebasTab = ({ proyecto }) => {
       agregarResultado('warning', `  Revisar la implementación del código`);
       return false;
     }
-    
+
     return true;
   };
 
@@ -139,7 +131,7 @@ const EjecutarPruebasTab = ({ proyecto }) => {
 
     setEjecutando(true);
     setResultados([]);
-    
+
     const detallePrueba = pruebaSeleccionada.prueba || pruebaSeleccionada;
     const inicio = Date.now();
 
@@ -150,25 +142,21 @@ const EjecutarPruebasTab = ({ proyecto }) => {
       agregarResultado('info', `Tipo: ${pruebaSeleccionada.tipo_prueba}`);
       agregarResultado('info', `═══════════════════════════════════════`);
 
-      // Mostrar objetivo
       agregarResultado('log', `\n🎯 OBJETIVO: ${detallePrueba.objetivo}`);
 
-      // Verificar precondiciones
       agregarResultado('log', `\n📋 Verificando precondiciones...`);
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       for (const precondicion of detallePrueba.precondiciones || []) {
         agregarResultado('info', `  • ${precondicion}`);
         await new Promise(resolve => setTimeout(resolve, 300));
       }
       agregarResultado('success', '✓ Todas las precondiciones cumplidas');
 
-      // Compilar código del usuario
       agregarResultado('log', `\n⚙️  Compilando código del usuario...`);
       await new Promise(resolve => setTimeout(resolve, 1200));
       agregarResultado('success', '✓ Código compilado exitosamente');
 
-      // Ejecutar pasos de la prueba
       agregarResultado('log', `\n🔄 Ejecutando pasos de la prueba...`);
       agregarResultado('log', `───────────────────────────────────────`);
 
@@ -183,11 +171,10 @@ const EjecutarPruebasTab = ({ proyecto }) => {
         }
       }
 
-      // Verificar postcondiciones
       if (todosLosPasosPasaron) {
         agregarResultado('log', `\n📝 Verificando postcondiciones...`);
         await new Promise(resolve => setTimeout(resolve, 800));
-        
+
         for (const postcondicion of detallePrueba.postcondiciones || []) {
           agregarResultado('info', `  • ${postcondicion}`);
           await new Promise(resolve => setTimeout(resolve, 300));
@@ -195,49 +182,47 @@ const EjecutarPruebasTab = ({ proyecto }) => {
         agregarResultado('success', '✓ Todas las postcondiciones cumplidas');
       }
 
-      // Calcular tiempo
       const tiempoTotal = ((Date.now() - inicio) / 1000).toFixed(2);
 
-      // Resultado final
       agregarResultado('log', `\n═══════════════════════════════════════`);
-      
+
       if (todosLosPasosPasaron) {
         agregarResultado('success', '✅ PRUEBA APROBADA');
         agregarResultado('success', `✓ Todos los pasos ejecutados correctamente (${pasos.length}/${pasos.length})`);
         agregarResultado('log', `\n📊 Criterios de aceptación cumplidos:`);
-        
+
         for (const criterio of detallePrueba.criterios_aceptacion || []) {
           agregarResultado('success', `  ✓ ${criterio}`);
         }
-        
+
         agregarResultado('info', `⏱️  Tiempo de ejecución: ${tiempoTotal}s`);
-        
+
         setEstadisticas(prev => ({
           pasadas: prev.pasadas + 1,
           fallidas: prev.fallidas,
           pendientes: Math.max(0, prev.pendientes - 1),
           tiempo: prev.tiempo + parseFloat(tiempoTotal)
         }));
-        
+
         message.success('¡Prueba ejecutada exitosamente!');
       } else {
         agregarResultado('error', '❌ PRUEBA FALLIDA');
         agregarResultado('error', '✗ Uno o más pasos no se completaron correctamente');
         agregarResultado('warning', '💡 Revisa el código e inténtalo nuevamente');
         agregarResultado('info', `⏱️  Tiempo de ejecución: ${tiempoTotal}s`);
-        
+
         setEstadisticas(prev => ({
           pasadas: prev.pasadas,
           fallidas: prev.fallidas + 1,
           pendientes: Math.max(0, prev.pendientes - 1),
           tiempo: prev.tiempo + parseFloat(tiempoTotal)
         }));
-        
+
         message.error('La prueba falló');
       }
-      
+
       agregarResultado('log', `═══════════════════════════════════════`);
-      
+
     } catch (error) {
       agregarResultado('error', `💥 Error crítico: ${error.message}`);
       message.error('Error al ejecutar la prueba');
@@ -248,7 +233,7 @@ const EjecutarPruebasTab = ({ proyecto }) => {
 
   const handleEjecutarTodas = async () => {
     const pruebasAprobadas = pruebas.filter(p => p.estado === 'aprobada');
-    
+
     if (pruebasAprobadas.length === 0) {
       message.warning('No hay pruebas aprobadas para ejecutar');
       return;
@@ -261,7 +246,7 @@ const EjecutarPruebasTab = ({ proyecto }) => {
 
     setEjecutando(true);
     setResultados([]);
-    
+
     agregarResultado('info', '╔═══════════════════════════════════════╗');
     agregarResultado('info', '║   EJECUCIÓN COMPLETA DE PRUEBAS       ║');
     agregarResultado('info', '╚═══════════════════════════════════════╝');
@@ -275,24 +260,23 @@ const EjecutarPruebasTab = ({ proyecto }) => {
     for (let i = 0; i < pruebasAprobadas.length; i++) {
       const prueba = pruebasAprobadas[i];
       const detalle = prueba.prueba || prueba;
-      
+
       agregarResultado('info', `\n[${i + 1}/${pruebasAprobadas.length}] Ejecutando: ${prueba.nombre}`);
       agregarResultado('log', `Código: ${prueba.codigo} | Tipo: ${prueba.tipo_prueba}`);
-      
+
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simular ejecución de pasos
+
       const pasos = detalle.pasos || [];
       let exito = true;
-      
+
       for (let j = 0; j < pasos.length; j++) {
         await new Promise(resolve => setTimeout(resolve, 500));
-        if (Math.random() < 0.15) { // 15% de fallo
+        if (Math.random() < 0.15) {
           exito = false;
           break;
         }
       }
-      
+
       if (exito) {
         agregarResultado('success', `✅ ${prueba.codigo} - APROBADA`);
         pasadas++;
@@ -310,7 +294,7 @@ const EjecutarPruebasTab = ({ proyecto }) => {
     agregarResultado('success', `✅ Pruebas aprobadas: ${pasadas}/${pruebasAprobadas.length}`);
     agregarResultado('error', `❌ Pruebas fallidas: ${fallidas}/${pruebasAprobadas.length}`);
     agregarResultado('info', `⏱️  Tiempo total: ${tiempoTotal}s`);
-    agregarResultado('info', `📈 Tasa de éxito: ${((pasadas/pruebasAprobadas.length)*100).toFixed(1)}%`);
+    agregarResultado('info', `📈 Tasa de éxito: ${((pasadas / pruebasAprobadas.length) * 100).toFixed(1)}%`);
 
     setEstadisticas({
       pasadas,
@@ -320,7 +304,7 @@ const EjecutarPruebasTab = ({ proyecto }) => {
     });
 
     setEjecutando(false);
-    
+
     if (fallidas === 0) {
       message.success('🎉 ¡Todas las pruebas pasaron exitosamente!');
     } else {
@@ -336,7 +320,7 @@ const EjecutarPruebasTab = ({ proyecto }) => {
 
   const handleCargarArchivo = (info) => {
     const { file } = info;
-    
+
     if (file.status === 'done' || file.originFileObj) {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -351,16 +335,15 @@ const EjecutarPruebasTab = ({ proyecto }) => {
   const handleConectarGitHub = async (valores) => {
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       setConectadoGitHub(true);
       setModalGitHubVisible(false);
       message.success('Repositorio conectado exitosamente');
-      
+
       agregarResultado('success', `✓ Conectado a ${valores.repositorio}`);
       agregarResultado('info', `📂 Rama: ${valores.rama}`);
       agregarResultado('info', `📁 Ruta: ${valores.ruta}`);
-      
-      // Simular carga de código desde GitHub
+
       const codigoSimulado = `// Código cargado desde GitHub: ${valores.repositorio}\n// Rama: ${valores.rama}\n\nfunction ejemploDesdeGitHub() {\n  // Tu código aquí\n  console.log("Código sincronizado desde GitHub");\n}\n`;
       setCodigoUsuario(codigoSimulado);
     } catch (error) {
@@ -407,12 +390,10 @@ const EjecutarPruebasTab = ({ proyecto }) => {
 
   if (loadingPruebas) {
     return (
-      <div className="tabs-container">
-        <div className="tabs-content-wrapper">
-          <div className="tab-loading-state">
-            <Spin size="large" />
-            <div className="tab-loading-text">Cargando pruebas...</div>
-          </div>
+      <div className="tab-main-content">
+        <div className="tab-loading-state">
+          <Spin size="large" />
+          <div className="tab-loading-text">Cargando pruebas...</div>
         </div>
       </div>
     );
@@ -420,50 +401,46 @@ const EjecutarPruebasTab = ({ proyecto }) => {
 
   if (pruebas.length === 0) {
     return (
-      <div className="tabs-container">
-        <div className="tabs-content-wrapper">
-          <Empty
-            description={
-              <div>
-                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                  No hay pruebas disponibles
-                </p>
-                <p style={{ fontSize: '0.9rem', color: '#666' }}>
-                  Primero debes crear y aprobar pruebas en la pestaña "Pruebas"
-                </p>
-              </div>
-            }
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
-        </div>
+      <div className="tab-main-content">
+        <Empty
+          description={
+            <div>
+              <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                No hay pruebas disponibles
+              </p>
+              <p style={{ fontSize: '0.9rem', color: '#666' }}>
+                Primero debes crear y aprobar pruebas en la pestaña "Pruebas"
+              </p>
+            </div>
+          }
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        />
       </div>
     );
   }
 
   if (pruebasAprobadas.length === 0) {
     return (
-      <div className="tabs-container">
-        <div className="tabs-content-wrapper">
-          <Empty
-            description={
-              <div>
-                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                  No hay pruebas aprobadas
-                </p>
-                <p style={{ fontSize: '0.9rem', color: '#666' }}>
-                  Debes aprobar al menos una prueba para poder ejecutarla
-                </p>
-              </div>
-            }
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
-        </div>
+      <div className="tab-main-content">
+        <Empty
+          description={
+            <div>
+              <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                No hay pruebas aprobadas
+              </p>
+              <p style={{ fontSize: '0.9rem', color: '#666' }}>
+                Debes aprobar al menos una prueba para poder ejecutarla
+              </p>
+            </div>
+          }
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        />
       </div>
     );
   }
 
   return (
-    <div className="tabs-container" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Header con estadísticas */}
       <div style={{
         padding: '1rem 1.5rem',
@@ -487,25 +464,22 @@ const EjecutarPruebasTab = ({ proyecto }) => {
           </Col>
 
           <Col>
-            <Space size="middle">
-              <Statistic
-                title="Pasadas"
-                value={estadisticas.pasadas}
-                prefix={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
-                valueStyle={{ fontSize: '1.2rem', color: '#52c41a' }}
-              />
-              <Statistic
-                title="Fallidas"
-                value={estadisticas.fallidas}
-                prefix={<CloseCircleOutlined style={{ color: '#ff4d4f' }} />}
-                valueStyle={{ fontSize: '1.2rem', color: '#ff4d4f' }}
-              />
-              <Statistic
-                title="Pendientes"
-                value={estadisticas.pendientes}
-                prefix={<ClockCircleOutlined style={{ color: '#faad14' }} />}
-                valueStyle={{ fontSize: '1.2rem', color: '#faad14' }}
-              />
+            <Space size="middle" style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ textAlign: 'center' }}>
+                <CheckCircleOutlined style={{ fontSize: '1.5rem', color: '#52c41a', display: 'block', marginBottom: '4px' }} />
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#52c41a' }}>{estadisticas.pasadas}</div>
+                <div style={{ fontSize: '0.75rem', color: '#666' }}>Pasadas</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <CloseCircleOutlined style={{ fontSize: '1.5rem', color: '#ff4d4f', display: 'block', marginBottom: '4px' }} />
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ff4d4f' }}>{estadisticas.fallidas}</div>
+                <div style={{ fontSize: '0.75rem', color: '#666' }}>Fallidas</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <ClockCircleOutlined style={{ fontSize: '1.5rem', color: '#faad14', display: 'block', marginBottom: '4px' }} />
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#faad14' }}>{estadisticas.pendientes}</div>
+                <div style={{ fontSize: '0.75rem', color: '#666' }}>Pendientes</div>
+              </div>
             </Space>
           </Col>
         </Row>
@@ -532,7 +506,7 @@ const EjecutarPruebasTab = ({ proyecto }) => {
               >
                 Ejecutar Prueba
               </Button>
-              
+
               <Button
                 icon={<ThunderboltOutlined />}
                 onClick={handleEjecutarTodas}
@@ -573,7 +547,7 @@ const EjecutarPruebasTab = ({ proyecto }) => {
           {tieneModificaciones && (
             <Tag color="orange">Sin guardar</Tag>
           )}
-          
+
           <Dropdown menu={menuOpciones} trigger={['click']}>
             <Button icon={<SettingOutlined />}>
               Opciones
@@ -588,7 +562,6 @@ const EjecutarPruebasTab = ({ proyecto }) => {
         display: 'flex',
         overflow: 'hidden'
       }}>
-        {/* Lista de pruebas */}
         <div style={{ width: '350px', flexShrink: 0 }}>
           <ListaPruebas
             pruebas={pruebasAprobadas}
@@ -597,8 +570,7 @@ const EjecutarPruebasTab = ({ proyecto }) => {
           />
         </div>
 
-        {/* Editor */}
-        <div style={{ 
+        <div style={{
           flex: 1,
           display: 'flex',
           flexDirection: 'column'
@@ -619,7 +591,7 @@ const EjecutarPruebasTab = ({ proyecto }) => {
               <Tag color="blue">{pruebaSeleccionada.codigo} seleccionada</Tag>
             )}
           </div>
-          
+
           <div style={{ flex: 1, overflow: 'hidden' }}>
             <Editor
               height="100%"
@@ -640,15 +612,13 @@ const EjecutarPruebasTab = ({ proyecto }) => {
             />
           </div>
 
-          {/* Consola de resultados */}
-          <ConsolaResultados 
+          <ConsolaResultados
             resultados={resultados}
             ejecutando={ejecutando}
           />
         </div>
       </div>
 
-      {/* Modal de GitHub */}
       <ModalGitHub
         visible={modalGitHubVisible}
         onCancel={() => setModalGitHubVisible(false)}

@@ -7,12 +7,14 @@ import ModalAdvertencia from './ModalAdvertencia';
 import { useEspecificaciones } from '../../../hooks/useEspecificaciones';
 import { usePruebas } from '../../../hooks/usePruebas';
 import { Spin, message } from 'antd';
+import '../../../styles/tabs.css';
+import '../../../styles/buttons.css';
 
 const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
   const proyectoId = proyecto?.proyecto_id;
 
   // Estados
-  const [vistaActual, setVistaActual] = useState('inicial'); // 'inicial', 'resumen', 'editor'
+  const [vistaActual, setVistaActual] = useState('inicial');
   const [pruebaSeleccionada, setPruebaSeleccionada] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [generandoPruebas, setGenerandoPruebas] = useState(false);
@@ -30,7 +32,7 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     loading: loadingPruebas,
     pruebas,
     contadores,
-    generarPrueba, // Función real de generación con IA
+    generarPrueba,
     cargarPruebas,
     recargarPruebas,
     eliminarPrueba,
@@ -95,10 +97,10 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     setGenerandoPruebas(true);
 
     try {
-      // Llamar a la función real de generación con IA
       const resultado = await generarPrueba();
 
       if (resultado && resultado.total_pruebas > 0) {
+        await recargarPruebas();
         setVistaActual('resumen');
 
         message.success({
@@ -120,7 +122,6 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
   };
 
   const handleCrearPrueba = () => {
-    // Aquí podrías abrir un modal de creación o navegar a la vista de editor
     message.info('Funcionalidad de crear prueba manual - Por implementar');
   };
 
@@ -142,13 +143,11 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     try {
       await eliminarPrueba(prueba.id_prueba);
 
-      // Si era la prueba seleccionada, volver a resumen
       if (pruebaSeleccionada?.id_prueba === prueba.id_prueba) {
         handleVolverAResumen();
       }
 
-      // Si no quedan pruebas, volver a vista inicial
-      if (pruebas.length === 1) { // Solo quedaba esta que se eliminó
+      if (pruebas.length === 1) {
         setVistaActual('inicial');
       }
     } catch (error) {
@@ -185,20 +184,14 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
   const handleRegenerarPrueba = async (prueba) => {
     try {
       setGenerandoPruebas(true);
-
       message.loading('Regenerando prueba con IA...', 0);
 
-      // Llamar a la función de generación
-      // Esto generará nuevas pruebas basadas en las especificaciones actuales
       const resultado = await generarPrueba();
-
       message.destroy();
 
       if (resultado && resultado.total_pruebas > 0) {
         await recargarPruebas();
         message.success('Pruebas regeneradas exitosamente');
-
-        // Volver a la vista de resumen para ver las nuevas pruebas
         handleVolverAResumen();
       } else {
         message.warning('No se pudo regenerar la prueba');
@@ -212,63 +205,52 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     }
   };
 
-  // Loading inicial
+  // === RENDERIZADO DE ESTADOS ===
+
+  // Loading inicial - Usa clases de tabs.css
   if (loading && todasEspecificaciones.length === 0 && pruebas.length === 0) {
     return (
-      <div className="tabs-container">
-        <div className="tabs-content-wrapper">
-          <div className="tab-loading-state">
-            <Spin size="large" className="tab-loading-spinner" />
-            <div className="tab-loading-text">
-              Cargando especificaciones y pruebas...
-            </div>
+      <div className="tab-main-content">
+        <div className="tab-loading-state">
+          <Spin size="large" />
+          <div className="tab-loading-text">
+            Cargando especificaciones y pruebas...
           </div>
         </div>
       </div>
     );
   }
 
-  // Vista de generación de pruebas (loading)
+  // Vista de generación de pruebas (loading) - Usa clases de tabs.css
   if (generandoPruebas) {
     return (
-      <div className="tabs-container">
-        <div className="tabs-content-wrapper">
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '80vh'
-          }}>
-            <Spin size="large" />
-            <p style={{
-              marginTop: '1.5rem',
-              fontSize: '1.2rem',
-              fontWeight: 600,
-              color: 'var(--text-secondary)'
-            }}>
-              🤖 Generando pruebas con IA...
-            </p>
-            <p style={{
-              marginTop: '0.5rem',
-              fontSize: '0.95rem',
-              color: 'var(--text-tertiary)',
-              textAlign: 'center',
-              maxWidth: '500px'
-            }}>
-              Analizando {todasEspecificaciones.length} especificación{todasEspecificaciones.length !== 1 ? 'es' : ''} del proyecto
-              <br />
-              <small style={{ color: '#999', marginTop: '0.5rem', display: 'block' }}>
-                Este proceso puede tomar algunos segundos...
-              </small>
-            </p>
+      <div className="tab-main-content">
+        <div className="tab-loading-state">
+          <Spin size="large" />
+          <div className="tab-loading-text">
+            🤖 Generando pruebas con IA...
           </div>
+          <p style={{
+            marginTop: '0.5rem',
+            fontSize: '0.95rem',
+            color: 'var(--text-tertiary)',
+            textAlign: 'center',
+            maxWidth: '500px'
+          }}>
+            Analizando {todasEspecificaciones.length} especificación{todasEspecificaciones.length !== 1 ? 'es' : ''} del proyecto
+            <br />
+            <small style={{ color: 'var(--text-tertiary)', marginTop: '0.5rem', display: 'block' }}>
+              Este proceso puede tomar algunos segundos...
+            </small>
+          </p>
         </div>
       </div>
     );
   }
 
-  // Renderizar vista según el estado actual
+  // === RENDERIZADO DE VISTAS ===
+
+  // Vista inicial (especificaciones)
   if (vistaActual === 'inicial') {
     return (
       <>
@@ -292,6 +274,7 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     );
   }
 
+  // Vista de resumen de pruebas
   if (vistaActual === 'resumen') {
     return (
       <VistaResumenPruebas
@@ -305,33 +288,32 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     );
   }
 
+  // Vista de editor de pruebas
   if (vistaActual === 'editor') {
     return (
-      <div className="tabs-container">
-        <div className="tabs-content-wrapper">
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '400px 1fr',
-            gap: '1.5rem',
-            height: 'calc(100vh - 200px)',
-            minHeight: '600px'
-          }}>
-            <ListaPruebas
-              pruebas={pruebas}
-              pruebaActiva={pruebaSeleccionada}
-              onSeleccionarPrueba={handleSeleccionarPrueba}
-              onVolver={handleVolverAResumen}
-            />
+      <div className="tab-main-content">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '400px 1fr',
+          gap: 'var(--space-xl)',
+          height: 'calc(100vh - 200px)',
+          minHeight: '600px'
+        }}>
+          <ListaPruebas
+            pruebas={pruebas}
+            pruebaActiva={pruebaSeleccionada}
+            onSeleccionarPrueba={handleSeleccionarPrueba}
+            onVolver={handleVolverAResumen}
+          />
 
-            <EditorPrueba
-              prueba={pruebaSeleccionada}
-              onEliminar={handleEliminarPrueba}
-              onAprobar={handleAprobarPrueba}
-              onGuardarCambios={handleGuardarCambios}
-              onDescartarCambios={handleDescartarCambios}
-              onRegenerar={handleRegenerarPrueba}
-            />
-          </div>
+          <EditorPrueba
+            prueba={pruebaSeleccionada}
+            onEliminar={handleEliminarPrueba}
+            onAprobar={handleAprobarPrueba}
+            onGuardarCambios={handleGuardarCambios}
+            onDescartarCambios={handleDescartarCambios}
+            onRegenerar={handleRegenerarPrueba}
+          />
         </div>
       </div>
     );

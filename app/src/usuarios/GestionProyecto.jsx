@@ -14,6 +14,8 @@ import {
 import '../styles/dashboard.css';
 import '../styles/forms.css';
 import '../styles/buttons.css';
+import '../styles/tabs.css';
+import '../styles/gestion-tabs.css';
 
 // Importar los componentes de las pestañas
 import InfoTab from './proyectos/InfoTab';
@@ -28,23 +30,26 @@ const GestionProyecto = ({ proyecto, onBack, onEditar }) => {
 
   if (!proyecto) {
     return (
-      <div className="dashboard-empty-state">
-        <div className="dashboard-empty-icon">
-          <FileTextOutlined />
+      <div className="tabs-container">
+        <div className="tab-empty-state">
+          <div className="tab-empty-icon">
+            <FileTextOutlined />
+          </div>
+          <h3 className="tab-empty-title">
+            Proyecto no encontrado
+          </h3>
+          <p className="tab-empty-description">
+            No se pudo cargar la información del proyecto
+          </p>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={onBack}
+            className="btn btn-primary"
+            size="large"
+          >
+            Volver al Dashboard
+          </Button>
         </div>
-        <div className="dashboard-empty-title">
-          Proyecto no encontrado
-        </div>
-        <div className="dashboard-empty-description">
-          No se pudo cargar la información del proyecto
-        </div>
-        <Button
-          type="primary"
-          icon={<ArrowLeftOutlined />}
-          onClick={onBack}
-        >
-          Volver al Dashboard
-        </Button>
       </div>
     );
   }
@@ -53,7 +58,7 @@ const GestionProyecto = ({ proyecto, onBack, onEditar }) => {
     {
       key: 'info',
       label: (
-        <span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <InfoCircleOutlined />
           Información
         </span>
@@ -63,7 +68,7 @@ const GestionProyecto = ({ proyecto, onBack, onEditar }) => {
     {
       key: 'especificaciones',
       label: (
-        <span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <FileTextOutlined />
           Especificaciones
         </span>
@@ -73,7 +78,7 @@ const GestionProyecto = ({ proyecto, onBack, onEditar }) => {
     {
       key: 'pruebas',
       label: (
-        <span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <BugOutlined />
           Pruebas
         </span>
@@ -83,7 +88,7 @@ const GestionProyecto = ({ proyecto, onBack, onEditar }) => {
     {
       key: 'ejecutar',
       label: (
-        <span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <PlayCircleOutlined />
           Ejecutar Pruebas
         </span>
@@ -93,51 +98,49 @@ const GestionProyecto = ({ proyecto, onBack, onEditar }) => {
   ];
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '2rem'
-        }}
-      >
-        {/* Botón regresar */}
-        <Button
-          icon={<ArrowLeftOutlined />}
-          onClick={onBack}
-          className="btn btn-secondary"
-        >
-          Regresar
-        </Button>
+    <div className="tabs-container">
+      <div className="tabs-content-wrapper">
+        {/* Header */}
+        <div className="tab-header">
+          {/* Botón regresar */}
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={onBack}
+            className="btn btn-secondary"
+            size="large"
+          >
+            Regresar
+          </Button>
 
-        {/* Título centrado */}
-        <Title
-          level={2}
+          {/* Título */}
+          <div className="tab-header-content">
+            <h1 className="tab-title">
+              {proyecto.nombre}
+            </h1>
+            <p className="tab-subtitle">
+              Gestiona todos los aspectos de tu proyecto
+            </p>
+          </div>
+
+          {/* Espacio para acciones adicionales si las necesitas */}
+          <div className="tab-header-actions">
+            {/* Aquí puedes agregar más botones en el futuro */}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={tabItems}
+          size="large"
+          type="card"
+          className="gestion-tabs"
           style={{
-            margin: 0,
-            textAlign: 'center',
-            flex: 1,
-            color: 'var(--text-primary)'
+            padding: '0'
           }}
-        >
-          {proyecto.nombre}
-        </Title>
+        />
       </div>
-
-      {/* Tabs */}
-      <Tabs
-        activeKey={activeTab}
-        onChange={setActiveTab}
-        items={tabItems}
-        size="large"
-        style={{
-          backgroundColor: 'var(--bg-white)',
-          borderRadius: 'var(--border-radius-lg)',
-          padding: '1rem'
-        }}
-      />
     </div>
   );
 };
