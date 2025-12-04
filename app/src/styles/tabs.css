@@ -1,38 +1,26 @@
-/* tabs.css - Estilos reutilizables para componentes de pestañas - Versión Clara */
-
-/* Variables de colores claros */
-:root {
-    --bg-container-light: #f9fafb;
-    --bg-white: #ffffff;
-    --text-dark: #1f2937;
-    --text-gray: #6b7280;
-    --text-light-gray: #9ca3af;
-    --border-light: #e5e7eb;
-    --primary-light: rgba(79, 70, 229, 0.1);
-    --primary-border: rgba(79, 70, 229, 0.2);
-    --shadow-light: 0 4px 6px rgba(0, 0, 0, 0.05);
-    --shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
+/* tabs.css - Estilos reutilizables para componentes de pestañas con soporte de tema */
 
 /* === CONTENEDOR PRINCIPAL DE TABS === */
 .tabs-container {
-    background: var(--bg-container-light);
+    background: var(--bg-container);
     min-height: 100vh;
     padding: var(--space-lg);
+    transition: background-color var(--transition-normal);
 }
 
 .tabs-content-wrapper {
     max-width: 1400px;
     margin: 0 auto;
-    background: var(--bg-white);
+    background: var(--bg-card);
     border-radius: var(--border-radius-lg);
-    border: 1px solid var(--border-light);
-    box-shadow: var(--shadow-light);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
     overflow: hidden;
     position: relative;
+    transition: all var(--transition-normal);
 }
 
-/* Borde superior con gradiente */
+/* Borde superior con gradiente morado */
 .tabs-content-wrapper::before {
     content: '';
     position: absolute;
@@ -47,14 +35,13 @@
 /* === HEADER DEL TAB === */
 .tab-header {
     padding: var(--space-xl) var(--space-xl) var(--space-lg);
-    border-bottom: 1px solid var(--border-light);
-    background: var(--bg-white);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-card);
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     gap: var(--space-lg);
     margin-top: 4px;
-    /* Para compensar el borde superior */
 }
 
 .tab-header-content {
@@ -62,7 +49,7 @@
 }
 
 .tab-title {
-    color: var(--text-dark) !important;
+    color: var(--text-primary) !important;
     font-size: var(--font-size-2xl);
     font-weight: var(--font-weight-bold);
     margin: 0 0 var(--space-sm) 0;
@@ -74,7 +61,7 @@
 }
 
 .tab-subtitle {
-    color: var(--text-gray) !important;
+    color: var(--text-secondary) !important;
     font-size: var(--font-size-base);
     font-weight: var(--font-weight-normal);
     line-height: var(--line-height-normal);
@@ -90,12 +77,12 @@
 /* === CONTENIDO PRINCIPAL DEL TAB === */
 .tab-main-content {
     padding: var(--space-xl);
-    background: var(--bg-white);
-    color: var(--text-dark);
+    background: var(--bg-card);
+    color: var(--text-primary);
     min-height: 400px;
 }
 
-/* === CARDS DE NAVEGACIÓN (ESPECIFICACIONES) === */
+/* === CARDS DE NAVEGACIÓN === */
 .tab-navigation-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -104,15 +91,15 @@
 }
 
 .tab-nav-card {
-    background: var(--bg-white) !important;
-    border: 1px solid var(--border-light) !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
     border-radius: var(--border-radius-lg);
     height: 300px;
     cursor: pointer;
     transition: all var(--transition-normal);
     position: relative;
     overflow: hidden;
-    box-shadow: var(--shadow-light);
+    box-shadow: var(--shadow-sm);
 }
 
 .tab-nav-card::before {
@@ -129,9 +116,8 @@
 
 .tab-nav-card:hover {
     transform: translateY(-4px);
-    box-shadow: var(--shadow-hover);
-    border-color: var(--primary-border);
-    background: var(--bg-white) !important;
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-color);
 }
 
 .tab-nav-card:hover::before {
@@ -145,7 +131,7 @@
     justify-content: center;
     text-align: center;
     height: 100%;
-    color: var(--text-dark);
+    color: var(--text-primary);
 }
 
 .tab-nav-card-icon-wrapper {
@@ -163,7 +149,7 @@
 
 .tab-nav-card:hover .tab-nav-card-icon {
     transform: scale(1.1);
-    filter: drop-shadow(0 4px 12px rgba(var(--primary-color-rgb, 79, 70, 229), 0.2));
+    filter: drop-shadow(0 4px 12px rgba(139, 92, 246, 0.3));
 }
 
 .tab-nav-card-count {
@@ -171,14 +157,14 @@
     top: -8px;
     right: -12px;
     background: var(--card-accent-color, var(--primary-color));
-    color: var(--bg-white);
+    color: var(--text-white);
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-bold);
     padding: 4px 8px;
     border-radius: 20px;
     min-width: 24px;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
     animation: countPulse 2s infinite;
 }
 
@@ -195,7 +181,7 @@
 }
 
 .tab-nav-card-title {
-    color: var(--text-dark) !important;
+    color: var(--text-primary) !important;
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
     margin: 0 0 var(--space-sm) 0;
@@ -203,7 +189,7 @@
 }
 
 .tab-nav-card-description {
-    color: var(--text-gray) !important;
+    color: var(--text-secondary) !important;
     font-size: var(--font-size-sm);
     line-height: var(--line-height-normal);
     margin-bottom: var(--space-md);
@@ -212,7 +198,7 @@
 .tab-nav-card-divider {
     width: 100%;
     height: 1px;
-    background: var(--border-light);
+    background: var(--border-color);
     margin: var(--space-md) 0;
 }
 
@@ -229,39 +215,34 @@
 
 .tab-nav-card-stats-label {
     font-size: var(--font-size-sm);
-    color: var(--text-light-gray);
+    color: var(--text-tertiary);
 }
 
 /* === RESUMEN GENERAL === */
 .tab-summary-card {
-    background: var(--bg-white) !important;
-    border: 1px solid var(--border-light) !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
     border-radius: var(--border-radius-lg);
     margin-top: var(--space-xl);
-    box-shadow: var(--shadow-light);
+    box-shadow: var(--shadow-sm);
 }
 
 .tab-summary-card .ant-card-head {
-    background: var(--bg-container-light);
-    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-hover);
+    border-bottom: 1px solid var(--border-color);
     padding: var(--space-lg) var(--space-xl);
 }
 
 .tab-summary-card .ant-card-head-title {
-    color: var(--text-dark) !important;
+    color: var(--text-primary) !important;
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
 }
 
-.ant-card-body {
-    padding: 24px !important;
-    overflow: auto;
-}
-
 .tab-summary-card .ant-card-body {
-    padding: var(--space-xl);
-    background: var(--bg-white);
-    color: var(--text-dark);
+    padding: var(--space-xl) !important;
+    background: var(--bg-card);
+    color: var(--text-primary);
 }
 
 .tab-summary-row {
@@ -274,7 +255,7 @@
     text-align: center;
     flex: 1;
     padding: var(--space-lg);
-    border-right: 1px solid var(--border-light);
+    border-right: 1px solid var(--border-color);
 }
 
 .tab-summary-total-number {
@@ -286,7 +267,7 @@
 }
 
 .tab-summary-total-label {
-    color: var(--text-gray) !important;
+    color: var(--text-secondary) !important;
     font-size: var(--font-size-sm);
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -311,20 +292,20 @@
 }
 
 .tab-summary-item-label {
-    color: var(--text-gray) !important;
+    color: var(--text-secondary) !important;
     font-size: var(--font-size-sm);
 }
 
 .tab-summary-item-value {
-    color: var(--text-dark) !important;
+    color: var(--text-primary) !important;
     font-weight: var(--font-weight-semibold);
     font-size: var(--font-size-base);
 }
 
-/* === SECCIÓN ACTIVA (CUANDO SE ENTRA A UNA PESTAÑA) === */
+/* === SECCIÓN ACTIVA === */
 .tab-active-section {
-    background: var(--bg-white);
-    color: var(--text-dark);
+    background: var(--bg-card);
+    color: var(--text-primary);
     padding: var(--space-xl);
     min-height: calc(100vh - 200px);
 }
@@ -335,13 +316,13 @@
     align-items: center;
     margin-bottom: var(--space-xl);
     padding-bottom: var(--space-lg);
-    border-bottom: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .tab-back-btn {
-    background: var(--bg-container-light) !important;
-    border: 1px solid var(--border-light) !important;
-    color: var(--text-dark) !important;
+    background: var(--bg-hover) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
     border-radius: var(--border-radius);
     padding: var(--space-sm) var(--space-md);
     font-size: var(--font-size-sm);
@@ -353,12 +334,13 @@
 
 .tab-back-btn:hover {
     background: var(--primary-light) !important;
-    border-color: var(--primary-border) !important;
+    border-color: var(--primary-color) !important;
+    color: var(--primary-color) !important;
     transform: translateX(-4px);
 }
 
 .tab-refresh-btn {
-    background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.1) !important;
+    background: var(--primary-light) !important;
     border: 1px solid var(--primary-color) !important;
     color: var(--primary-color) !important;
     border-radius: var(--border-radius);
@@ -372,7 +354,7 @@
 
 .tab-refresh-btn:hover {
     background: var(--primary-color) !important;
-    color: var(--bg-white) !important;
+    color: var(--text-white) !important;
     transform: scale(1.05);
 }
 
@@ -380,33 +362,33 @@
 .tab-empty-state {
     text-align: center;
     padding: var(--space-2xl);
-    background: var(--bg-container-light);
-    border: 2px dashed var(--border-light);
+    background: var(--bg-hover);
+    border: 2px dashed var(--border-color);
     border-radius: var(--border-radius-lg);
     margin: var(--space-xl) 0;
     transition: all var(--transition-normal);
 }
 
 .tab-empty-state:hover {
-    border-color: rgba(var(--primary-color-rgb, 79, 70, 229), 0.5);
-    background: var(--bg-white);
+    border-color: var(--primary-color);
+    background: var(--bg-gray);
 }
 
 .tab-empty-icon {
     font-size: 4rem;
-    color: var(--text-light-gray) !important;
+    color: var(--text-tertiary) !important;
     margin-bottom: var(--space-lg);
 }
 
 .tab-empty-title {
-    color: var(--text-dark) !important;
+    color: var(--text-primary) !important;
     font-size: var(--font-size-xl);
     font-weight: var(--font-weight-semibold);
     margin-bottom: var(--space-sm);
 }
 
 .tab-empty-description {
-    color: var(--text-gray) !important;
+    color: var(--text-secondary) !important;
     font-size: var(--font-size-base);
     line-height: var(--line-height-normal);
 }
@@ -418,18 +400,14 @@
     align-items: center;
     justify-content: center;
     min-height: 400px;
-    background: var(--bg-container-light);
+    background: var(--bg-hover);
     border-radius: var(--border-radius-lg);
     gap: var(--space-lg);
     margin: var(--space-xl) 0;
 }
 
-.tab-loading-spinner .ant-spin-dot {
-    background-color: var(--primary-color) !important;
-}
-
 .tab-loading-text {
-    color: var(--text-gray) !important;
+    color: var(--text-secondary) !important;
     font-size: var(--font-size-base);
     font-weight: var(--font-weight-medium);
 }
@@ -438,42 +416,41 @@
 .tab-error-state {
     text-align: center;
     padding: var(--space-2xl);
-    background: rgba(239, 68, 68, 0.05);
-    border: 2px solid rgba(239, 68, 68, 0.2);
+    background: var(--error-light);
+    border: 2px solid var(--error-color);
     border-radius: var(--border-radius-lg);
     margin: var(--space-xl) 0;
 }
 
 .tab-error-icon {
     font-size: 3rem;
-    color: #ef4444 !important;
+    color: var(--error-color) !important;
     margin-bottom: var(--space-lg);
 }
 
 .tab-error-title {
-    color: #ef4444 !important;
+    color: var(--error-color) !important;
     font-size: var(--font-size-xl);
     font-weight: var(--font-weight-semibold);
     margin-bottom: var(--space-sm);
 }
 
 .tab-error-description {
-    color: var(--text-gray) !important;
+    color: var(--text-secondary) !important;
     font-size: var(--font-size-base);
     margin-bottom: var(--space-lg);
 }
 
 .tab-error-retry-btn {
-    background: #ef4444 !important;
-    border-color: #ef4444 !important;
-    color: var(--bg-white) !important;
+    background: var(--error-color) !important;
+    border-color: var(--error-color) !important;
+    color: var(--text-white) !important;
     border-radius: var(--border-radius);
     padding: var(--space-sm) var(--space-lg);
 }
 
 .tab-error-retry-btn:hover {
-    background: #dc2626 !important;
-    border-color: #dc2626 !important;
+    background: var(--error-hover) !important;
     transform: scale(1.05);
 }
 
@@ -590,14 +567,6 @@
         height: 300px;
     }
 
-    .tab-nav-card-body {
-        padding: var(--space-lg);
-    }
-
-    .tab-nav-card-icon {
-        font-size: 2.5rem;
-    }
-
     .tab-summary-row {
         flex-direction: column;
         gap: var(--space-lg);
@@ -605,7 +574,7 @@
 
     .tab-summary-total {
         border-right: none;
-        border-bottom: 1px solid var(--border-light);
+        border-bottom: 1px solid var(--border-color);
         padding-bottom: var(--space-lg);
     }
 
@@ -633,12 +602,8 @@
         height: 300px;
     }
 
-    .tab-nav-card-body {
-        padding: var(--space-md);
-    }
-
     .tab-nav-card-icon {
-        font-size: 1rem;
+        font-size: 2rem;
     }
 
     .tab-nav-card-title {

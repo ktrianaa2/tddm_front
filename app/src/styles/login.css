@@ -1,20 +1,21 @@
-/* login.css - Estilos específicos del componente de login */
+/* login.css - Estilos específicos del componente de login con soporte de tema */
 
-/* Fondo general - gris oscuro */
+/* Fondo general */
 .login-container {
-    background: var(--bg-container); /* Fondo gris oscuro */
+    background: var(--bg-container);
     min-height: 100vh;
     padding: 1rem;
     display: flex;
     justify-content: center;
     align-items: center;
+    transition: background-color var(--transition-normal);
 }
 
-/* Card login - fondo NEGRO para logo blanco */
+/* Card login */
 .login-card {
-    background-color: var(--bg-dark) !important; /* Fondo NEGRO */
-    color: var(--text-white);
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color) !important;
     border-radius: var(--border-radius-xl);
     padding: 2.5rem;
     width: 100%;
@@ -22,9 +23,10 @@
     box-shadow: var(--shadow-xl);
     position: relative;
     overflow: hidden;
+    transition: all var(--transition-normal);
 }
 
-/* Decoración sutil */
+/* Decoración sutil morada */
 .login-card::before {
     content: '';
     position: absolute;
@@ -39,8 +41,8 @@
 .login-logo {
     max-width: 180px;
     height: auto;
-    margin: 0 auto 1.5rem auto; 
-    display: block; 
+    margin: 0 auto 1.5rem auto;
+    display: block;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
@@ -54,28 +56,32 @@
     font-weight: var(--font-weight-bold);
     font-size: var(--font-size-2xl);
     margin-bottom: 0.5rem;
-    color: var(--text-white) !important;
+    color: var(--text-primary) !important;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .login-header p {
     font-size: var(--font-size-base);
-    color: rgba(255, 255, 255, 0.8) !important;
+    color: var(--text-secondary) !important;
     line-height: var(--line-height-normal);
 }
 
-/* Inputs - fondo blanco para contraste con card negro */
+/* Inputs - contraste con card */
 .login-card .login-input {
     border-radius: var(--border-radius) !important;
     padding: 0.75rem 1rem !important;
-    background-color: var(--bg-white) !important; /* Fondo blanco */
+    background-color: var(--bg-container) !important;
     border: 1px solid var(--border-color) !important;
-    color: var(--text-primary) !important;         /* Texto negro */
+    color: var(--text-primary) !important;
     font-size: var(--font-size-base) !important;
     transition: all var(--transition-normal) !important;
     height: 48px !important;
 }
 
-/* Placeholder gris oscuro */
+/* Placeholder */
 .login-card .login-input::placeholder {
     color: var(--text-tertiary) !important;
 }
@@ -96,14 +102,14 @@
     color: var(--text-tertiary) !important;
 }
 
-/* Labels - texto blanco para card negro */
-.login-form .ant-form-item-label > label {
-    color: var(--text-white) !important;
+/* Labels */
+.login-form .ant-form-item-label>label {
+    color: var(--text-primary) !important;
     font-weight: var(--font-weight-medium);
     font-size: var(--font-size-sm);
 }
 
-/* Botón principal - versión específica para login */
+/* Botón principal morado */
 .login-card .login-button {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
     color: var(--text-white) !important;
@@ -114,7 +120,7 @@
     height: 48px !important;
     font-size: var(--font-size-base) !important;
     transition: all var(--transition-normal) !important;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3) !important; /* sombra más visible sobre negro */
+    box-shadow: var(--shadow-primary) !important;
     width: 100%;
 }
 
@@ -122,7 +128,7 @@
     background: linear-gradient(135deg, var(--primary-hover), var(--secondary-hover)) !important;
     color: var(--text-white) !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.5) !important;
+    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4) !important;
 }
 
 .login-card .login-button:active {
@@ -135,18 +141,18 @@
     transform: none !important;
 }
 
-/* Enlaces - texto claro para card negro */
+/* Enlaces */
 .login-links {
     text-align: center;
     margin-top: 1.5rem;
     padding-top: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid var(--border-color);
 }
 
 .login-links a {
     display: block;
     font-size: var(--font-size-sm);
-    color: rgba(255, 255, 255, 0.8) !important;
+    color: var(--text-secondary) !important;
     text-decoration: none;
     margin: 0.5rem 0;
     font-weight: var(--font-weight-medium);
@@ -154,13 +160,13 @@
 }
 
 .login-links a:hover {
-    color: var(--text-white) !important;
+    color: var(--primary-color) !important;
     text-decoration: underline;
 }
 
 /* Divider personalizado */
 .login-card .ant-divider {
-    border-color: rgba(255, 255, 255, 0.2) !important;
+    border-color: var(--border-color) !important;
 }
 
 /* Mensajes de error */
@@ -205,13 +211,17 @@
 
 /* Checkbox "Recordarme" */
 .login-checkbox .ant-checkbox-wrapper {
-    color: rgba(255, 255, 255, 0.8) !important;
+    color: var(--text-secondary) !important;
     font-size: var(--font-size-sm);
 }
 
 .login-checkbox .ant-checkbox-checked .ant-checkbox-inner {
     background-color: var(--primary-color) !important;
     border-color: var(--primary-color) !important;
+}
+
+.login-checkbox .ant-checkbox-inner {
+    border-color: var(--border-color) !important;
 }
 
 /* Responsive */
@@ -221,11 +231,11 @@
         margin: 1rem;
         max-width: none;
     }
-    
+
     .login-header h2 {
         font-size: var(--font-size-xl);
     }
-    
+
     .login-logo {
         max-width: 150px;
     }
@@ -237,6 +247,7 @@
         opacity: 0;
         transform: translateY(30px) scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);

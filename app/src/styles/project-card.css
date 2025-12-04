@@ -1,8 +1,8 @@
-/* project-card.css - Tarjetas blancas que contrastan con el fondo gris */
+/* project-card.css - Tarjetas adaptables a tema claro/oscuro */
 
 /* === TARJETA PRINCIPAL === */
 .project-card {
-  background: var(--bg-white); /* Blanco para contrastar con fondo gris */
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-sm);
@@ -12,7 +12,7 @@
   position: relative;
 }
 
-/* Barra superior con gradiente */
+/* Barra superior con gradiente morado */
 .project-card::before {
   content: '';
   position: absolute;
@@ -38,7 +38,7 @@
 
 /* === HEADER DE LA TARJETA === */
 .project-card .ant-card-head {
-  background: var(--bg-gray); /* Fondo gris claro para el header */
+  background: var(--bg-hover);
   border-bottom: 1px solid var(--border-color);
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
@@ -56,6 +56,8 @@
 /* === CUERPO DE LA TARJETA === */
 .project-card .ant-card-body {
   padding: var(--space-lg);
+  background: var(--bg-card);
+  color: var(--text-primary);
 }
 
 .project-card-content {
@@ -130,7 +132,7 @@
   position: absolute;
   top: var(--space-md);
   right: var(--space-md);
-  background: var(--bg-gray);
+  background: var(--bg-hover);
   color: var(--text-tertiary);
   font-size: 11px;
   padding: 2px 8px;
@@ -152,21 +154,20 @@
   margin-top: var(--space-md);
   padding-top: var(--space-md);
   border-top: 1px solid var(--border-color);
-  flex-wrap: wrap; /* permite que los botones bajen de línea en pantallas pequeñas */
+  flex-wrap: wrap;
 }
 
 .project-card-actions .btn-card {
-  flex: 1 1 auto; /* los botones se expanden para llenar el espacio */
-  min-width: 100px; /* ancho mínimo para que no colapsen demasiado */
+  flex: 1 1 auto;
+  min-width: 100px;
 }
 
 /* Para pantallas pequeñas */
 @media (max-width: 480px) {
   .project-card-actions .btn-card {
-    width: 100%; /* ocupan todo el ancho */
+    width: 100%;
   }
 }
-
 
 /* === ANIMACIONES === */
 @keyframes projectCardSlideIn {
@@ -174,6 +175,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -198,7 +200,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--bg-card);
+  opacity: 0.8;
   border-radius: var(--border-radius-lg);
   display: flex;
   align-items: center;
@@ -216,7 +219,7 @@
   .project-card .ant-card-body {
     padding: var(--space-md);
   }
-  
+
   .project-card-actions {
     flex-direction: column;
     gap: var(--space-sm);
@@ -227,11 +230,11 @@
   .project-card .ant-card-head {
     padding: var(--space-sm) var(--space-md);
   }
-  
+
   .project-card .ant-card-head-title {
     font-size: var(--font-size-base);
   }
-  
+
   .project-card-id {
     position: static;
     display: inline-block;

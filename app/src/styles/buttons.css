@@ -1,4 +1,4 @@
-/* buttons.css - Estilos unificados para todos los botones */
+/* buttons.css - Estilos unificados para todos los botones con soporte de tema */
 
 /* === BASE === */
 .btn {
@@ -31,28 +31,31 @@
 
 /* === VARIANTES === */
 
-/* Primario (guardar, confirmar, crear) → ahora en lila */
+/* Primario (guardar, confirmar, crear) → morado */
 .btn-primary {
-  color: var(--secondary-color);
-  background: rgba(124, 58, 237, 0.1); /* lila clarito */
-  border: 1px solid var(--secondary-color);
+  color: var(--primary-color);
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid var(--primary-color);
 }
+
 .btn-primary:hover {
-  background: var(--secondary-hover);
+  background: var(--primary-color);
   color: var(--text-white);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
 }
 
 /* Secundario (cancelar, cerrar, volver...) */
 .btn-secondary {
-  background: var(--bg-gray);
+  background: var(--bg-hover);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
 }
+
 .btn-secondary:hover {
-  border-color: var(--secondary-color);
-  color: var(--secondary-color);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: var(--bg-gray);
 }
 
 /* Éxito (guardar, confirmar) */
@@ -61,6 +64,7 @@
   background: var(--success-light);
   border: 1px solid var(--success-color);
 }
+
 .btn-success:hover {
   background: var(--success-color);
   color: var(--text-white);
@@ -74,9 +78,12 @@
   background: var(--warning-light);
   border: 1px solid var(--warning-color);
 }
+
 .btn-warning:hover {
+  background: var(--warning-color);
+  color: var(--text-white);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
 }
 
 /* Peligro (eliminar, descartar, anular) */
@@ -85,6 +92,7 @@
   background: var(--error-light);
   border: 1px solid var(--error-color);
 }
+
 .btn-danger:hover {
   background: var(--error-color);
   color: var(--text-white);
@@ -98,6 +106,7 @@
   background: rgba(6, 182, 212, 0.1);
   border: 1px solid var(--info-color);
 }
+
 .btn-info:hover {
   background: var(--info-color);
   color: var(--text-white);
@@ -118,7 +127,7 @@
   height: 44px;
 }
 
-/* === Ejemplo de botón circular/icono === */
+/* === Botón circular/icono === */
 .btn-icon {
   padding: 6px;
   border-radius: 50%;
@@ -131,12 +140,57 @@
 
 /* === Fix para sobrescribir estilos de Ant Design === */
 .ant-btn.btn-primary {
-  background: rgba(124, 58, 237, 0.1) !important;
-  border-color: var(--secondary-color) !important;
-  color: var(--secondary-color) !important;
+  background: rgba(139, 92, 246, 0.1) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
 }
+
 .ant-btn.btn-primary:hover {
-  background: var(--secondary-hover) !important;
-  border-color: var(--secondary-hover) !important;
+  background: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--text-white) !important;
+}
+
+.ant-btn.btn-secondary {
+  background: var(--bg-hover) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.ant-btn.btn-secondary:hover {
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+}
+
+.ant-btn.btn-success {
+  background: var(--success-light) !important;
+  border-color: var(--success-color) !important;
+  color: var(--success-color) !important;
+}
+
+.ant-btn.btn-success:hover {
+  background: var(--success-color) !important;
+  color: var(--text-white) !important;
+}
+
+.ant-btn.btn-danger {
+  background: var(--error-light) !important;
+  border-color: var(--error-color) !important;
+  color: var(--error-color) !important;
+}
+
+.ant-btn.btn-danger:hover {
+  background: var(--error-color) !important;
+  color: var(--text-white) !important;
+}
+
+.ant-btn.btn-info {
+  background: rgba(6, 182, 212, 0.1) !important;
+  border-color: var(--info-color) !important;
+  color: var(--info-color) !important;
+}
+
+.ant-btn.btn-info:hover {
+  background: var(--info-color) !important;
   color: var(--text-white) !important;
 }

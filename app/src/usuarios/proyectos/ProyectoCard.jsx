@@ -12,7 +12,7 @@ const ProyectoCard = ({ proyecto, onEditar, onEliminar, onVer }) => {
   };
 
   const handleEditClick = (e) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     onEditar(proyecto);
   };
 
@@ -22,13 +22,13 @@ const ProyectoCard = ({ proyecto, onEditar, onEliminar, onVer }) => {
   };
 
   const handleViewClick = (e) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
   };
 
   return (
     <Card
       title={proyecto.nombre}
-      bordered={false}
+      variant="outlined"
       className="project-card"
       tabIndex={0}
       hoverable
