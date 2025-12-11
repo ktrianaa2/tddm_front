@@ -1,57 +1,72 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Button, Typography, message, Spin, Modal, Row, Col } from 'antd';
 import { PlusOutlined, BookOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import HistoriasUsuarioFormContainer from './HistoriasUsuarioFormContainer';
 import HistoriaUsuarioItem from './HistoriaUsuarioItem';
-import { getStoredToken, API_ENDPOINTS, postJSONAuth, getWithAuth, putJSONAuth, deleteWithAuth } from '../../../../config';
+import { useHistoriasUsuario } from '../../../hooks/useHistoriasdeUsuario';
 import '../../../styles/forms.css';
 import '../../../styles/buttons.css';
 
 const { Title, Text } = Typography;
 const { confirm } = Modal;
 
-const HistoriasUsuarioSection = ({
-  proyectoId,
-  historiasUsuario,
-  catalogos,
-  loading,
-  loadingCatalogos,
-  onActualizar
-}) => {
+const HistoriasUsuarioSection = ({ proyectoId }) => {
   const [editing, setEditing] = useState(null); // null = lista, {} = creando, {datos} = editando
-  const [loadingSubmit, setLoadingSubmit] = useState(false);
+
+  // Usar el hook refactorizado con autoLoad en true
+  const {
+    historiasUsuario,
+    catalogos,
+    loading,
+    loadingCatalogos,
+    loadingAccion,
+    errorCatalogos,
+    obtenerHistoriaUsuario,
+    crearHistoriaUsuario,
+    actualizarHistoriaUsuario,
+    eliminarHistoriaUsuario,
+    cargarCatalogos
+  } = useHistoriasUsuario(proyectoId, true);
+
+  // Adaptar catálogos para compatibilidad con el formulario
+  // El formulario espera 'unidades_estimacion' pero el hook retorna 'tipos_estimacion'
+  const catalogosAdaptados = catalogos ? {
+    ...catalogos,
+    unidades_estimacion: catalogos.tipos_estimacion || []
+  } : null;
+
+  // Recargar catálogos si hay error
+  useEffect(() => {
+    if (errorCatalogos && proyectoId) {
+      const timer = setTimeout(() => {
+        cargarCatalogos();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [errorCatalogos, proyectoId, cargarCatalogos]);
 
   const cargarHistoriaParaEdicion = async (historiaId) => {
-    setLoadingSubmit(true);
-
     try {
-      const token = getStoredToken();
-      const response = await getWithAuth(`${API_ENDPOINTS.OBTENER_HISTORIA_USUARIO}/${historiaId}/`, token);
+      const historiaBackend = await obtenerHistoriaUsuario(historiaId);
 
-      if (!response || !response.historia) {
+      if (!historiaBackend) {
         throw new Error('No se pudo obtener la información de la historia de usuario');
       }
 
-      const historiaBackend = response.historia;
-
       // Función helper para mapear keys a IDs
-      const mapearKeyAId = (keyOrId, catalogo, tipoCatalogo = '') => {
+      const mapearKeyAId = (keyOrId, catalogo) => {
         if (!keyOrId || !catalogo || !Array.isArray(catalogo)) return null;
 
         const keyOrIdStr = keyOrId.toString();
 
         // 1. Buscar por ID exacto primero
         let found = catalogo.find(item => item.id?.toString() === keyOrIdStr);
-        if (found) {
-          return found.id.toString();
-        }
+        if (found) return found.id.toString();
 
         // 2. Buscar por key normalizada
         const normalizedKey = keyOrIdStr.toLowerCase();
         found = catalogo.find(item => item.key === normalizedKey);
-        if (found) {
-          return found.id.toString();
-        }
+        if (found) return found.id.toString();
 
         // 3. Buscar por nombre normalizado
         found = catalogo.find(item => {
@@ -67,10 +82,7 @@ const HistoriasUsuarioSection = ({
           return nombreNormalizado === normalizedKey;
         });
 
-        if (found) {
-          return found.id.toString();
-        }
-
+        if (found) return found.id.toString();
         return null;
       };
 
@@ -94,18 +106,14 @@ const HistoriasUsuarioSection = ({
 
       // Mapear prioridad
       if (historiaBackend.prioridad && catalogos.prioridades) {
-        const prioridadId = mapearKeyAId(historiaBackend.prioridad, catalogos.prioridades, 'Prioridad');
-        if (prioridadId) {
-          historiaParaEditar.prioridad = prioridadId;
-        }
+        const prioridadId = mapearKeyAId(historiaBackend.prioridad, catalogos.prioridades);
+        if (prioridadId) historiaParaEditar.prioridad = prioridadId;
       }
 
       // Mapear estado  
       if (historiaBackend.estado && catalogos.estados) {
-        const estadoId = mapearKeyAId(historiaBackend.estado, catalogos.estados, 'Estado');
-        if (estadoId) {
-          historiaParaEditar.estado = estadoId;
-        }
+        const estadoId = mapearKeyAId(historiaBackend.estado, catalogos.estados);
+        if (estadoId) historiaParaEditar.estado = estadoId;
       }
 
       const estimacionesParaFormulario = [];
@@ -113,43 +121,48 @@ const HistoriasUsuarioSection = ({
       // Procesar múltiples estimaciones
       if (historiaBackend.estimaciones && Array.isArray(historiaBackend.estimaciones) && historiaBackend.estimaciones.length > 0) {
         historiaBackend.estimaciones.forEach((est, index) => {
-          let unidadId = null;
+          let tipoEstimacionId = null;
 
           if (est.tipo_estimacion_id) {
             // Verificar que existe en nuestro catálogo
-            const unidadExiste = catalogos.unidades_estimacion?.find(u => u.id.toString() === est.tipo_estimacion_id.toString());
-            if (unidadExiste) {
-              unidadId = est.tipo_estimacion_id.toString();
+            const tipoExiste = catalogos.tipos_estimacion?.find(
+              t => t.id.toString() === est.tipo_estimacion_id.toString()
+            );
+            if (tipoExiste) {
+              tipoEstimacionId = est.tipo_estimacion_id.toString();
             }
           }
           // Fallback: buscar por nombre
           else if (est.tipo_estimacion_nombre) {
-            unidadId = mapearKeyAId(est.tipo_estimacion_nombre, catalogos.unidades_estimacion, 'Unidad Estimación');
+            tipoEstimacionId = mapearKeyAId(
+              est.tipo_estimacion_nombre,
+              catalogos.tipos_estimacion
+            );
           }
 
-          // Si tenemos unidad válida y valor válido
-          if (unidadId && (est.valor !== null && est.valor !== undefined)) {
-            const estimacionFormulario = {
+          // Si tenemos tipo válido y valor válido, agregar la estimación
+          if (tipoEstimacionId && (est.valor !== null && est.valor !== undefined)) {
+            estimacionesParaFormulario.push({
               id: est.id || `existing_${Date.now()}_${index}`,
-              unidad_estimacion: unidadId,
+              tipo_estimacion_id: tipoEstimacionId,
               valor: est.valor
-            };
-
-            estimacionesParaFormulario.push(estimacionFormulario);
+            });
           }
         });
       }
       // Procesar estimación única (formato legacy)
       else if (historiaBackend.estimacion_valor && historiaBackend.unidad_estimacion) {
-        const unidadId = mapearKeyAId(historiaBackend.unidad_estimacion, catalogos.unidades_estimacion, 'Unidad Estimación');
+        const tipoEstimacionId = mapearKeyAId(
+          historiaBackend.unidad_estimacion,
+          catalogos.tipos_estimacion
+        );
 
-        if (unidadId) {
-          const estimacionFormulario = {
+        if (tipoEstimacionId) {
+          estimacionesParaFormulario.push({
             id: `existing_single_${Date.now()}`,
-            unidad_estimacion: unidadId,
+            tipo_estimacion_id: tipoEstimacionId,
             valor: historiaBackend.estimacion_valor
-          };
-          estimacionesParaFormulario.push(estimacionFormulario);
+          });
         }
       }
 
@@ -158,8 +171,6 @@ const HistoriasUsuarioSection = ({
 
     } catch (error) {
       message.error(`Error al cargar historia de usuario: ${error.message}`);
-    } finally {
-      setLoadingSubmit(false);
     }
   };
 
@@ -169,10 +180,7 @@ const HistoriasUsuarioSection = ({
       return;
     }
 
-    setLoadingSubmit(true);
     try {
-      const token = getStoredToken();
-
       // Construir título basado en los campos disponibles
       let titulo = values.descripcion_historia || '';
       if (!titulo && values.actor_rol && values.funcionalidad_accion) {
@@ -198,61 +206,42 @@ const HistoriasUsuarioSection = ({
         valor_negocio: values.valor_negocio || null,
         prioridad_id: values.prioridad ? parseInt(values.prioridad) : null,
         estado_id: values.estado ? parseInt(values.estado) : null,
-        proyecto_id: parseInt(proyectoId),
         estimaciones: []
       };
 
+      // Procesar estimaciones
       if (values.estimaciones && Array.isArray(values.estimaciones) && values.estimaciones.length > 0) {
         const estimacionesValidas = values.estimaciones
           .filter(est => {
             const tieneUnidad = est.tipo_estimacion_id && est.tipo_estimacion_id !== '';
             const tieneValor = est.valor !== null && est.valor !== undefined && est.valor !== '';
             const valorValido = !isNaN(parseFloat(est.valor)) && parseFloat(est.valor) > 0;
-
             return tieneUnidad && tieneValor && valorValido;
           })
-          .map(est => {
-            const estimacionParaBackend = {
-              tipo_estimacion_id: parseInt(est.tipo_estimacion_id),
-              valor: parseFloat(est.valor)
-            };
-
-            return estimacionParaBackend;
-          });
+          .map(est => ({
+            tipo_estimacion_id: parseInt(est.tipo_estimacion_id),
+            valor: parseFloat(est.valor)
+          }));
 
         dataToSend.estimaciones = estimacionesValidas;
       }
 
-      // Mantener compatibilidad con formato legacy si solo hay una estimación
-      if (dataToSend.estimaciones.length === 1) {
-        dataToSend.estimacion_valor = dataToSend.estimaciones[0].valor;
-        dataToSend.unidad_estimacion = dataToSend.estimaciones[0].tipo_estimacion_id;
-      }
-
-      let response;
+      let result;
 
       if (editing && editing.id) {
         // Actualizar historia existente
-        response = await putJSONAuth(
-          `${API_ENDPOINTS.ACTUALIZAR_HISTORIA_USUARIO}/${editing.id}/`,
-          dataToSend,
-          token
-        );
-        message.success(response.mensaje || 'Historia de usuario actualizada exitosamente');
+        result = await actualizarHistoriaUsuario(editing.id, dataToSend);
       } else {
         // Crear nueva historia
-        response = await postJSONAuth(API_ENDPOINTS.CREAR_HISTORIA_USUARIO, dataToSend, token);
-        message.success(response.mensaje || 'Historia de usuario creada exitosamente');
+        result = await crearHistoriaUsuario(dataToSend);
       }
 
-      // Llamar al callback para actualizar los datos en el componente padre
-      onActualizar();
-      setEditing(null);
+      if (result.success) {
+        setEditing(null);
+      }
 
     } catch (error) {
       message.error(`Error al guardar historia de usuario: ${error.message}`);
-    } finally {
-      setLoadingSubmit(false);
     }
   };
 
@@ -263,7 +252,7 @@ const HistoriasUsuarioSection = ({
       content: (
         <div>
           <p>¿Estás seguro de que deseas eliminar la historia de usuario:</p>
-          <p><strong>"{extraerTitulo(historia.descripcion_historia)}"</strong></p>
+          <p><strong>"{extraerTitulo(historia.descripcion || historia.titulo)}"</strong></p>
           <p style={{ color: '#ff4d4f', fontSize: '0.9em', marginTop: '0.5rem' }}>
             Esta acción no se puede deshacer.
           </p>
@@ -273,17 +262,7 @@ const HistoriasUsuarioSection = ({
       okType: 'danger',
       cancelText: 'Cancelar',
       async onOk() {
-        try {
-          const token = getStoredToken();
-          const response = await deleteWithAuth(
-            `${API_ENDPOINTS.ELIMINAR_HISTORIA_USUARIO}/${historia.id}/`,
-            token
-          );
-          message.success(response.mensaje || 'Historia de usuario eliminada exitosamente');
-          onActualizar();
-        } catch (error) {
-          message.error(`Error al eliminar historia de usuario: ${error.message}`);
-        }
+        await eliminarHistoriaUsuario(historia.id);
       },
     });
   };
@@ -293,10 +272,11 @@ const HistoriasUsuarioSection = ({
     const catalogosDisponibles = catalogos &&
       Array.isArray(catalogos.prioridades) && catalogos.prioridades.length > 0 &&
       Array.isArray(catalogos.estados) && catalogos.estados.length > 0 &&
-      Array.isArray(catalogos.unidades_estimacion) && catalogos.unidades_estimacion.length > 0;
+      Array.isArray(catalogos.tipos_estimacion) && catalogos.tipos_estimacion.length > 0;
 
     if (!catalogosDisponibles) {
       message.error('Los catálogos necesarios no están disponibles. Reintentando carga...');
+      await cargarCatalogos();
       return;
     }
 
@@ -307,12 +287,10 @@ const HistoriasUsuarioSection = ({
     setEditing(null);
   };
 
-  // Extraer el título de la descripción de la historia (primeras palabras hasta 50 caracteres)
-  const extraerTitulo = (descripcionHistoria) => {
-    if (!descripcionHistoria) return 'Sin título';
-    return descripcionHistoria.length > 50
-      ? `${descripcionHistoria.substring(0, 50)}...`
-      : descripcionHistoria;
+  // Extraer el título de la descripción de la historia
+  const extraerTitulo = (texto) => {
+    if (!texto) return 'Sin título';
+    return texto.length > 50 ? `${texto.substring(0, 50)}...` : texto;
   };
 
   if (!proyectoId) {
@@ -338,14 +316,17 @@ const HistoriasUsuarioSection = ({
   }
 
   // MOSTRAR ERROR SI NO SE PUDIERON CARGAR LOS CATÁLOGOS
-  if (!catalogos) {
+  if (errorCatalogos && !catalogos) {
     return (
       <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
         <ExclamationCircleOutlined style={{ fontSize: "3rem", color: "#ff4d4f", marginBottom: "1rem" }} />
         <Title level={4} type="danger">Error al cargar catálogos</Title>
         <Text type="secondary" style={{ display: 'block', marginBottom: '1rem' }}>
-          Los catálogos necesarios no están disponibles
+          {errorCatalogos}
         </Text>
+        <Button onClick={cargarCatalogos} loading={loadingCatalogos}>
+          Reintentar
+        </Button>
       </Card>
     );
   }
@@ -359,8 +340,8 @@ const HistoriasUsuarioSection = ({
           onCancel={handleCancelar}
           historiasExistentes={historiasUsuario}
           proyectoId={proyectoId}
-          loading={loadingSubmit}
-          catalogosExternos={catalogos}
+          loading={loadingAccion}
+          catalogosExternos={catalogosAdaptados}
         />
       ) : (
         <>
@@ -415,15 +396,14 @@ const HistoriasUsuarioSection = ({
                   {historiasUsuario.map((historia) => (
                     <Col key={historia.id} xs={24} sm={24} md={12} lg={8} xl={8} xxl={6}>
                       <HistoriaUsuarioItem
-                        key={historia.id}
                         historia={historia}
                         onEditar={handleEditar}
                         onEliminar={handleEliminar}
-                        loading={loadingSubmit}
+                        loading={loadingAccion}
                         catalogosDisponibles={catalogos &&
                           Array.isArray(catalogos.prioridades) && catalogos.prioridades.length > 0 &&
                           Array.isArray(catalogos.estados) && catalogos.estados.length > 0 &&
-                          Array.isArray(catalogos.unidades_estimacion) && catalogos.unidades_estimacion.length > 0
+                          Array.isArray(catalogos.tipos_estimacion) && catalogos.tipos_estimacion.length > 0
                         }
                       />
                     </Col>

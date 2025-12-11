@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { message } from 'antd';
-import { 
-    getStoredToken, 
-    API_ENDPOINTS, 
-    getWithAuth, 
-    postJSONAuth, 
-    putJSONAuth, 
-    deleteWithAuth 
+import {
+    getStoredToken,
+    API_ENDPOINTS,
+    getWithAuth,
+    postJSONAuth,
+    putJSONAuth,
+    deleteWithAuth
 } from '../../config';
 
 /**
@@ -17,33 +17,35 @@ import {
  */
 export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
     // ============== ESTADOS ==============
+    // Estados para las historias de usuario
     const [historiasUsuario, setHistoriasUsuario] = useState([]);
     const [historiaActual, setHistoriaActual] = useState(null);
     const [estimacionesActuales, setEstimacionesActuales] = useState([]);
-    
+
+    // Estados para catálogos
+    const [catalogos, setCatalogos] = useState(null);
+
     // Estados de carga
     const [loading, setLoading] = useState(false);
     const [loadingDetalle, setLoadingDetalle] = useState(false);
     const [loadingAccion, setLoadingAccion] = useState(false);
-    
-    // Catálogos específicos para historias de usuario
-    const [catalogos, setCatalogos] = useState({
-        prioridades: [],
-        estados: [],
-        tipos_estimacion: []
-    });
     const [loadingCatalogos, setLoadingCatalogos] = useState(false);
+    const [errorCatalogos, setErrorCatalogos] = useState(null);
 
     // ============== FUNCIONES DE CATÁLOGOS ==============
-    
+
     /**
      * Carga todos los catálogos necesarios para historias de usuario
      */
     const cargarCatalogos = useCallback(async () => {
         setLoadingCatalogos(true);
+        setErrorCatalogos(null);
+
         try {
             const token = getStoredToken();
-            if (!token) throw new Error('No hay token de autenticación');
+            if (!token) {
+                throw new Error('No hay token de autenticación');
+            }
 
             const [prioridades, estados, tiposEst] = await Promise.allSettled([
                 getWithAuth(API_ENDPOINTS.PRIORIDADES, token),
@@ -74,8 +76,8 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
 
             // Procesar estados (filtrar para historias de usuario)
             if (estados.status === 'fulfilled' && estados.value) {
-                const data = estados.value.estados_elemento || estados.value.estados || 
-                            estados.value.data || estados.value;
+                const data = estados.value.estados_elemento || estados.value.estados ||
+                    estados.value.data || estados.value;
                 if (Array.isArray(data)) {
                     catalogosData.estados = data
                         .filter(e => e.tipo === 'historia_usuario' || !e.tipo)
@@ -92,8 +94,8 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
 
             // Procesar tipos de estimación
             if (tiposEst.status === 'fulfilled' && tiposEst.value) {
-                const data = tiposEst.value.tipos_estimacion || 
-                            tiposEst.value.data || tiposEst.value;
+                const data = tiposEst.value.tipos_estimacion ||
+                    tiposEst.value.data || tiposEst.value;
                 if (Array.isArray(data)) {
                     catalogosData.tipos_estimacion = data.map(te => ({
                         id: te.id || te.estimacion_id,
@@ -109,67 +111,72 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
             return catalogosData;
 
         } catch (error) {
-            message.error(`Error al cargar catálogos: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            setErrorCatalogos(errorMsg);
+            message.error(`Error al cargar catálogos: ${errorMsg}`);
             throw error;
         } finally {
             setLoadingCatalogos(false);
         }
     }, []);
 
-    // ============== FUNCIONES CRUD ==============
+    // ============== FUNCIONES DE CARGA ==============
 
     /**
      * Listar todas las historias de usuario de un proyecto
      */
-    const listarHistoriasUsuario = useCallback(async (showMessage = false) => {
+    const cargarHistoriasUsuario = useCallback(async () => {
         if (!proyectoId) {
-            console.warn('No se puede listar historias de usuario sin proyectoId');
-            return [];
+            console.warn('No se puede cargar historias de usuario sin proyectoId');
+            return;
         }
 
         setLoading(true);
         try {
             const token = getStoredToken();
-            if (!token) throw new Error('No hay token de autenticación');
+            if (!token) {
+                throw new Error('No hay token de autenticación');
+            }
 
             const response = await getWithAuth(
                 `${API_ENDPOINTS.LISTAR_HISTORIAS_USUARIO}/${proyectoId}/`,
                 token
             );
 
-            const historiasData = response.historias || [];
-            const historiasProcessed = historiasData.map(h => ({
-                id: h.id,
-                titulo: h.titulo,
-                descripcion: h.descripcion || '',
-                actor_rol: h.actor_rol || '',
-                funcionalidad_accion: h.funcionalidad_accion || '',
-                beneficio_razon: h.beneficio_razon || '',
-                criterios_aceptacion: h.criterios_aceptacion,
-                prioridad: h.prioridad,
-                estado: h.estado,
-                valor_negocio: h.valor_negocio,
-                dependencias_relaciones: h.dependencias_relaciones || '',
-                componentes_relacionados: h.componentes_relacionados || '',
-                notas_adicionales: h.notas_adicionales || '',
-                proyecto_id: h.proyecto_id,
-                fecha_creacion: h.fecha_creacion,
-                estimaciones: h.estimaciones || [],
-                // Compatibilidad con formato antiguo
-                estimacion_valor: h.estimacion_valor,
-                unidad_estimacion: h.unidad_estimacion
-            }));
+            // Intentar diferentes estructuras de respuesta
+            const historiasData = response.historias || response.historias_usuario || response.data || [];
 
-            setHistoriasUsuario(historiasProcessed);
-            if (showMessage) {
-                message.success(`${historiasProcessed.length} historias de usuario cargadas`);
+            if (Array.isArray(historiasData)) {
+                const historiasProcessed = historiasData.map(h => ({
+                    id: h.id,
+                    titulo: h.titulo,
+                    descripcion: h.descripcion || '',
+                    actor_rol: h.actor_rol || '',
+                    funcionalidad_accion: h.funcionalidad_accion || '',
+                    beneficio_razon: h.beneficio_razon || '',
+                    criterios_aceptacion: h.criterios_aceptacion,
+                    prioridad: h.prioridad,
+                    estado: h.estado,
+                    valor_negocio: h.valor_negocio,
+                    dependencias_relaciones: h.dependencias_relaciones || '',
+                    componentes_relacionados: h.componentes_relacionados || '',
+                    notas_adicionales: h.notas_adicionales || '',
+                    proyecto_id: h.proyecto_id,
+                    fecha_creacion: h.fecha_creacion,
+                    estimaciones: h.estimaciones || [],
+                    estimacion_valor: h.estimacion_valor,
+                    unidad_estimacion: h.unidad_estimacion
+                }));
+                setHistoriasUsuario(historiasProcessed);
+            } else {
+                setHistoriasUsuario([]);
             }
-            return historiasProcessed;
 
         } catch (error) {
-            message.error(`Error al listar historias de usuario: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al cargar historias de usuario: ${errorMsg}`);
             setHistoriasUsuario([]);
-            return [];
+            throw error;
         } finally {
             setLoading(false);
         }
@@ -194,7 +201,7 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
                 token
             );
 
-            const historia = response.historia;
+            const historia = response.historia || response;
             if (historia) {
                 const historiaProcessed = {
                     id: historia.id,
@@ -219,7 +226,7 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
 
                 setHistoriaActual(historiaProcessed);
                 setEstimacionesActuales(historiaProcessed.estimaciones);
-                
+
                 if (showMessage) {
                     message.success('Historia de usuario cargada correctamente');
                 }
@@ -229,12 +236,39 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
             return null;
 
         } catch (error) {
-            message.error(`Error al obtener historia de usuario: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al obtener historia de usuario: ${errorMsg}`);
             return null;
         } finally {
             setLoadingDetalle(false);
         }
     }, []);
+
+    /**
+     * Obtener las estimaciones de una historia específica
+     */
+    const obtenerEstimaciones = useCallback(async (historiaId) => {
+        try {
+            const token = getStoredToken();
+            if (!token) throw new Error('No hay token de autenticación');
+
+            const response = await getWithAuth(
+                `${API_ENDPOINTS.LISTAR_HISTORIAS_USUARIO}/${historiaId}/estimaciones/`,
+                token
+            );
+
+            const estimaciones = response.estimaciones || [];
+            setEstimacionesActuales(estimaciones);
+            return estimaciones;
+
+        } catch (error) {
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al obtener estimaciones: ${errorMsg}`);
+            return [];
+        }
+    }, []);
+
+    // ============== FUNCIONES CRUD ==============
 
     /**
      * Crear una nueva historia de usuario
@@ -245,7 +279,6 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
             const token = getStoredToken();
             if (!token) throw new Error('No hay token de autenticación');
 
-            // Preparar datos para enviar
             const payload = {
                 titulo: datosHistoria.titulo,
                 descripcion: datosHistoria.descripcion || '',
@@ -270,10 +303,8 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
             );
 
             message.success('Historia de usuario creada exitosamente');
-            
-            // Recargar la lista
-            await listarHistoriasUsuario();
-            
+            await cargarHistoriasUsuario();
+
             return {
                 success: true,
                 historia_id: response.historia_id,
@@ -282,15 +313,16 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
             };
 
         } catch (error) {
-            message.error(`Error al crear historia de usuario: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al crear historia de usuario: ${errorMsg}`);
             return {
                 success: false,
-                error: error.message
+                error: errorMsg
             };
         } finally {
             setLoadingAccion(false);
         }
-    }, [proyectoId, listarHistoriasUsuario]);
+    }, [proyectoId, cargarHistoriasUsuario]);
 
     /**
      * Actualizar una historia de usuario existente
@@ -308,15 +340,12 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
             );
 
             message.success('Historia de usuario actualizada exitosamente');
-            
-            // Recargar la lista
-            await listarHistoriasUsuario();
-            
-            // Si es la historia actual, recargarla
+            await cargarHistoriasUsuario();
+
             if (historiaActual && historiaActual.id === historiaId) {
                 await obtenerHistoriaUsuario(historiaId);
             }
-            
+
             return {
                 success: true,
                 estimaciones_actualizadas: response.estimaciones_actualizadas || 0,
@@ -324,15 +353,16 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
             };
 
         } catch (error) {
-            message.error(`Error al actualizar historia de usuario: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al actualizar historia de usuario: ${errorMsg}`);
             return {
                 success: false,
-                error: error.message
+                error: errorMsg
             };
         } finally {
             setLoadingAccion(false);
         }
-    }, [listarHistoriasUsuario, obtenerHistoriaUsuario, historiaActual]);
+    }, [cargarHistoriasUsuario, obtenerHistoriaUsuario, historiaActual]);
 
     /**
      * Eliminar una historia de usuario (soft delete)
@@ -349,53 +379,26 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
             );
 
             message.success('Historia de usuario eliminada exitosamente');
-            
-            // Recargar la lista
-            await listarHistoriasUsuario();
-            
-            // Limpiar historia actual si era la eliminada
+            await cargarHistoriasUsuario();
+
             if (historiaActual && historiaActual.id === historiaId) {
                 setHistoriaActual(null);
                 setEstimacionesActuales([]);
             }
-            
-            return {
-                success: true
-            };
+
+            return { success: true };
 
         } catch (error) {
-            message.error(`Error al eliminar historia de usuario: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al eliminar historia de usuario: ${errorMsg}`);
             return {
                 success: false,
-                error: error.message
+                error: errorMsg
             };
         } finally {
             setLoadingAccion(false);
         }
-    }, [listarHistoriasUsuario, historiaActual]);
-
-    /**
-     * Obtener las estimaciones de una historia específica
-     */
-    const obtenerEstimaciones = useCallback(async (historiaId) => {
-        try {
-            const token = getStoredToken();
-            if (!token) throw new Error('No hay token de autenticación');
-
-            const response = await getWithAuth(
-                `${API_ENDPOINTS.LISTAR_HISTORIAS_USUARIO}/${historiaId}/estimaciones/`,
-                token
-            );
-
-            const estimaciones = response.estimaciones || [];
-            setEstimacionesActuales(estimaciones);
-            return estimaciones;
-
-        } catch (error) {
-            message.error(`Error al obtener estimaciones: ${error.message}`);
-            return [];
-        }
-    }, []);
+    }, [cargarHistoriasUsuario, historiaActual]);
 
     // ============== FUNCIONES AUXILIARES ==============
 
@@ -408,7 +411,7 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         }
 
         const textoLower = texto.toLowerCase();
-        return historiasUsuario.filter(h => 
+        return historiasUsuario.filter(h =>
             h.titulo?.toLowerCase().includes(textoLower) ||
             h.descripcion?.toLowerCase().includes(textoLower) ||
             h.actor_rol?.toLowerCase().includes(textoLower) ||
@@ -432,24 +435,24 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         }
 
         if (filtros.valorNegocioMin !== undefined) {
-            resultado = resultado.filter(h => 
+            resultado = resultado.filter(h =>
                 h.valor_negocio && h.valor_negocio >= filtros.valorNegocioMin
             );
         }
 
         if (filtros.valorNegocioMax !== undefined) {
-            resultado = resultado.filter(h => 
+            resultado = resultado.filter(h =>
                 h.valor_negocio && h.valor_negocio <= filtros.valorNegocioMax
             );
         }
 
         if (filtros.conEstimaciones !== undefined) {
             if (filtros.conEstimaciones) {
-                resultado = resultado.filter(h => 
+                resultado = resultado.filter(h =>
                     h.estimaciones && h.estimaciones.length > 0
                 );
             } else {
-                resultado = resultado.filter(h => 
+                resultado = resultado.filter(h =>
                     !h.estimaciones || h.estimaciones.length === 0
                 );
             }
@@ -533,15 +536,15 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
      */
     const generarFormatoHistoria = useCallback((historia) => {
         const partes = [];
-        
+
         if (historia.actor_rol) {
             partes.push(`Como ${historia.actor_rol}`);
         }
-        
+
         if (historia.funcionalidad_accion) {
             partes.push(`quiero ${historia.funcionalidad_accion}`);
         }
-        
+
         if (historia.beneficio_razon) {
             partes.push(`para ${historia.beneficio_razon}`);
         }
@@ -555,7 +558,6 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
     const validarDatosHistoria = useCallback((datos) => {
         const errores = [];
 
-        // Validaciones obligatorias según backend
         if (!datos.titulo || datos.titulo.trim() === '') {
             errores.push('El título es obligatorio');
         } else if (datos.titulo.trim().length < 5) {
@@ -568,7 +570,6 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
             errores.push('Los criterios de aceptación deben tener al menos 10 caracteres');
         }
 
-        // Validar valor de negocio
         if (datos.valor_negocio !== null && datos.valor_negocio !== undefined) {
             const valor = parseInt(datos.valor_negocio);
             if (isNaN(valor)) {
@@ -578,7 +579,6 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
             }
         }
 
-        // Validar estimaciones
         if (datos.estimaciones && Array.isArray(datos.estimaciones)) {
             datos.estimaciones.forEach((est, index) => {
                 if (!est.tipo_estimacion_id) {
@@ -601,7 +601,7 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
      */
     const calcularTotalEstimaciones = useCallback((tipoEstimacionId) => {
         let total = 0;
-        
+
         historiasUsuario.forEach(h => {
             if (h.estimaciones) {
                 h.estimaciones.forEach(est => {
@@ -619,7 +619,7 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
      * Obtener historias con alta prioridad de negocio
      */
     const obtenerHistoriasAltaPrioridad = useCallback((umbral = 70) => {
-        return historiasUsuario.filter(h => 
+        return historiasUsuario.filter(h =>
             h.valor_negocio && h.valor_negocio >= umbral
         ).sort((a, b) => (b.valor_negocio || 0) - (a.valor_negocio || 0));
     }, [historiasUsuario]);
@@ -639,25 +639,39 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         try {
             await Promise.all([
                 cargarCatalogos(),
-                listarHistoriasUsuario()
+                cargarHistoriasUsuario()
             ]);
         } catch (error) {
             console.error('Error al recargar datos:', error);
         }
-    }, [cargarCatalogos, listarHistoriasUsuario]);
+    }, [cargarCatalogos, cargarHistoriasUsuario]);
 
     // ============== EFECTOS ==============
 
+    /**
+     * Efecto para carga automática
+     */
     useEffect(() => {
         if (autoLoad && proyectoId) {
             // Cargar catálogos solo si no están cargados
-            if (catalogos.tipos_estimacion.length === 0) {
+            if (!catalogos) {
                 cargarCatalogos();
             }
-            // Cargar historias de usuario
-            listarHistoriasUsuario();
+            // Cargar historias de usuario cuando cambia el proyecto
+            cargarHistoriasUsuario();
         }
     }, [proyectoId, autoLoad]);
+
+    // ============== CONTADORES ==============
+    const contadores = {
+        total: historiasUsuario.length,
+        porPrioridad: obtenerEstadisticas().porPrioridad,
+        porEstado: obtenerEstadisticas().porEstado,
+        conEstimaciones: obtenerEstadisticas().conEstimaciones,
+        sinEstimaciones: obtenerEstadisticas().sinEstimaciones,
+        totalEstimaciones: obtenerEstadisticas().totalEstimaciones,
+        valorNegocioPromedio: obtenerEstadisticas().valorNegocioPromedio
+    };
 
     // ============== RETURN ==============
 
@@ -667,6 +681,7 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         historiaActual,
         estimacionesActuales,
         catalogos,
+        contadores,
         estadisticas: obtenerEstadisticas(),
 
         // Estados de carga
@@ -674,9 +689,13 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         loadingDetalle,
         loadingAccion,
         loadingCatalogos,
+        errorCatalogos,
+
+        // Funciones de carga
+        cargarCatalogos,
+        cargarHistoriasUsuario,
 
         // Funciones CRUD
-        listarHistoriasUsuario,
         obtenerHistoriaUsuario,
         crearHistoriaUsuario,
         actualizarHistoriaUsuario,
@@ -690,11 +709,10 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         generarFormatoHistoria,
         calcularTotalEstimaciones,
         obtenerHistoriasAltaPrioridad,
-        cargarCatalogos,
         limpiarEstado,
         recargarTodo,
 
-        // Setters (por si se necesitan)
+        // Setters
         setHistoriasUsuario,
         setHistoriaActual,
         setEstimacionesActuales

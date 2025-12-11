@@ -21,45 +21,31 @@ const RequisitosFormContainer = ({
 
     // Función helper para procesar items de catálogo
     const procesarItems = (items, tipoColor) => {
-
         if (!Array.isArray(items)) {
             return [];
         }
 
         const itemsProcesados = items
             .filter(item => {
-                // Buscar diferentes posibles campos de ID
-                const id = item.id || item.tipo_id || item.prioridad_id || item.estado_id || item.relacion_id;
-                const tieneId = id !== undefined && id !== null;
+                // El hook ya devuelve items con 'id' normalizado
+                const tieneId = item.id !== undefined && item.id !== null;
                 const estaActivo = item.activo !== false;
                 return tieneId && estaActivo;
             })
             .map(item => {
-                // Obtener el ID correcto según el tipo de catálogo
-                let id;
-                if (tipoColor === 'tipos') {
-                    id = item.tipo_id || item.id;
-                } else if (tipoColor === 'prioridades') {
-                    id = item.prioridad_id || item.id;
-                } else if (tipoColor === 'estados') {
-                    id = item.estado_id || item.id;
-                } else {
-                    id = item.id || item.tipo_id || item.prioridad_id || item.estado_id || item.relacion_id;
-                }
+                // El hook ya normaliza el ID a 'id'
+                const id = item.id;
 
-                // Generar key normalizada a partir del nombre
-                let key = item.key || item.nombre || 'unknown';
-                if (typeof key === 'string' && key !== item.key) {
-                    key = key.toLowerCase()
-                        .trim()
-                        .replace(/[\s_-]+/g, '-')
-                        .replace(/[áàäâ]/g, 'a')
-                        .replace(/[éèëê]/g, 'e')
-                        .replace(/[íìïî]/g, 'i')
-                        .replace(/[óòöô]/g, 'o')
-                        .replace(/[úùüû]/g, 'u')
-                        .replace(/ñ/g, 'n');
-                }
+                // El hook ya tiene key normalizada
+                const key = item.key || item.nombre.toLowerCase()
+                    .trim()
+                    .replace(/[\s_-]+/g, '-')
+                    .replace(/[áàäâ]/g, 'a')
+                    .replace(/[éèëê]/g, 'e')
+                    .replace(/[íìïî]/g, 'i')
+                    .replace(/[óòöô]/g, 'o')
+                    .replace(/[úùüû]/g, 'u')
+                    .replace(/ñ/g, 'n');
 
                 // Mapeo de colores por defecto
                 const defaultColors = {
@@ -98,9 +84,9 @@ const RequisitosFormContainer = ({
                     nivel: item.nivel || undefined,
                     activo: item.activo !== false,
                     tipo: item.tipo || undefined,
-                    orden: item.orden || undefined,
-                    ...item // Mantener propiedades originales
+                    orden: item.orden || undefined
                 };
+
                 return itemProcesado;
             });
 
@@ -108,12 +94,11 @@ const RequisitosFormContainer = ({
     };
 
     const procesarCatalogosExternos = (catalogosExternos) => {
-
         if (!catalogosExternos || typeof catalogosExternos !== 'object') {
             return;
         }
 
-        // Procesar tipos de requisito - CORREGIR LA REFERENCIA
+        // Procesar tipos de requisito
         if (catalogosExternos.tipos_requisito && Array.isArray(catalogosExternos.tipos_requisito)) {
             const tiposProcesados = procesarItems(catalogosExternos.tipos_requisito, 'tipos');
             setTiposRequisito(tiposProcesados);
@@ -137,7 +122,7 @@ const RequisitosFormContainer = ({
             setEstados([]);
         }
 
-        // Procesar tipos de relación - CORREGIR LA REFERENCIA
+        // Procesar tipos de relación
         if (catalogosExternos.tipos_relacion_requisito && Array.isArray(catalogosExternos.tipos_relacion_requisito)) {
             const tiposRelacionProcesados = procesarItems(catalogosExternos.tipos_relacion_requisito, 'general');
             setTiposRelacion(tiposRelacionProcesados);
@@ -193,8 +178,8 @@ const RequisitosFormContainer = ({
             const relacionesProcesadas = relacionesData.map(rel => {
                 return {
                     id: rel.id || `temp_${Date.now()}_${Math.random()}`,
-                    requisito_id: (rel.requisito_id || '').toString(),
-                    tipo_relacion: (rel.tipo_relacion || '').toString(),
+                    requisito_id: (rel.requisito_id || rel.requisito_relacionado_id || '').toString(),
+                    tipo_relacion: (rel.tipo_relacion_id || rel.tipo_relacion || '').toString(),
                     descripcion: rel.descripcion || ''
                 };
             });
@@ -202,6 +187,7 @@ const RequisitosFormContainer = ({
             return relacionesProcesadas;
 
         } catch (error) {
+            // Silenciar errores de CORS o conexión
             if (error.message.includes('CORS') ||
                 error.message.includes('conexión') ||
                 error.message.includes('Failed to fetch') ||

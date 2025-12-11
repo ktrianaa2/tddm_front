@@ -39,7 +39,6 @@ export const useProyectos = () => {
         const formData = new FormData();
         formData.append("nombre", values.nombre);
         formData.append("descripcion", values.descripcion || "");
-        // Ya no se envía el estado, se asigna por defecto en el backend
 
         try {
             const res = await postFormDataAuth(API_ENDPOINTS.CREAR_PROYECTO, formData, token);
@@ -57,7 +56,6 @@ export const useProyectos = () => {
         const formData = new FormData();
         formData.append("nombre", values.nombre);
         formData.append("descripcion", values.descripcion || "");
-        // Ya no se envía el estado en la edición
 
         try {
             const res = await postFormDataAuth(
@@ -99,16 +97,18 @@ export const useProyectos = () => {
         const formData = new FormData();
 
         try {
+            // Corregido: agregar la barra al final de la URL
             const res = await postFormDataAuth(
-                `${API_ENDPOINTS.ELIMINAR_PROYECTO}/${proyectoId}`,
+                `${API_ENDPOINTS.ELIMINAR_PROYECTO}/${proyectoId}/`,
                 formData,
                 token
             );
-            message.success(res.mensaje || "Proyecto eliminado");
+            message.success(res.mensaje || "Proyecto eliminado exitosamente");
             setRefreshFlag(prev => prev + 1);
             return { success: true };
         } catch (error) {
-            message.error(error.message);
+            console.error("Error al eliminar proyecto:", error);
+            message.error(error.message || "Error al eliminar el proyecto");
             return { success: false, error };
         }
     };

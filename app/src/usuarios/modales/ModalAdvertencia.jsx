@@ -1,9 +1,8 @@
 import React from 'react';
 import { Modal, Button } from 'antd';
 import { WarningOutlined } from '@ant-design/icons';
-import '../../../styles/tabs.css';
-import '../../../styles/buttons.css';
-import '../../../styles/modal.css';
+import '../../styles/buttons.css';
+import '../../styles/modal.css';
 
 const ModalAdvertencia = ({
   visible,

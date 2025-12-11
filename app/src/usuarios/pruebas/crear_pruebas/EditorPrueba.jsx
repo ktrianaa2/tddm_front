@@ -23,7 +23,7 @@ const EditorPrueba = ({
     const [guardando, setGuardando] = useState(false);
 
     // 💡 Función para formatear la prueba en código
-    const formatearPrueba = (prueba) => {
+    const formatearPruebas = (prueba) => {
         if (!prueba) return '';
 
         // Usar el objeto anidado 'prueba' (detalle) si existe, sino usar el objeto de primer nivel (fallback)
@@ -81,6 +81,129 @@ ${asercionesComentarios}
  * - Caso válido: ${detalle.datos_prueba?.ejemplos?.[0]?.caso || 'N/A'}
  * - Caso límite: ${detalle.datos_prueba?.ejemplos?.[1]?.caso || 'N/A'}
  * - Caso inválido: ${detalle.datos_prueba?.ejemplos?.[2]?.caso || 'N/A'}
+ */`;
+    };
+
+    // Función mejorada para formatear prueba
+    const formatearPrueba = (prueba) => {
+        if (!prueba) return '';
+
+        const detalle = prueba.prueba || prueba;
+
+        const generarCodigoDesdePasos = () => {
+            const pasos = detalle.pasos || [];
+
+            if (!pasos.length || pasos[0]?.accion === 'undefined') {
+                // Fallback si no hay pasos válidos
+                return `    test('debe cumplir con el flujo principal', async () => {
+        // ⚠️ Esta prueba necesita implementación
+        // TODO: Implementar la lógica de prueba
+        
+        const entrada = ${detalle.datos_prueba?.entrada || '{}'};
+        const resultado = await funcionBajoPrueba(entrada);
+        
+        expect(resultado).toBeDefined();
+    });`;
+            }
+
+            // Generar código real desde los pasos
+            let codigoTest = `    test('debe cumplir con ${detalle.objetivo || 'el flujo principal'}', async () => {\n`;
+            codigoTest += `        // Arrange\n`;
+
+            // Pasos de configuración (mocks, datos)
+            const pasosArrange = pasos.filter(p =>
+                p.accion.includes('const ') ||
+                p.accion.includes('mock') ||
+                p.paso <= 3
+            );
+
+            pasosArrange.forEach(paso => {
+                codigoTest += `        ${paso.accion}\n`;
+            });
+
+            codigoTest += `\n        // Act\n`;
+
+            // Pasos de ejecución
+            const pasosAct = pasos.filter(p =>
+                p.accion.includes('await ') &&
+                !p.accion.includes('expect')
+            );
+
+            if (pasosAct.length > 0) {
+                pasosAct.forEach(paso => {
+                    codigoTest += `        ${paso.accion}\n`;
+                });
+            } else {
+                // Si no hay paso Act explícito, usar el primero con await
+                const pasoConAwait = pasos.find(p => p.accion.includes('await'));
+                if (pasoConAwait) {
+                    codigoTest += `        ${pasoConAwait.accion}\n`;
+                }
+            }
+
+            codigoTest += `\n        // Assert\n`;
+
+            // Pasos de verificación
+            const pasosAssert = pasos.filter(p => p.accion.includes('expect('));
+
+            if (pasosAssert.length > 0) {
+                pasosAssert.forEach(paso => {
+                    codigoTest += `        ${paso.accion}\n`;
+                });
+            } else {
+                // Fallback: generar expects desde criterios
+                (detalle.criterios_aceptacion || []).forEach((criterio, i) => {
+                    codigoTest += `        // ${criterio}\n`;
+                });
+                codigoTest += `        expect(resultado).toBeDefined();\n`;
+            }
+
+            codigoTest += `    });`;
+
+            return codigoTest;
+        };
+
+        // Precondiciones
+        const precondicionesCode = (detalle.precondiciones || [])
+            .map(p => `        // ${p}`)
+            .join('\n') || '        // Configurar entorno de prueba';
+
+        return `// ${detalle.nombre || prueba.nombre}
+// Código: ${prueba.codigo}
+// Tipo: ${detalle.tipo_prueba || prueba.tipo}
+// Estado: ${prueba.estado || 'Pendiente'}
+
+describe('${detalle.nombre || prueba.nombre}', () => {
+    let mockRepositorio;
+    let service;
+    
+    beforeEach(() => {
+${precondicionesCode}
+        
+        mockRepositorio = {
+            findByCodigo: jest.fn(),
+            save: jest.fn()
+        };
+        
+        service = new ProductoService(mockRepositorio);
+    });
+
+${generarCodigoDesdePasos()
+            }
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+});
+
+/*
+ * ESPECIFICACIÓN: ${prueba.especificacion_relacionada || 'N/A'}
+ * 
+ * OBJETIVO: ${detalle.objetivo || 'N/A'}
+ * 
+ * DATOS DE PRUEBA:
+ * Entrada: ${detalle.datos_prueba?.entrada || 'N/A'}
+ * Salida: ${detalle.datos_prueba?.salida_esperada || 'N/A'}
  */`;
     };
 
@@ -309,7 +432,7 @@ ${asercionesComentarios}
                         💡 <kbd>Ctrl+S</kbd> para guardar cambios
                     </span>
                     <span>
-                        {prueba.especificacion_relacionada && `📋 ${prueba.especificacion_relacionada}`}
+                        {prueba.especificacion_relacionada && `📋 ${prueba.especificacion_relacionada} `}
                     </span>
                 </div>
             </div>

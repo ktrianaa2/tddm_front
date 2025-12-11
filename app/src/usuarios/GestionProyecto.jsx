@@ -124,7 +124,7 @@ const GestionProyecto = ({ proyecto, onBack, onEditar }) => {
 
           {/* Espacio para acciones adicionales si las necesitas */}
           <div className="tab-header-actions">
-            {/* Aquí puedes agregar más botones en el futuro */}
+            {/* agregar más botones en el futuro */}
           </div>
         </div>
 

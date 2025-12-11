@@ -1,0 +1,464 @@
+/* ===================================
+   INFO TAB - ESTILOS ESPECÍFICOS
+   =================================== */
+
+/* Icon Wrapper */
+.info-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info-icon {
+  font-size: 24px;
+  color: white;
+}
+
+/* Labels y Textos */
+.info-label {
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.info-description {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.6;
+  padding: 12px;
+  background: var(--bg-hover);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+/* Empty Description */
+.info-empty-description {
+  padding: 24px;
+  text-align: center;
+  background: var(--bg-hover);
+  border-radius: 8px;
+  border: 2px dashed var(--border-color);
+}
+
+.info-empty-icon {
+  font-size: 32px;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+
+/* Date Cards */
+.info-date-card {
+  padding: 16px;
+  background: var(--bg-hover);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.info-date-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.info-date-icon {
+  font-size: 18px;
+}
+
+.info-date-icon-primary {
+  color: var(--primary-color);
+}
+
+.info-date-icon-info {
+  color: var(--info-color);
+}
+
+.info-date-label {
+  color: var(--text-secondary);
+}
+
+.info-date-value {
+  color: var(--text-primary);
+  font-size: 15px;
+  display: block;
+  margin-left: 26px;
+}
+
+/* Metrics Card */
+.info-metrics-card {
+  margin-bottom: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Metric Boxes */
+.metric-box {
+  text-align: center;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.metric-box:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.metric-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.metric-label {
+  color: #595959;
+  font-size: 13px;
+}
+
+/* Metric Box Variants */
+.metric-box-blue {
+  background: linear-gradient(135deg, #e6f4ff, #f0f5ff);
+  border-color: #91caff;
+}
+
+.metric-box-blue .metric-icon {
+  color: #1890ff;
+}
+
+.metric-box-blue .metric-value {
+  color: #1890ff;
+}
+
+.metric-box-orange {
+  background: linear-gradient(135deg, #fff7e6, #fffbf0);
+  border-color: #ffd591;
+}
+
+.metric-box-orange .metric-icon {
+  color: #fa8c16;
+}
+
+.metric-box-orange .metric-value {
+  color: #fa8c16;
+}
+
+.metric-box-purple {
+  background: linear-gradient(135deg, #f9f0ff, #faf5ff);
+  border-color: #d3adf7;
+}
+
+.metric-box-purple .metric-icon {
+  color: #722ed1;
+}
+
+.metric-box-purple .metric-value {
+  color: #722ed1;
+}
+
+.metric-box-red {
+  background: linear-gradient(135deg, #fff1f0, #fff5f5);
+  border-color: #ffccc7;
+}
+
+.metric-box-red .metric-icon {
+  color: #f5222d;
+}
+
+.metric-box-red .metric-value {
+  color: #f5222d;
+}
+
+/* Progress Card */
+.info-progress-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Empty Progress State */
+.info-empty-progress {
+  text-align: center;
+  padding: 48px 24px;
+  background: linear-gradient(135deg, var(--bg-hover), var(--bg-card));
+  border-radius: 10px;
+  border: 2px dashed var(--border-color);
+}
+
+.info-empty-progress-icon {
+  font-size: 64px;
+  color: var(--primary-color);
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.info-empty-progress-title {
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.info-empty-progress-description {
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Progress Content */
+.info-progress-content {
+  padding: 8px;
+}
+
+.info-progress-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--bg-hover);
+  border-radius: 10px;
+}
+
+.info-progress-stat {
+  text-align: center;
+}
+
+.info-progress-stat-value {
+  font-size: 36px;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 8px;
+}
+
+.info-progress-stat-value-success {
+  color: var(--success-color);
+}
+
+.info-progress-stat-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Progress Bar */
+.info-progress-bar-wrapper {
+  margin-bottom: 24px;
+}
+
+.info-progress-bar {
+  width: 100%;
+  height: 16px;
+  background: var(--bg-hover);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border-color);
+}
+
+.info-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+  border-radius: 8px;
+  transition: width 0.6s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.info-progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Progress Breakdown */
+.info-progress-breakdown {
+  padding: 16px;
+  background: var(--bg-hover);
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.info-breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.info-breakdown-item:hover {
+  background: var(--primary-light);
+  transform: translateX(4px);
+}
+
+.info-breakdown-icon {
+  font-size: 16px;
+  color: var(--primary-color);
+}
+
+/* Actions Card */
+.info-actions-card {
+  margin-bottom: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Summary Card */
+.info-summary-card {
+  margin-bottom: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.info-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--bg-hover);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.info-summary-item:hover {
+  background: var(--primary-light);
+  transform: translateX(4px);
+}
+
+.info-summary-label {
+  color: var(--text-secondary);
+}
+
+.info-summary-value {
+  color: var(--text-primary);
+  font-size: 18px;
+}
+
+.info-summary-value-success {
+  color: var(--success-color);
+}
+
+/* Temporal Card */
+.info-temporal-card {
+  background: linear-gradient(135deg, var(--primary-light), var(--bg-card));
+  border: 1px solid var(--primary-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+}
+
+.info-temporal-icon {
+  font-size: 48px;
+  color: var(--primary-color);
+  margin-bottom: 16px;
+}
+
+.info-temporal-label {
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.info-temporal-value {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.info-temporal-created {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  display: block;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .metric-box {
+    padding: 16px 12px;
+  }
+
+  .metric-icon {
+    font-size: 28px;
+  }
+
+  .metric-value {
+    font-size: 24px;
+  }
+
+  .info-progress-stat-value {
+    font-size: 28px;
+  }
+
+  .info-empty-progress {
+    padding: 32px 16px;
+  }
+
+  .info-empty-progress-icon {
+    font-size: 48px;
+  }
+}
+
+@media (max-width: 576px) {
+  .metric-box {
+    padding: 12px 8px;
+  }
+
+  .metric-icon {
+    font-size: 24px;
+  }
+
+  .metric-value {
+    font-size: 20px;
+  }
+
+  .metric-label {
+    font-size: 12px;
+  }
+
+  .info-date-card {
+    padding: 12px;
+  }
+
+  .info-progress-stats {
+    flex-direction: column;
+    gap: 16px;
+  }
+}

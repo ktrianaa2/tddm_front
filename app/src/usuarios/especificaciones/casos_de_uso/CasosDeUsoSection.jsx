@@ -1,75 +1,87 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Button, Typography, message, Spin, Modal, Row, Col } from "antd";
-import { PlusOutlined, ReloadOutlined, ExclamationCircleOutlined, UserOutlined } from "@ant-design/icons";
+import { PlusOutlined, ExclamationCircleOutlined, UserOutlined } from "@ant-design/icons";
+import { useCasosUso } from "../../../hooks/useCasosdeUso";
 import CasosUsoFormContainer from "./CasosUsoFormContainer";
 import CasoUsoItem from "./CasoUsoItem";
-import { getStoredToken, API_ENDPOINTS, postJSONAuth, getWithAuth, putJSONAuth, deleteWithAuth } from "../../../../config";
 import '../../../styles/forms.css';
 import '../../../styles/buttons.css';
 
 const { Title, Text } = Typography;
 const { confirm } = Modal;
 
-const CasosUsoSection = ({
-  proyectoId,
-  casosUso,
-  catalogos,
-  loading,
-  loadingCatalogos,
-  onActualizar
-}) => {
+const CasosDeUsoSection = ({ proyectoId }) => {
   const [editing, setEditing] = useState(null);
-  const [loadingSubmit, setLoadingSubmit] = useState(false);
+
+  // Usar el hook refactorizado
+  const {
+    // Datos
+    casosUso,
+    catalogos,
+    contadores,
+
+    // Estados de carga
+    loading,
+    loadingDetalle,
+    loadingAccion,
+    loadingCatalogos,
+    errorCatalogos,
+
+    // Funciones CRUD
+    obtenerCasoUso,
+    crearCasoUso,
+    actualizarCasoUso,
+    eliminarCasoUso,
+
+    // Funciones auxiliares
+    cargarCasosUso,
+    recargarTodo
+  } = useCasosUso(proyectoId, true);
+
+  // Función helper para mapear keys a IDs
+  const mapearKeyAId = (key, catalogo) => {
+    if (!key || !catalogo) return undefined;
+
+    const item = catalogo.find(item =>
+      item.key === key ||
+      item.nombre?.toLowerCase() === key.toLowerCase() ||
+      item.id?.toString() === key.toString()
+    );
+    return item ? item.id.toString() : undefined;
+  };
 
   // Cargar un caso de uso específico para edición
   const cargarCasoUsoParaEdicion = async (casoUsoId) => {
-    setLoadingSubmit(true);
-
     try {
-      const token = getStoredToken();
-      const response = await getWithAuth(`${API_ENDPOINTS.OBTENER_CASO_USO}/${casoUsoId}/`, token);
+      const casoUso = await obtenerCasoUso(casoUsoId);
 
-      if (!response || !response.id) {
+      if (!casoUso || !casoUso.id) {
         throw new Error('No se pudo obtener la información del caso de uso');
       }
 
-      // Función helper para mapear keys a IDs
-      const mapearKeyAId = (key, catalogo, tipo) => {
-        if (!key || !catalogo) return undefined;
-
-        const item = catalogo.find(item =>
-          item.key === key ||
-          item.nombre?.toLowerCase() === key.toLowerCase() ||
-          item.id?.toString() === key.toString()
-        );
-        return item ? item.id.toString() : undefined;
-      };
-
       // Preparar los valores para el formulario
       const casoUsoParaEditar = {
-        id: response.id,
-        nombre: response.nombre || '',
-        descripcion: response.descripcion || '',
-        actores: response.actores || '',
-        precondiciones: response.precondiciones || '',
-        flujo_principal: response.flujo_principal || [],
-        flujos_alternativos: response.flujos_alternativos || [],
-        postcondiciones: response.postcondiciones || '',
-        requisitos_especiales: response.requisitos_especiales || '',
-        riesgos_consideraciones: response.riesgos_consideraciones || '',
-        proyecto_id: response.proyecto_id,
+        id: casoUso.id,
+        nombre: casoUso.nombre || '',
+        descripcion: casoUso.descripcion || '',
+        actores: casoUso.actores || '',
+        precondiciones: casoUso.precondiciones || '',
+        flujo_principal: casoUso.flujo_principal || [],
+        flujos_alternativos: casoUso.flujos_alternativos || [],
+        postcondiciones: casoUso.postcondiciones || '',
+        requisitos_especiales: casoUso.requisitos_especiales || '',
+        riesgos_consideraciones: casoUso.riesgos_consideraciones || '',
+        proyecto_id: casoUso.proyecto_id,
 
         // Mapear usando los catálogos disponibles
-        prioridad: mapearKeyAId(response.prioridad, catalogos.prioridades, 'prioridad'),
-        estado: mapearKeyAId(response.estado, catalogos.estados, 'estado'),
+        prioridad: mapearKeyAId(casoUso.prioridad, catalogos?.prioridades),
+        estado: mapearKeyAId(casoUso.estado, catalogos?.estados),
       };
 
       setEditing(casoUsoParaEditar);
 
     } catch (error) {
       message.error(`Error al cargar caso de uso: ${error.message}`);
-    } finally {
-      setLoadingSubmit(false);
     }
   };
 
@@ -78,11 +90,9 @@ const CasosUsoSection = ({
       message.error('No se ha especificado el ID del proyecto');
       return;
     }
-    setLoadingSubmit(true);
-    try {
-      const token = getStoredToken();
 
-      // Mapear los valores del formulario a los nombres esperados por el backend
+    try {
+      // Preparar datos para enviar
       const dataToSend = {
         nombre: values.nombre,
         descripcion: values.descripcion,
@@ -93,42 +103,33 @@ const CasosUsoSection = ({
         postcondiciones: values.postcondiciones || '',
         requisitos_especiales: values.requisitos_especiales || '',
         riesgos_consideraciones: values.riesgos_consideraciones || '',
-        proyecto_id: proyectoId,
         prioridad_id: values.prioridad ? parseInt(values.prioridad) : null,
         estado_id: values.estado ? parseInt(values.estado) : null,
         relaciones: (values.relaciones || [])
           .filter(rel => rel.casoUsoRelacionado && rel.tipo)
-          .map(rel => {
-            return {
-              casoUsoRelacionado: parseInt(rel.casoUsoRelacionado),
-              tipo: parseInt(rel.tipo),
-              descripcion: rel.descripcion || ''
-            };
-          })
+          .map(rel => ({
+            casoUsoRelacionado: parseInt(rel.casoUsoRelacionado),
+            tipo: parseInt(rel.tipo),
+            descripcion: rel.descripcion || ''
+          }))
       };
 
-      let response;
+      let resultado;
 
       if (editing && editing.id) {
-        response = await putJSONAuth(
-          `${API_ENDPOINTS.ACTUALIZAR_CASO_USO}/${editing.id}/`,
-          dataToSend,
-          token
-        );
-        message.success(response.mensaje || 'Caso de uso actualizado exitosamente');
+        // Actualizar
+        resultado = await actualizarCasoUso(editing.id, dataToSend);
       } else {
-        response = await postJSONAuth(API_ENDPOINTS.CREAR_CASO_USO, dataToSend, token);
-        message.success(response.mensaje || 'Caso de uso creado exitosamente');
+        // Crear
+        resultado = await crearCasoUso(dataToSend);
       }
 
-      // Llamar al callback para actualizar los datos en el componente padre
-      onActualizar();
-      setEditing(null);
+      if (resultado.success) {
+        setEditing(null);
+      }
 
     } catch (error) {
       message.error(`Error al guardar caso de uso: ${error.message}`);
-    } finally {
-      setLoadingSubmit(false);
     }
   };
 
@@ -149,17 +150,7 @@ const CasosUsoSection = ({
       okType: 'danger',
       cancelText: 'Cancelar',
       async onOk() {
-        try {
-          const token = getStoredToken();
-          const response = await deleteWithAuth(
-            `${API_ENDPOINTS.ELIMINAR_CASO_USO}/${casoUso.id}/`,
-            token
-          );
-          message.success(response.mensaje || 'Caso de uso eliminado exitosamente');
-          onActualizar();
-        } catch (error) {
-          message.error(`Error al eliminar caso de uso: ${error.message}`);
-        }
+        await eliminarCasoUso(casoUso.id);
       },
     });
   };
@@ -185,7 +176,10 @@ const CasosUsoSection = ({
   // Verificar si los catálogos están disponibles
   const catalogosDisponibles = catalogos &&
     Array.isArray(catalogos.prioridades) && catalogos.prioridades.length > 0 &&
-    Array.isArray(catalogos.estados) && catalogos.estados.length > 0;
+    Array.isArray(catalogos.estados) && catalogos.estados.length > 0 &&
+    Array.isArray(catalogos.tipos_relacion_cu);
+
+  // VALIDACIONES Y ESTADOS DE CARGA
 
   if (!proyectoId) {
     return (
@@ -210,17 +204,22 @@ const CasosUsoSection = ({
   }
 
   // MOSTRAR ERROR SI NO SE PUDIERON CARGAR LOS CATÁLOGOS
-  if (!catalogos) {
+  if (errorCatalogos || (!catalogos && !loadingCatalogos)) {
     return (
       <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
         <ExclamationCircleOutlined style={{ fontSize: "3rem", color: "#ff4d4f", marginBottom: "1rem" }} />
         <Title level={4} type="danger">Error al cargar catálogos</Title>
         <Text type="secondary" style={{ display: 'block', marginBottom: '1rem' }}>
-          Los catálogos necesarios no están disponibles
+          {errorCatalogos || 'Los catálogos necesarios no están disponibles'}
         </Text>
+        <Button type="primary" onClick={recargarTodo}>
+          Reintentar
+        </Button>
       </Card>
     );
   }
+
+  // RENDERIZADO PRINCIPAL
 
   return (
     <div>
@@ -231,20 +230,30 @@ const CasosUsoSection = ({
           onCancel={handleCancelar}
           casosUsoExistentes={casosUso}
           proyectoId={proyectoId}
-          loading={loadingSubmit}
+          loading={loadingAccion}
           catalogosExternos={catalogos}
         />
       ) : (
         <>
           {/* Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "1.5rem"
+          }}>
             <div>
               <Title level={3} style={{ margin: 0 }}>
                 <UserOutlined style={{ marginRight: "0.5rem", color: "#52c41a" }} />
                 Gestión de Casos de Uso
               </Title>
               <Text type="secondary">
-                {casosUso.length} caso{casosUso.length !== 1 ? "s" : ""} de uso
+                {contadores.total} caso{contadores.total !== 1 ? "s" : ""} de uso
+                {contadores.conRelaciones > 0 && (
+                  <span style={{ marginLeft: '0.5rem' }}>
+                    • {contadores.conRelaciones} con relaciones
+                  </span>
+                )}
               </Text>
             </div>
 
@@ -277,9 +286,27 @@ const CasosUsoSection = ({
               {/* Lista de casos de uso */}
               {casosUso.length === 0 ? (
                 <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
-                  <UserOutlined style={{ fontSize: "3rem", color: "var(--text-disabled)", marginBottom: "1rem" }} />
-                  <Title level={4} type="secondary">No hay casos de uso definidos</Title>
-                  <Text type="secondary">Comienza agregando el primer caso de uso de este proyecto</Text>
+                  <UserOutlined style={{
+                    fontSize: "3rem",
+                    color: "var(--text-disabled)",
+                    marginBottom: "1rem"
+                  }} />
+                  <Title level={4} type="secondary">
+                    No hay casos de uso definidos
+                  </Title>
+                  <Text type="secondary">
+                    Comienza agregando el primer caso de uso de este proyecto
+                  </Text>
+                  <div style={{ marginTop: '1.5rem' }}>
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={() => setEditing({})}
+                      disabled={!catalogosDisponibles}
+                    >
+                      Crear Primer Caso de Uso
+                    </Button>
+                  </div>
                 </Card>
               ) : (
                 <Row gutter={[16, 16]}>
@@ -289,7 +316,7 @@ const CasosUsoSection = ({
                         casoUso={casoUso}
                         onEditar={handleEditar}
                         onEliminar={handleEliminar}
-                        loading={loadingSubmit}
+                        loading={loadingDetalle || loadingAccion}
                         catalogosDisponibles={catalogosDisponibles}
                       />
                     </Col>
@@ -304,4 +331,4 @@ const CasosUsoSection = ({
   );
 };
 
-export default CasosUsoSection;
+export default CasosDeUsoSection;

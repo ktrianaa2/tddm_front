@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { message } from 'antd';
-import { 
-    getStoredToken, 
-    API_ENDPOINTS, 
-    getWithAuth, 
-    postJSONAuth, 
-    putJSONAuth, 
-    deleteWithAuth 
+import {
+    getStoredToken,
+    API_ENDPOINTS,
+    getWithAuth,
+    postJSONAuth,
+    putJSONAuth,
+    deleteWithAuth
 } from '../../config';
 
 /**
@@ -17,33 +17,35 @@ import {
  */
 export const useCasosUso = (proyectoId, autoLoad = true) => {
     // ============== ESTADOS ==============
+    // Estados para los casos de uso
     const [casosUso, setCasosUso] = useState([]);
     const [casoUsoActual, setCasoUsoActual] = useState(null);
     const [relacionesActuales, setRelacionesActuales] = useState([]);
-    
+
+    // Estados para catálogos
+    const [catalogos, setCatalogos] = useState(null);
+
     // Estados de carga
     const [loading, setLoading] = useState(false);
     const [loadingDetalle, setLoadingDetalle] = useState(false);
     const [loadingAccion, setLoadingAccion] = useState(false);
-    
-    // Catálogos específicos para casos de uso
-    const [catalogos, setCatalogos] = useState({
-        prioridades: [],
-        estados: [],
-        tipos_relacion_cu: []
-    });
     const [loadingCatalogos, setLoadingCatalogos] = useState(false);
+    const [errorCatalogos, setErrorCatalogos] = useState(null);
 
     // ============== FUNCIONES DE CATÁLOGOS ==============
-    
+
     /**
      * Carga todos los catálogos necesarios para casos de uso
      */
     const cargarCatalogos = useCallback(async () => {
         setLoadingCatalogos(true);
+        setErrorCatalogos(null);
+
         try {
             const token = getStoredToken();
-            if (!token) throw new Error('No hay token de autenticación');
+            if (!token) {
+                throw new Error('No hay token de autenticación');
+            }
 
             const [prioridades, estados, tiposRel] = await Promise.allSettled([
                 getWithAuth(API_ENDPOINTS.PRIORIDADES, token),
@@ -74,11 +76,11 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
 
             // Procesar estados (filtrar solo para casos de uso)
             if (estados.status === 'fulfilled' && estados.value) {
-                const data = estados.value.estados_elemento || estados.value.estados || 
-                            estados.value.data || estados.value;
+                const data = estados.value.estados_elemento || estados.value.estados ||
+                    estados.value.data || estados.value;
                 if (Array.isArray(data)) {
                     catalogosData.estados = data
-                        .filter(e => e.tipo === 'caso_uso' || !e.tipo) // Filtrar solo estados de caso de uso
+                        .filter(e => e.tipo === 'caso_uso' || !e.tipo)
                         .map(e => ({
                             id: e.id || e.estado_id,
                             nombre: e.nombre,
@@ -92,9 +94,9 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
 
             // Procesar tipos de relación para casos de uso
             if (tiposRel.status === 'fulfilled' && tiposRel.value) {
-                const data = tiposRel.value.tipos_relacion_cu || 
-                            tiposRel.value.tipos_relacion || 
-                            tiposRel.value.data || tiposRel.value;
+                const data = tiposRel.value.tipos_relacion_cu ||
+                    tiposRel.value.tipos_relacion ||
+                    tiposRel.value.data || tiposRel.value;
                 if (Array.isArray(data)) {
                     catalogosData.tipos_relacion_cu = data.map(tr => ({
                         id: tr.id || tr.relacion_id,
@@ -110,63 +112,69 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
             return catalogosData;
 
         } catch (error) {
-            message.error(`Error al cargar catálogos: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            setErrorCatalogos(errorMsg);
+            message.error(`Error al cargar catálogos: ${errorMsg}`);
             throw error;
         } finally {
             setLoadingCatalogos(false);
         }
     }, []);
 
-    // ============== FUNCIONES CRUD ==============
+    // ============== FUNCIONES DE CARGA ==============
 
     /**
      * Listar todos los casos de uso de un proyecto
      */
-    const listarCasosUso = useCallback(async (showMessage = false) => {
+    const cargarCasosUso = useCallback(async () => {
         if (!proyectoId) {
-            console.warn('No se puede listar casos de uso sin proyectoId');
-            return [];
+            console.warn('No se puede cargar casos de uso sin proyectoId');
+            return;
         }
 
         setLoading(true);
         try {
             const token = getStoredToken();
-            if (!token) throw new Error('No hay token de autenticación');
+            if (!token) {
+                throw new Error('No hay token de autenticación');
+            }
 
             const response = await getWithAuth(
                 `${API_ENDPOINTS.LISTAR_CASOS_USO}/${proyectoId}/`,
                 token
             );
 
-            const casosUsoData = response.data || [];
-            const casosUsoProcessed = casosUsoData.map(cu => ({
-                id: cu.id,
-                nombre: cu.nombre,
-                descripcion: cu.descripcion || '',
-                actores: cu.actores,
-                precondiciones: cu.precondiciones,
-                flujo_principal: cu.flujo_principal || [],
-                flujos_alternativos: cu.flujos_alternativos || [],
-                postcondiciones: cu.postcondiciones || '',
-                requisitos_especiales: cu.requisitos_especiales || '',
-                riesgos_consideraciones: cu.riesgos_consideraciones || '',
-                prioridad: cu.prioridad,
-                estado: cu.estado,
-                proyecto_id: cu.proyecto_id,
-                fecha_creacion: cu.fecha_creacion,
-                relaciones: cu.relaciones || []
-            }));
+            // Intentar diferentes estructuras de respuesta
+            const casosUsoData = response.casos_uso || response.data || [];
 
-            setCasosUso(casosUsoProcessed);
-            if (showMessage) {
-                message.success(`${casosUsoProcessed.length} casos de uso cargados`);
+            if (Array.isArray(casosUsoData)) {
+                const casosUsoProcessed = casosUsoData.map(cu => ({
+                    id: cu.id,
+                    nombre: cu.nombre,
+                    descripcion: cu.descripcion || '',
+                    actores: cu.actores,
+                    precondiciones: cu.precondiciones,
+                    flujo_principal: cu.flujo_principal || [],
+                    flujos_alternativos: cu.flujos_alternativos || [],
+                    postcondiciones: cu.postcondiciones || '',
+                    requisitos_especiales: cu.requisitos_especiales || '',
+                    riesgos_consideraciones: cu.riesgos_consideraciones || '',
+                    prioridad: cu.prioridad,
+                    estado: cu.estado,
+                    proyecto_id: cu.proyecto_id,
+                    fecha_creacion: cu.fecha_creacion,
+                    relaciones: cu.relaciones || []
+                }));
+                setCasosUso(casosUsoProcessed);
+            } else {
+                setCasosUso([]);
             }
-            return casosUsoProcessed;
 
         } catch (error) {
-            message.error(`Error al listar casos de uso: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al cargar casos de uso: ${errorMsg}`);
             setCasosUso([]);
-            return [];
+            throw error;
         } finally {
             setLoading(false);
         }
@@ -212,7 +220,7 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
 
                 setCasoUsoActual(casoUsoProcessed);
                 setRelacionesActuales(casoUsoProcessed.relaciones);
-                
+
                 if (showMessage) {
                     message.success('Caso de uso cargado correctamente');
                 }
@@ -222,12 +230,39 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
             return null;
 
         } catch (error) {
-            message.error(`Error al obtener caso de uso: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al obtener caso de uso: ${errorMsg}`);
             return null;
         } finally {
             setLoadingDetalle(false);
         }
     }, []);
+
+    /**
+     * Obtener las relaciones de un caso de uso específico
+     */
+    const obtenerRelaciones = useCallback(async (casoUsoId) => {
+        try {
+            const token = getStoredToken();
+            if (!token) throw new Error('No hay token de autenticación');
+
+            const response = await getWithAuth(
+                `${API_ENDPOINTS.RELACIONES_CASO_USO}/${casoUsoId}/`,
+                token
+            );
+
+            const relaciones = response.relaciones || [];
+            setRelacionesActuales(relaciones);
+            return relaciones;
+
+        } catch (error) {
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al obtener relaciones: ${errorMsg}`);
+            return [];
+        }
+    }, []);
+
+    // ============== FUNCIONES CRUD ==============
 
     /**
      * Crear un nuevo caso de uso
@@ -238,7 +273,6 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
             const token = getStoredToken();
             if (!token) throw new Error('No hay token de autenticación');
 
-            // Preparar datos para enviar
             const payload = {
                 nombre: datosCasoUso.nombre,
                 descripcion: datosCasoUso.descripcion || '',
@@ -262,10 +296,8 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
             );
 
             message.success('Caso de uso creado exitosamente');
-            
-            // Recargar la lista
-            await listarCasosUso();
-            
+            await cargarCasosUso();
+
             return {
                 success: true,
                 caso_uso_id: response.caso_uso_id,
@@ -273,15 +305,16 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
             };
 
         } catch (error) {
-            message.error(`Error al crear caso de uso: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al crear caso de uso: ${errorMsg}`);
             return {
                 success: false,
-                error: error.message
+                error: errorMsg
             };
         } finally {
             setLoadingAccion(false);
         }
-    }, [proyectoId, listarCasosUso]);
+    }, [proyectoId, cargarCasosUso]);
 
     /**
      * Actualizar un caso de uso existente
@@ -299,33 +332,31 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
             );
 
             message.success('Caso de uso actualizado exitosamente');
-            
-            // Recargar la lista
-            await listarCasosUso();
-            
-            // Si es el caso de uso actual, recargarlo
+            await cargarCasosUso();
+
             if (casoUsoActual && casoUsoActual.id === casoUsoId) {
                 await obtenerCasoUso(casoUsoId);
             }
-            
+
             return {
                 success: true,
                 data: response
             };
 
         } catch (error) {
-            message.error(`Error al actualizar caso de uso: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al actualizar caso de uso: ${errorMsg}`);
             return {
                 success: false,
-                error: error.message
+                error: errorMsg
             };
         } finally {
             setLoadingAccion(false);
         }
-    }, [listarCasosUso, obtenerCasoUso, casoUsoActual]);
+    }, [cargarCasosUso, obtenerCasoUso, casoUsoActual]);
 
     /**
-     * Eliminar un caso de uso (soft delete)
+     * Eliminar un caso de uso
      */
     const eliminarCasoUso = useCallback(async (casoUsoId) => {
         setLoadingAccion(true);
@@ -339,53 +370,26 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
             );
 
             message.success('Caso de uso eliminado exitosamente');
-            
-            // Recargar la lista
-            await listarCasosUso();
-            
-            // Limpiar caso de uso actual si era el eliminado
+            await cargarCasosUso();
+
             if (casoUsoActual && casoUsoActual.id === casoUsoId) {
                 setCasoUsoActual(null);
                 setRelacionesActuales([]);
             }
-            
-            return {
-                success: true
-            };
+
+            return { success: true };
 
         } catch (error) {
-            message.error(`Error al eliminar caso de uso: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al eliminar caso de uso: ${errorMsg}`);
             return {
                 success: false,
-                error: error.message
+                error: errorMsg
             };
         } finally {
             setLoadingAccion(false);
         }
-    }, [listarCasosUso, casoUsoActual]);
-
-    /**
-     * Obtener las relaciones de un caso de uso específico
-     */
-    const obtenerRelaciones = useCallback(async (casoUsoId) => {
-        try {
-            const token = getStoredToken();
-            if (!token) throw new Error('No hay token de autenticación');
-
-            const response = await getWithAuth(
-                `${API_ENDPOINTS.RELACIONES_CASO_USO}/${casoUsoId}/`,
-                token
-            );
-
-            const relaciones = response.relaciones || [];
-            setRelacionesActuales(relaciones);
-            return relaciones;
-
-        } catch (error) {
-            message.error(`Error al obtener relaciones: ${error.message}`);
-            return [];
-        }
-    }, []);
+    }, [cargarCasosUso, casoUsoActual]);
 
     // ============== FUNCIONES AUXILIARES ==============
 
@@ -398,7 +402,7 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
         }
 
         const textoLower = texto.toLowerCase();
-        return casosUso.filter(cu => 
+        return casosUso.filter(cu =>
             cu.nombre?.toLowerCase().includes(textoLower) ||
             cu.descripcion?.toLowerCase().includes(textoLower) ||
             cu.actores?.toLowerCase().includes(textoLower) ||
@@ -422,7 +426,7 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
 
         if (filtros.actor) {
             const actorLower = filtros.actor.toLowerCase();
-            resultado = resultado.filter(cu => 
+            resultado = resultado.filter(cu =>
                 cu.actores?.toLowerCase().includes(actorLower)
             );
         }
@@ -444,20 +448,17 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
         };
 
         casosUso.forEach(cu => {
-            // Por prioridad
             if (cu.prioridad) {
                 stats.porPrioridad[cu.prioridad] = (stats.porPrioridad[cu.prioridad] || 0) + 1;
             }
 
-            // Por estado
             if (cu.estado) {
                 stats.porEstado[cu.estado] = (stats.porEstado[cu.estado] || 0) + 1;
             }
 
-            // Relaciones
             const numRelaciones = cu.relaciones?.length || 0;
             stats.totalRelaciones += numRelaciones;
-            
+
             if (numRelaciones > 0) {
                 stats.conRelaciones++;
             } else {
@@ -473,10 +474,9 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
      */
     const obtenerActoresUnicos = useCallback(() => {
         const actoresSet = new Set();
-        
+
         casosUso.forEach(cu => {
             if (cu.actores) {
-                // Separar por comas y limpiar espacios
                 const actores = cu.actores.split(',').map(a => a.trim());
                 actores.forEach(actor => {
                     if (actor) actoresSet.add(actor);
@@ -516,7 +516,6 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
     const validarDatosCasoUso = useCallback((datos) => {
         const errores = [];
 
-        // Validaciones obligatorias según backend
         if (!datos.nombre || datos.nombre.trim() === '') {
             errores.push('El nombre es obligatorio');
         } else if (datos.nombre.trim().length > 100) {
@@ -531,7 +530,6 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
             errores.push('Las precondiciones son obligatorias');
         }
 
-        // Validar flujos si existen
         if (datos.flujo_principal && datos.flujo_principal.length > 0) {
             const erroresFlujo = validarFlujos(datos.flujo_principal, 'principal');
             errores.push(...erroresFlujo);
@@ -563,25 +561,38 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
         try {
             await Promise.all([
                 cargarCatalogos(),
-                listarCasosUso()
+                cargarCasosUso()
             ]);
         } catch (error) {
             console.error('Error al recargar datos:', error);
         }
-    }, [cargarCatalogos, listarCasosUso]);
+    }, [cargarCatalogos, cargarCasosUso]);
 
     // ============== EFECTOS ==============
 
+    /**
+     * Efecto para carga automática
+     */
     useEffect(() => {
         if (autoLoad && proyectoId) {
             // Cargar catálogos solo si no están cargados
-            if (catalogos.prioridades.length === 0) {
+            if (!catalogos) {
                 cargarCatalogos();
             }
-            // Cargar casos de uso
-            listarCasosUso();
+            // Cargar casos de uso cuando cambia el proyecto
+            cargarCasosUso();
         }
     }, [proyectoId, autoLoad]);
+
+    // ============== CONTADORES ==============
+    const contadores = {
+        total: casosUso.length,
+        porPrioridad: obtenerEstadisticas().porPrioridad,
+        porEstado: obtenerEstadisticas().porEstado,
+        conRelaciones: obtenerEstadisticas().conRelaciones,
+        sinRelaciones: obtenerEstadisticas().sinRelaciones,
+        totalRelaciones: obtenerEstadisticas().totalRelaciones
+    };
 
     // ============== RETURN ==============
 
@@ -591,7 +602,7 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
         casoUsoActual,
         relacionesActuales,
         catalogos,
-        estadisticas: obtenerEstadisticas(),
+        contadores,
         actoresUnicos: obtenerActoresUnicos(),
 
         // Estados de carga
@@ -599,9 +610,13 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
         loadingDetalle,
         loadingAccion,
         loadingCatalogos,
+        errorCatalogos,
+
+        // Funciones de carga
+        cargarCatalogos,
+        cargarCasosUso,
 
         // Funciones CRUD
-        listarCasosUso,
         obtenerCasoUso,
         crearCasoUso,
         actualizarCasoUso,
@@ -613,11 +628,10 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
         filtrarCasosUso,
         validarDatosCasoUso,
         validarFlujos,
-        cargarCatalogos,
         limpiarEstado,
         recargarTodo,
 
-        // Setters (por si se necesitan)
+        // Setters
         setCasosUso,
         setCasoUsoActual,
         setRelacionesActuales

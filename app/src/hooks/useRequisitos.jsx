@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { message } from 'antd';
-import { 
-    getStoredToken, 
-    API_ENDPOINTS, 
-    getWithAuth, 
-    postJSONAuth, 
-    putJSONAuth, 
-    deleteWithAuth 
+import {
+    getStoredToken,
+    API_ENDPOINTS,
+    getWithAuth,
+    postJSONAuth,
+    putJSONAuth,
+    deleteWithAuth
 } from '../../config';
 
 /**
@@ -17,34 +17,35 @@ import {
  */
 export const useRequisitos = (proyectoId, autoLoad = true) => {
     // ============== ESTADOS ==============
+    // Estados para los requisitos
     const [requisitos, setRequisitos] = useState([]);
     const [requisitoActual, setRequisitoActual] = useState(null);
     const [relacionesActuales, setRelacionesActuales] = useState([]);
-    
+
+    // Estados para catálogos
+    const [catalogos, setCatalogos] = useState(null);
+
     // Estados de carga
     const [loading, setLoading] = useState(false);
     const [loadingDetalle, setLoadingDetalle] = useState(false);
     const [loadingAccion, setLoadingAccion] = useState(false);
-    
-    // Catálogos específicos para requisitos
-    const [catalogos, setCatalogos] = useState({
-        tipos_requisito: [],
-        prioridades: [],
-        estados: [],
-        tipos_relacion_requisito: []
-    });
     const [loadingCatalogos, setLoadingCatalogos] = useState(false);
+    const [errorCatalogos, setErrorCatalogos] = useState(null);
 
     // ============== FUNCIONES DE CATÁLOGOS ==============
-    
+
     /**
      * Carga todos los catálogos necesarios para requisitos
      */
     const cargarCatalogos = useCallback(async () => {
         setLoadingCatalogos(true);
+        setErrorCatalogos(null);
+
         try {
             const token = getStoredToken();
-            if (!token) throw new Error('No hay token de autenticación');
+            if (!token) {
+                throw new Error('No hay token de autenticación');
+            }
 
             const [tiposReq, prioridades, estados, tiposRel] = await Promise.allSettled([
                 getWithAuth(API_ENDPOINTS.TIPOS_REQUISITO, token),
@@ -89,27 +90,29 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
                 }
             }
 
-            // Procesar estados
+            // Procesar estados (filtrar solo para requisitos)
             if (estados.status === 'fulfilled' && estados.value) {
-                const data = estados.value.estados_elemento || estados.value.estados || 
-                            estados.value.data || estados.value;
+                const data = estados.value.estados_elemento || estados.value.estados ||
+                    estados.value.data || estados.value;
                 if (Array.isArray(data)) {
-                    catalogosData.estados = data.map(e => ({
-                        id: e.id || e.estado_id,
-                        nombre: e.nombre,
-                        key: e.key || e.nombre?.toLowerCase().replace(/[\s_-]+/g, '-'),
-                        descripcion: e.descripcion || '',
-                        tipo: e.tipo,
-                        activo: e.activo !== false
-                    }));
+                    catalogosData.estados = data
+                        .filter(e => e.tipo === 'requisito' || !e.tipo)
+                        .map(e => ({
+                            id: e.id || e.estado_id,
+                            nombre: e.nombre,
+                            key: e.key || e.nombre?.toLowerCase().replace(/[\s_-]+/g, '-'),
+                            descripcion: e.descripcion || '',
+                            tipo: e.tipo,
+                            activo: e.activo !== false
+                        }));
                 }
             }
 
             // Procesar tipos de relación
             if (tiposRel.status === 'fulfilled' && tiposRel.value) {
-                const data = tiposRel.value.tipos_relacion_requisito || 
-                            tiposRel.value.tipos_relacion || 
-                            tiposRel.value.data || tiposRel.value;
+                const data = tiposRel.value.tipos_relacion_requisito ||
+                    tiposRel.value.tipos_relacion ||
+                    tiposRel.value.data || tiposRel.value;
                 if (Array.isArray(data)) {
                     catalogosData.tipos_relacion_requisito = data.map(tr => ({
                         id: tr.id || tr.relacion_id,
@@ -125,59 +128,66 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
             return catalogosData;
 
         } catch (error) {
-            message.error(`Error al cargar catálogos: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            setErrorCatalogos(errorMsg);
+            message.error(`Error al cargar catálogos: ${errorMsg}`);
             throw error;
         } finally {
             setLoadingCatalogos(false);
         }
     }, []);
 
-    // ============== FUNCIONES CRUD ==============
+    // ============== FUNCIONES DE CARGA ==============
 
     /**
      * Listar todos los requisitos de un proyecto
      */
-    const listarRequisitos = useCallback(async (showMessage = false) => {
+    const cargarRequisitos = useCallback(async () => {
         if (!proyectoId) {
-            console.warn('No se puede listar requisitos sin proyectoId');
-            return [];
+            console.warn('No se puede cargar requisitos sin proyectoId');
+            return;
         }
 
         setLoading(true);
         try {
             const token = getStoredToken();
-            if (!token) throw new Error('No hay token de autenticación');
+            if (!token) {
+                throw new Error('No hay token de autenticación');
+            }
 
             const response = await getWithAuth(
                 `${API_ENDPOINTS.LISTAR_REQUISITOS}/${proyectoId}/`,
                 token
             );
 
-            const requisitosData = response.requisitos || [];
-            const requisitosProcessed = requisitosData.map(req => ({
-                id: req.id,
-                nombre: req.nombre,
-                descripcion: req.descripcion,
-                tipo: req.tipo,
-                criterios: req.criterios,
-                prioridad: req.prioridad,
-                estado: req.estado,
-                origen: req.origen || '',
-                condiciones_previas: req.condiciones_previas || '',
-                proyecto_id: req.proyecto_id,
-                fecha_creacion: req.fecha_creacion
-            }));
+            // Intentar diferentes estructuras de respuesta
+            const requisitosData = response.requisitos || response.data || [];
 
-            setRequisitos(requisitosProcessed);
-            if (showMessage) {
-                message.success(`${requisitosProcessed.length} requisitos cargados`);
+            if (Array.isArray(requisitosData)) {
+                const requisitosProcessed = requisitosData.map(req => ({
+                    id: req.id,
+                    nombre: req.nombre,
+                    descripcion: req.descripcion,
+                    tipo: req.tipo,
+                    criterios: req.criterios,
+                    prioridad: req.prioridad,
+                    estado: req.estado,
+                    origen: req.origen || '',
+                    condiciones_previas: req.condiciones_previas || '',
+                    proyecto_id: req.proyecto_id,
+                    fecha_creacion: req.fecha_creacion,
+                    relaciones_requisitos: req.relaciones_requisitos || []
+                }));
+                setRequisitos(requisitosProcessed);
+            } else {
+                setRequisitos([]);
             }
-            return requisitosProcessed;
 
         } catch (error) {
-            message.error(`Error al listar requisitos: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al cargar requisitos: ${errorMsg}`);
             setRequisitos([]);
-            return [];
+            throw error;
         } finally {
             setLoading(false);
         }
@@ -202,7 +212,7 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
                 token
             );
 
-            const requisito = response.requisito;
+            const requisito = response.requisito || response;
             if (requisito) {
                 const requisitoProcessed = {
                     id: requisito.id,
@@ -221,7 +231,7 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
 
                 setRequisitoActual(requisitoProcessed);
                 setRelacionesActuales(requisitoProcessed.relaciones_requisitos);
-                
+
                 if (showMessage) {
                     message.success('Requisito cargado correctamente');
                 }
@@ -231,12 +241,39 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
             return null;
 
         } catch (error) {
-            message.error(`Error al obtener requisito: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al obtener requisito: ${errorMsg}`);
             return null;
         } finally {
             setLoadingDetalle(false);
         }
     }, []);
+
+    /**
+     * Obtener las relaciones de un requisito específico
+     */
+    const obtenerRelaciones = useCallback(async (requisitoId) => {
+        try {
+            const token = getStoredToken();
+            if (!token) throw new Error('No hay token de autenticación');
+
+            const response = await getWithAuth(
+                `${API_ENDPOINTS.RELACIONES_REQUISITO}/${requisitoId}/`,
+                token
+            );
+
+            const relaciones = response.relaciones || [];
+            setRelacionesActuales(relaciones);
+            return relaciones;
+
+        } catch (error) {
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al obtener relaciones: ${errorMsg}`);
+            return [];
+        }
+    }, []);
+
+    // ============== FUNCIONES CRUD ==============
 
     /**
      * Crear un nuevo requisito
@@ -247,7 +284,6 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
             const token = getStoredToken();
             if (!token) throw new Error('No hay token de autenticación');
 
-            // Preparar datos para enviar
             const payload = {
                 nombre: datosRequisito.nombre,
                 descripcion: datosRequisito.descripcion,
@@ -268,10 +304,8 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
             );
 
             message.success('Requisito creado exitosamente');
-            
-            // Recargar la lista
-            await listarRequisitos();
-            
+            await cargarRequisitos();
+
             return {
                 success: true,
                 requisito_id: response.requisito_id,
@@ -279,15 +313,16 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
             };
 
         } catch (error) {
-            message.error(`Error al crear requisito: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al crear requisito: ${errorMsg}`);
             return {
                 success: false,
-                error: error.message
+                error: errorMsg
             };
         } finally {
             setLoadingAccion(false);
         }
-    }, [proyectoId, listarRequisitos]);
+    }, [proyectoId, cargarRequisitos]);
 
     /**
      * Actualizar un requisito existente
@@ -305,30 +340,28 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
             );
 
             message.success('Requisito actualizado exitosamente');
-            
-            // Recargar la lista
-            await listarRequisitos();
-            
-            // Si es el requisito actual, recargarlo
+            await cargarRequisitos();
+
             if (requisitoActual && requisitoActual.id === requisitoId) {
                 await obtenerRequisito(requisitoId);
             }
-            
+
             return {
                 success: true,
                 data: response
             };
 
         } catch (error) {
-            message.error(`Error al actualizar requisito: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al actualizar requisito: ${errorMsg}`);
             return {
                 success: false,
-                error: error.message
+                error: errorMsg
             };
         } finally {
             setLoadingAccion(false);
         }
-    }, [listarRequisitos, obtenerRequisito, requisitoActual]);
+    }, [cargarRequisitos, obtenerRequisito, requisitoActual]);
 
     /**
      * Eliminar un requisito (soft delete)
@@ -345,53 +378,26 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
             );
 
             message.success('Requisito eliminado exitosamente');
-            
-            // Recargar la lista
-            await listarRequisitos();
-            
-            // Limpiar requisito actual si era el eliminado
+            await cargarRequisitos();
+
             if (requisitoActual && requisitoActual.id === requisitoId) {
                 setRequisitoActual(null);
                 setRelacionesActuales([]);
             }
-            
-            return {
-                success: true
-            };
+
+            return { success: true };
 
         } catch (error) {
-            message.error(`Error al eliminar requisito: ${error.message}`);
+            const errorMsg = error.message || 'Error desconocido';
+            message.error(`Error al eliminar requisito: ${errorMsg}`);
             return {
                 success: false,
-                error: error.message
+                error: errorMsg
             };
         } finally {
             setLoadingAccion(false);
         }
-    }, [listarRequisitos, requisitoActual]);
-
-    /**
-     * Obtener las relaciones de un requisito específico
-     */
-    const obtenerRelaciones = useCallback(async (requisitoId) => {
-        try {
-            const token = getStoredToken();
-            if (!token) throw new Error('No hay token de autenticación');
-
-            const response = await getWithAuth(
-                `${API_ENDPOINTS.RELACIONES_REQUISITO}/${requisitoId}/`,
-                token
-            );
-
-            const relaciones = response.relaciones || [];
-            setRelacionesActuales(relaciones);
-            return relaciones;
-
-        } catch (error) {
-            message.error(`Error al obtener relaciones: ${error.message}`);
-            return [];
-        }
-    }, []);
+    }, [cargarRequisitos, requisitoActual]);
 
     // ============== FUNCIONES AUXILIARES ==============
 
@@ -404,7 +410,7 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
         }
 
         const textoLower = texto.toLowerCase();
-        return requisitos.filter(req => 
+        return requisitos.filter(req =>
             req.nombre?.toLowerCase().includes(textoLower) ||
             req.descripcion?.toLowerCase().includes(textoLower) ||
             req.criterios?.toLowerCase().includes(textoLower)
@@ -440,7 +446,10 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
             total: requisitos.length,
             porTipo: {},
             porPrioridad: {},
-            porEstado: {}
+            porEstado: {},
+            conRelaciones: 0,
+            sinRelaciones: 0,
+            totalRelaciones: 0
         };
 
         requisitos.forEach(req => {
@@ -458,10 +467,50 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
             if (req.estado) {
                 stats.porEstado[req.estado] = (stats.porEstado[req.estado] || 0) + 1;
             }
+
+            // Contar relaciones
+            const numRelaciones = req.relaciones_requisitos?.length || 0;
+            stats.totalRelaciones += numRelaciones;
+
+            if (numRelaciones > 0) {
+                stats.conRelaciones++;
+            } else {
+                stats.sinRelaciones++;
+            }
         });
 
         return stats;
     }, [requisitos]);
+
+    /**
+     * Validar datos de requisito antes de crear/actualizar
+     */
+    const validarDatosRequisito = useCallback((datos) => {
+        const errores = [];
+
+        if (!datos.nombre || datos.nombre.trim() === '') {
+            errores.push('El nombre es obligatorio');
+        } else if (datos.nombre.trim().length > 100) {
+            errores.push('El nombre no puede exceder 100 caracteres');
+        }
+
+        if (!datos.descripcion || datos.descripcion.trim() === '') {
+            errores.push('La descripción es obligatoria');
+        }
+
+        if (!datos.tipo_id) {
+            errores.push('El tipo de requisito es obligatorio');
+        }
+
+        if (!datos.criterios || datos.criterios.trim() === '') {
+            errores.push('Los criterios de aceptación son obligatorios');
+        }
+
+        return {
+            valido: errores.length === 0,
+            errores
+        };
+    }, []);
 
     /**
      * Limpiar estado
@@ -478,25 +527,39 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
         try {
             await Promise.all([
                 cargarCatalogos(),
-                listarRequisitos()
+                cargarRequisitos()
             ]);
         } catch (error) {
             console.error('Error al recargar datos:', error);
         }
-    }, [cargarCatalogos, listarRequisitos]);
+    }, [cargarCatalogos, cargarRequisitos]);
 
     // ============== EFECTOS ==============
 
+    /**
+     * Efecto para carga automática
+     */
     useEffect(() => {
         if (autoLoad && proyectoId) {
             // Cargar catálogos solo si no están cargados
-            if (catalogos.tipos_requisito.length === 0) {
+            if (!catalogos) {
                 cargarCatalogos();
             }
-            // Cargar requisitos
-            listarRequisitos();
+            // Cargar requisitos cuando cambia el proyecto
+            cargarRequisitos();
         }
     }, [proyectoId, autoLoad]);
+
+    // ============== CONTADORES ==============
+    const contadores = {
+        total: requisitos.length,
+        porTipo: obtenerEstadisticas().porTipo,
+        porPrioridad: obtenerEstadisticas().porPrioridad,
+        porEstado: obtenerEstadisticas().porEstado,
+        conRelaciones: obtenerEstadisticas().conRelaciones,
+        sinRelaciones: obtenerEstadisticas().sinRelaciones,
+        totalRelaciones: obtenerEstadisticas().totalRelaciones
+    };
 
     // ============== RETURN ==============
 
@@ -506,6 +569,7 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
         requisitoActual,
         relacionesActuales,
         catalogos,
+        contadores,
         estadisticas: obtenerEstadisticas(),
 
         // Estados de carga
@@ -513,9 +577,13 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
         loadingDetalle,
         loadingAccion,
         loadingCatalogos,
+        errorCatalogos,
+
+        // Funciones de carga
+        cargarCatalogos,
+        cargarRequisitos,
 
         // Funciones CRUD
-        listarRequisitos,
         obtenerRequisito,
         crearRequisito,
         actualizarRequisito,
@@ -525,11 +593,11 @@ export const useRequisitos = (proyectoId, autoLoad = true) => {
         // Funciones auxiliares
         buscarRequisitos,
         filtrarRequisitos,
-        cargarCatalogos,
+        validarDatosRequisito,
         limpiarEstado,
         recargarTodo,
 
-        // Setters (por si se necesitan)
+        // Setters
         setRequisitos,
         setRequisitoActual,
         setRelacionesActuales

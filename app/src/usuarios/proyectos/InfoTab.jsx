@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Card,
   Button,
@@ -8,8 +8,8 @@ import {
   Space,
   Typography,
   message,
-  Statistic,
-  Divider
+  Divider,
+  Spin
 } from 'antd';
 import {
   EditOutlined,
@@ -17,7 +17,6 @@ import {
   FileTextOutlined,
   SettingOutlined,
   FolderOpenOutlined,
-  CheckCircleOutlined,
   ClockCircleOutlined,
   RocketOutlined,
   CodeOutlined,
@@ -29,17 +28,65 @@ import {
 import '../../styles/tabs.css';
 import '../../styles/buttons.css';
 import '../../styles/tags.css';
+import '../../styles/info-tab.css';
+
+// Importar los hooks
+import { useRequisitos } from '../../hooks/useRequisitos';
+import { useCasosUso } from '../../hooks/useCasosdeUso';
+import { useHistoriasUsuario } from '../../hooks/useHistoriasdeUsuario';
+import { usePruebas } from '../../hooks/usePruebas';
 
 const { Text, Paragraph, Title } = Typography;
 
 const InfoTab = ({ proyecto, onBack, onEditar }) => {
+  // Inicializar hooks con el ID del proyecto - CORRECCIÓN: usar proyecto_id en lugar de id
+  const {
+    requisitos,
+    loading: loadingRequisitos,
+    estadisticas: statsRequisitos,
+    contadores: contadoresRequisitos
+  } = useRequisitos(proyecto?.proyecto_id, true); // ← Cambiar proyecto?.id a proyecto?.proyecto_id
+
+  const {
+    casosUso,
+    loading: loadingCasosUso,
+    estadisticas: statsCasosUso,
+    contadores: contadoresCasosUso
+  } = useCasosUso(proyecto?.proyecto_id, true); // ← Cambiar proyecto?.id a proyecto?.proyecto_id
+
+  const {
+    historiasUsuario,
+    loading: loadingHistorias,
+    estadisticas: statsHistorias,
+    contadores: contadoresHistorias
+  } = useHistoriasUsuario(proyecto?.proyecto_id, true); // ← Cambiar proyecto?.id a proyecto?.proyecto_id
+
+  const {
+    pruebas,
+    contadores: contadoresPruebas,
+    loading: loadingPruebas,
+    cargarPruebas
+  } = usePruebas(proyecto?.proyecto_id, true); // ← Cambiar proyecto?.id a proyecto?.proyecto_id
+
+  // Cargar pruebas al montar - OPCIONAL: ya no necesario si usePruebas tiene autoLoad
+  useEffect(() => {
+    if (proyecto?.proyecto_id && !loadingPruebas && pruebas.length === 0) {
+      cargarPruebas();
+    }
+  }, [proyecto?.proyecto_id]);
+
+  // Calcular totales usando contadores en lugar de arrays
+  const totalElementos = (contadoresRequisitos?.total || 0) +
+    (contadoresCasosUso?.total || 0) +
+    (contadoresHistorias?.total || 0);
+
+  const isLoading = loadingRequisitos || loadingCasosUso || loadingHistorias || loadingPruebas;
+
   const getStatusTag = (estado) => {
     const statusMap = {
-      'Requisitos': { color: 'blue', text: 'En Requisitos' },
-      'Diseño': { color: 'purple', text: 'En Diseño' },
-      'Desarrollo': { color: 'orange', text: 'En Desarrollo' },
-      'Pruebas': { color: 'cyan', text: 'En Pruebas' },
-      'Completado': { color: 'green', text: 'Completado' },
+      'Especificaciones': { color: 'blue', text: 'En Requisitos' },
+      'Generación': { color: 'orange', text: 'En Desarrollo' },
+      'Ejecución': { color: 'green', text: 'Completado' },
     };
 
     const status = statusMap[estado] || { color: 'default', text: estado };
@@ -53,6 +100,46 @@ const InfoTab = ({ proyecto, onBack, onEditar }) => {
       message.info('La función de editar estará disponible próximamente');
     }
   };
+
+  // Calcular progreso (simple: basado en si hay elementos creados)
+  const calcularProgreso = () => {
+    if (totalElementos === 0) return 0;
+
+    let completados = 0;
+    let total = 0;
+
+    // Contar elementos por estado
+    if (statsRequisitos) {
+      Object.entries(statsRequisitos.porEstado).forEach(([estado, count]) => {
+        total += count;
+        if (estado.toLowerCase().includes('completado') || estado.toLowerCase().includes('aprobado')) {
+          completados += count;
+        }
+      });
+    }
+
+    if (statsCasosUso) {
+      Object.entries(statsCasosUso.porEstado).forEach(([estado, count]) => {
+        total += count;
+        if (estado.toLowerCase().includes('completado') || estado.toLowerCase().includes('aprobado')) {
+          completados += count;
+        }
+      });
+    }
+
+    if (statsHistorias) {
+      Object.entries(statsHistorias.porEstado).forEach(([estado, count]) => {
+        total += count;
+        if (estado.toLowerCase().includes('completado') || estado.toLowerCase().includes('aprobado')) {
+          completados += count;
+        }
+      });
+    }
+
+    return total > 0 ? Math.round((completados / total) * 100) : 0;
+  };
+
+  const progreso = calcularProgreso();
 
   return (
     <div className="tab-main-content">
@@ -72,16 +159,8 @@ const InfoTab = ({ proyecto, onBack, onEditar }) => {
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
               <Space size="middle">
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <FileTextOutlined style={{ fontSize: '24px', color: 'white' }} />
+                <div className="info-icon-wrapper">
+                  <FileTextOutlined className="info-icon" />
                 </div>
                 <div>
                   <Title level={3} style={{ margin: 0, color: 'var(--text-primary)' }}>
@@ -102,87 +181,24 @@ const InfoTab = ({ proyecto, onBack, onEditar }) => {
 
             <Divider style={{ margin: '24px 0' }} />
 
-            {/* Estado y Descripción */}
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <div>
-                <Text strong style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>
-                  Estado Actual
-                </Text>
-                {getStatusTag(proyecto.estado)}
-              </div>
-
-              <div>
-                <Text strong style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>
+                <Text strong className="info-label">
                   Descripción
                 </Text>
                 {proyecto.descripcion ? (
-                  <Paragraph style={{
-                    margin: 0,
-                    color: 'var(--text-primary)',
-                    fontSize: '15px',
-                    lineHeight: '1.6',
-                    padding: '12px',
-                    background: 'var(--bg-hover)',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)'
-                  }}>
+                  <Paragraph className="info-description">
                     {proyecto.descripcion}
                   </Paragraph>
                 ) : (
-                  <div style={{
-                    padding: '24px',
-                    textAlign: 'center',
-                    background: 'var(--bg-hover)',
-                    borderRadius: '8px',
-                    border: '2px dashed var(--border-color)'
-                  }}>
-                    <FileTextOutlined style={{ fontSize: '32px', color: 'var(--text-tertiary)', marginBottom: '8px' }} />
+                  <div className="info-empty-description">
+                    <FileTextOutlined className="info-empty-icon" />
                     <Text type="secondary" italic style={{ display: 'block' }}>
                       No hay descripción disponible
                     </Text>
                   </div>
                 )}
               </div>
-
-              {/* Fechas en diseño mejorado */}
-              <Row gutter={16}>
-                <Col span={12}>
-                  <div style={{
-                    padding: '16px',
-                    background: 'var(--bg-hover)',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)'
-                  }}>
-                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                      <Space>
-                        <CalendarOutlined style={{ color: 'var(--primary-color)', fontSize: '18px' }} />
-                        <Text strong style={{ color: 'var(--text-secondary)' }}>Fecha de Creación</Text>
-                      </Space>
-                      <Text style={{ color: 'var(--text-primary)', fontSize: '15px', display: 'block', marginLeft: '26px' }}>
-                        {proyecto.fecha_creacion || proyecto.fecha_actualizacion}
-                      </Text>
-                    </Space>
-                  </div>
-                </Col>
-                <Col span={12}>
-                  <div style={{
-                    padding: '16px',
-                    background: 'var(--bg-hover)',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)'
-                  }}>
-                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                      <Space>
-                        <ClockCircleOutlined style={{ color: 'var(--info-color)', fontSize: '18px' }} />
-                        <Text strong style={{ color: 'var(--text-secondary)' }}>Última Actualización</Text>
-                      </Space>
-                      <Text style={{ color: 'var(--text-primary)', fontSize: '15px', display: 'block', marginLeft: '26px' }}>
-                        {proyecto.fecha_actualizacion}
-                      </Text>
-                    </Space>
-                  </div>
-                </Col>
-              </Row>
             </Space>
           </Card>
 
@@ -194,88 +210,47 @@ const InfoTab = ({ proyecto, onBack, onEditar }) => {
                 <span style={{ color: 'var(--text-primary)' }}>Métricas del Proyecto</span>
               </Space>
             }
+            className="info-metrics-card"
             style={{
-              marginBottom: '24px',
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+              marginBottom: '24px'
             }}
           >
-            <Row gutter={[16, 16]}>
-              <Col xs={12} sm={12} md={6}>
-                <div style={{
-                  textAlign: 'center',
-                  padding: '20px',
-                  background: 'linear-gradient(135deg, #e6f4ff, #f0f5ff)',
-                  borderRadius: '10px',
-                  border: '1px solid #91caff',
-                  transition: 'transform 0.2s',
-                  cursor: 'pointer'
-                }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                >
-                  <FileTextOutlined style={{ fontSize: '32px', color: '#1890ff', marginBottom: '8px' }} />
-                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#1890ff', marginBottom: '4px' }}>0</div>
-                  <Text style={{ color: '#595959', fontSize: '13px' }}>Requisitos</Text>
-                </div>
-              </Col>
-              <Col xs={12} sm={12} md={6}>
-                <div style={{
-                  textAlign: 'center',
-                  padding: '20px',
-                  background: 'linear-gradient(135deg, #fff7e6, #fffbf0)',
-                  borderRadius: '10px',
-                  border: '1px solid #ffd591',
-                  transition: 'transform 0.2s',
-                  cursor: 'pointer'
-                }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                >
-                  <CodeOutlined style={{ fontSize: '32px', color: '#fa8c16', marginBottom: '8px' }} />
-                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fa8c16', marginBottom: '4px' }}>0</div>
-                  <Text style={{ color: '#595959', fontSize: '13px' }}>Casos de Uso</Text>
-                </div>
-              </Col>
-              <Col xs={12} sm={12} md={6}>
-                <div style={{
-                  textAlign: 'center',
-                  padding: '20px',
-                  background: 'linear-gradient(135deg, #f9f0ff, #faf5ff)',
-                  borderRadius: '10px',
-                  border: '1px solid #d3adf7',
-                  transition: 'transform 0.2s',
-                  cursor: 'pointer'
-                }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                >
-                  <TeamOutlined style={{ fontSize: '32px', color: '#722ed1', marginBottom: '8px' }} />
-                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#722ed1', marginBottom: '4px' }}>0</div>
-                  <Text style={{ color: '#595959', fontSize: '13px' }}>Historias</Text>
-                </div>
-              </Col>
-              <Col xs={12} sm={12} md={6}>
-                <div style={{
-                  textAlign: 'center',
-                  padding: '20px',
-                  background: 'linear-gradient(135deg, #fff1f0, #fff5f5)',
-                  borderRadius: '10px',
-                  border: '1px solid #ffccc7',
-                  transition: 'transform 0.2s',
-                  cursor: 'pointer'
-                }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                >
-                  <BugOutlined style={{ fontSize: '32px', color: '#f5222d', marginBottom: '8px' }} />
-                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#f5222d', marginBottom: '4px' }}>0</div>
-                  <Text style={{ color: '#595959', fontSize: '13px' }}>Pruebas</Text>
-                </div>
-              </Col>
-            </Row>
+            {isLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <Spin size="large" tip="Cargando métricas..." />
+              </div>
+            ) : (
+              <Row gutter={[16, 16]}>
+                <Col xs={12} sm={12} md={6}>
+                  <div className="metric-box metric-box-blue">
+                    <FileTextOutlined className="metric-icon" />
+                    <div className="metric-value">{contadoresRequisitos?.total || 0}</div>
+                    <Text className="metric-label">Requisitos</Text>
+                  </div>
+                </Col>
+                <Col xs={12} sm={12} md={6}>
+                  <div className="metric-box metric-box-orange">
+                    <CodeOutlined className="metric-icon" />
+                    <div className="metric-value">{contadoresCasosUso?.total || 0}</div>
+                    <Text className="metric-label">Casos de Uso</Text>
+                  </div>
+                </Col>
+                <Col xs={12} sm={12} md={6}>
+                  <div className="metric-box metric-box-purple">
+                    <TeamOutlined className="metric-icon" />
+                    <div className="metric-value">{contadoresHistorias?.total || 0}</div>
+                    <Text className="metric-label">Historias</Text>
+                  </div>
+                </Col>
+                <Col xs={12} sm={12} md={6}>
+                  <div className="metric-box metric-box-red">
+                    <BugOutlined className="metric-icon" />
+                    <div className="metric-value">{contadoresPruebas?.total || 0}</div>
+                    <Text className="metric-label">Pruebas</Text>
+                  </div>
+                </Col>
+              </Row>
+            )}
           </Card>
 
           {/* Estado del Proyecto */}
@@ -286,35 +261,75 @@ const InfoTab = ({ proyecto, onBack, onEditar }) => {
                 <span style={{ color: 'var(--text-primary)' }}>Progreso General</span>
               </Space>
             }
-            style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
-            }}
+            className="info-progress-card"
           >
-            <div style={{
-              textAlign: 'center',
-              padding: '48px 24px',
-              background: 'linear-gradient(135deg, var(--bg-hover), var(--bg-card))',
-              borderRadius: '10px',
-              border: '2px dashed var(--border-color)'
-            }}>
-              <FolderOpenOutlined
-                style={{
-                  fontSize: '64px',
-                  color: 'var(--primary-color)',
-                  marginBottom: '16px',
-                  opacity: 0.6
-                }}
-              />
-              <Title level={4} style={{ color: 'var(--text-primary)', marginBottom: '8px' }}>
-                Proyecto Iniciado
-              </Title>
-              <Paragraph style={{ color: 'var(--text-secondary)', margin: 0, maxWidth: '500px', marginLeft: 'auto', marginRight: 'auto' }}>
-                Comienza a agregar requisitos, casos de uso y otros elementos para ver el progreso de tu proyecto en tiempo real.
-              </Paragraph>
-            </div>
+            {totalElementos === 0 ? (
+              <div className="info-empty-progress">
+                <FolderOpenOutlined className="info-empty-progress-icon" />
+                <Title level={4} className="info-empty-progress-title">
+                  Proyecto Iniciado
+                </Title>
+                <Paragraph className="info-empty-progress-description">
+                  Comienza a agregar requisitos, casos de uso y otros elementos para ver el progreso de tu proyecto en tiempo real.
+                </Paragraph>
+              </div>
+            ) : (
+              <div className="info-progress-content">
+                <div className="info-progress-stats">
+                  <div className="info-progress-stat">
+                    <div className="info-progress-stat-value">{totalElementos}</div>
+                    <div className="info-progress-stat-label">Elementos Totales</div>
+                  </div>
+                  <div className="info-progress-stat">
+                    <div className="info-progress-stat-value info-progress-stat-value-success">
+                      {progreso}%
+                    </div>
+                    <div className="info-progress-stat-label">Completado</div>
+                  </div>
+                </div>
+
+                <div className="info-progress-bar-wrapper">
+                  <div className="info-progress-bar">
+                    <div
+                      className="info-progress-bar-fill"
+                      style={{ width: `${progreso}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="info-progress-breakdown">
+                  <Text strong style={{ marginBottom: '12px', display: 'block' }}>
+                    Desglose por tipo:
+                  </Text>
+                  <Row gutter={[12, 12]}>
+                    <Col span={12}>
+                      <div className="info-breakdown-item">
+                        <FileTextOutlined className="info-breakdown-icon" />
+                        <span>{contadoresRequisitos?.total || 0} Requisitos</span>
+                      </div>
+                    </Col>
+                    <Col span={12}>
+                      <div className="info-breakdown-item">
+                        <CodeOutlined className="info-breakdown-icon" />
+                        <span>{contadoresCasosUso?.total || 0} Casos de Uso</span>
+                      </div>
+                    </Col>
+                    <Col span={12}>
+                      <div className="info-breakdown-item">
+                        <TeamOutlined className="info-breakdown-icon" />
+                        <span>{contadoresHistorias?.total || 0} Historias</span>
+                      </div>
+                    </Col>
+                    <Col span={12}>
+                      <div className="info-breakdown-item">
+                        <BugOutlined className="info-breakdown-icon" />
+                        <span>{contadoresPruebas?.total || 0} Pruebas</span>
+                      </div>
+                    </Col>
+                  </Row>
+                </div>
+              </div>
+            )}
           </Card>
         </Col>
 
@@ -328,13 +343,7 @@ const InfoTab = ({ proyecto, onBack, onEditar }) => {
                 <span style={{ color: 'var(--text-primary)' }}>Acciones Rápidas</span>
               </Space>
             }
-            style={{
-              marginBottom: '24px',
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
-            }}
+            className="info-actions-card"
           >
             <Space direction="vertical" style={{ width: '100%' }} size="middle">
               <Button
@@ -380,89 +389,42 @@ const InfoTab = ({ proyecto, onBack, onEditar }) => {
                 <span style={{ color: 'var(--text-primary)' }}>Resumen Rápido</span>
               </Space>
             }
-            style={{
-              marginBottom: '24px',
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
-            }}
+            className="info-summary-card"
           >
             <Space direction="vertical" style={{ width: '100%' }} size="middle">
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '12px',
-                background: 'var(--bg-hover)',
-                borderRadius: '8px'
-              }}>
-                <Text style={{ color: 'var(--text-secondary)' }}>Elementos Totales</Text>
-                <Text strong style={{ color: 'var(--text-primary)', fontSize: '18px' }}>0</Text>
+              <div className="info-summary-item">
+                <Text className="info-summary-label">Elementos Totales</Text>
+                <Text strong className="info-summary-value">{totalElementos}</Text>
               </div>
 
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '12px',
-                background: 'var(--bg-hover)',
-                borderRadius: '8px'
-              }}>
-                <Text style={{ color: 'var(--text-secondary)' }}>Progreso</Text>
-                <Text strong style={{ color: 'var(--success-color)', fontSize: '18px' }}>0%</Text>
+              <div className="info-summary-item">
+                <Text className="info-summary-label">Progreso</Text>
+                <Text strong className="info-summary-value info-summary-value-success">
+                  {progreso}%
+                </Text>
               </div>
 
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '12px',
-                background: 'var(--bg-hover)',
-                borderRadius: '8px'
-              }}>
-                <Text style={{ color: 'var(--text-secondary)' }}>Estado</Text>
+              <div className="info-summary-item">
+                <Text className="info-summary-label">Estado</Text>
                 {getStatusTag(proyecto.estado)}
               </div>
             </Space>
           </Card>
 
           {/* Información Temporal */}
-          <Card
-            style={{
-              background: 'linear-gradient(135deg, var(--primary-light), var(--bg-card))',
-              border: '1px solid var(--primary-color)',
-              borderRadius: '12px',
-              boxShadow: '0 4px 12px rgba(139, 92, 246, 0.15)'
-            }}
-          >
+          <Card className="info-temporal-card">
             <div style={{ textAlign: 'center', padding: '8px' }}>
-              <CalendarOutlined
-                style={{
-                  fontSize: '48px',
-                  color: 'var(--primary-color)',
-                  marginBottom: '16px'
-                }}
-              />
+              <CalendarOutlined className="info-temporal-icon" />
               <div style={{ marginBottom: '16px' }}>
-                <Text strong style={{
-                  color: 'var(--text-primary)',
-                  display: 'block',
-                  marginBottom: '8px',
-                  fontSize: '15px'
-                }}>
+                <Text strong className="info-temporal-label">
                   Última Actualización
                 </Text>
-                <Text style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+                <Text className="info-temporal-value">
                   {proyecto.fecha_actualizacion}
                 </Text>
               </div>
               <Divider style={{ margin: '16px 0' }} />
-              <Text style={{
-                fontSize: '13px',
-                color: 'var(--text-tertiary)',
-                display: 'block'
-              }}>
+              <Text className="info-temporal-created">
                 Creado el {proyecto.fecha_creacion || proyecto.fecha_actualizacion}
               </Text>
             </div>

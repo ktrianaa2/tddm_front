@@ -3,8 +3,10 @@ import VistaEspecificaciones from './VistaEspecificaciones';
 import VistaResumenPruebas from './VistaResumenPruebas';
 import ListaPruebas from './ListaPruebas';
 import EditorPrueba from './EditorPrueba';
-import ModalAdvertencia from './ModalAdvertencia';
-import { useEspecificaciones } from '../../../hooks/useEspecificaciones';
+import ModalAdvertencia from '../../modales/ModalAdvertencia';
+import { useRequisitos } from '../../../hooks/useRequisitos';
+import { useCasosUso } from '../../../hooks/useCasosdeUso';
+import { useHistoriasUsuario } from '../../../hooks/useHistoriasdeUsuario';
 import { usePruebas } from '../../../hooks/usePruebas';
 import { Spin, message } from 'antd';
 import '../../../styles/tabs.css';
@@ -19,15 +21,29 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [generandoPruebas, setGenerandoPruebas] = useState(false);
 
-  // Hooks personalizados
+  // Hooks personalizados para especificaciones
   const {
     requisitos,
-    casosUso,
-    historiasUsuario,
-    loading: loadingEspecificaciones,
-    cargarEspecificaciones
-  } = useEspecificaciones(proyectoId);
+    loading: loadingRequisitos,
+    cargarRequisitos,
+    recargarTodo: recargarRequisitos
+  } = useRequisitos(proyectoId);
 
+  const {
+    casosUso,
+    loading: loadingCasosUso,
+    cargarCasosUso,
+    recargarTodo: recargarCasosUso
+  } = useCasosUso(proyectoId);
+
+  const {
+    historiasUsuario,
+    loading: loadingHistorias,
+    cargarHistoriasUsuario,
+    recargarTodo: recargarHistorias
+  } = useHistoriasUsuario(proyectoId);
+
+  // Hook para pruebas
   const {
     loading: loadingPruebas,
     pruebas,
@@ -39,24 +55,30 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     guardarPrueba
   } = usePruebas(proyectoId);
 
+  // Consolidar estados de carga
+  const loadingEspecificaciones = loadingRequisitos || loadingCasosUso || loadingHistorias;
   const loading = externalLoading || loadingEspecificaciones || loadingPruebas;
 
-  // Combinar especificaciones
+  // Combinar especificaciones con mapeo correcto de campos
   const todasEspecificaciones = [
     ...requisitos.map(req => ({
       ...req,
+      requisito_id: req.id, // Mapear id a requisito_id para compatibilidad
       tipo_especificacion: 'requisito',
       tipo_label: 'Requisito',
       color: 'blue'
     })),
     ...casosUso.map(cu => ({
       ...cu,
+      caso_uso_id: cu.id, // Mapear id a caso_uso_id para compatibilidad
       tipo_especificacion: 'caso_uso',
       tipo_label: 'Caso de Uso',
       color: 'green'
     })),
     ...historiasUsuario.map(hu => ({
       ...hu,
+      historia_id: hu.id, // Mapear id a historia_id para compatibilidad
+      descripcion_historia: hu.titulo, // Mapear titulo a descripcion_historia
       tipo_especificacion: 'historia_usuario',
       tipo_label: 'Historia de Usuario',
       color: 'purple'
@@ -66,7 +88,9 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
   // Cargar datos al montar
   useEffect(() => {
     if (proyectoId) {
-      cargarEspecificaciones();
+      cargarRequisitos();
+      cargarCasosUso();
+      cargarHistoriasUsuario();
       cargarPruebas();
     }
   }, [proyectoId]);
@@ -80,7 +104,9 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
 
   // Handlers
   const handleRecargarTodo = () => {
-    cargarEspecificaciones();
+    recargarRequisitos();
+    recargarCasosUso();
+    recargarHistorias();
     recargarPruebas();
   };
 
@@ -207,7 +233,7 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
 
   // === RENDERIZADO DE ESTADOS ===
 
-  // Loading inicial - Usa clases de tabs.css
+  // Loading inicial
   if (loading && todasEspecificaciones.length === 0 && pruebas.length === 0) {
     return (
       <div className="tab-main-content">
@@ -221,7 +247,7 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     );
   }
 
-  // Vista de generación de pruebas (loading) - Usa clases de tabs.css
+  // Vista de generación de pruebas (loading)
   if (generandoPruebas) {
     return (
       <div className="tab-main-content">
