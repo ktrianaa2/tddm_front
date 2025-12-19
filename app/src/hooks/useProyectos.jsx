@@ -4,9 +4,44 @@ import { getStoredToken, API_ENDPOINTS, getWithAuth, postFormDataAuth } from '..
 
 export const useProyectos = () => {
     const [proyectos, setProyectos] = useState([]);
+    const [estadosProyecto, setEstadosProyecto] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingEstados, setLoadingEstados] = useState(true);
     const [refreshFlag, setRefreshFlag] = useState(0);
 
+    // Función para cargar los estados de proyecto
+    const fetchEstadosProyecto = useCallback(async () => {
+        setLoadingEstados(true);
+        const token = getStoredToken();
+
+        if (!API_ENDPOINTS.ESTADOS_PROYECTO) {
+            message.error("Endpoint de estados de proyecto no definido");
+            setEstadosProyecto([]);
+            setLoadingEstados(false);
+            return;
+        }
+
+        try {
+            const response = await getWithAuth(API_ENDPOINTS.ESTADOS_PROYECTO, token);
+            // ✅ El backend retorna 'estados_proyecto'
+            const estados = response?.estados_proyecto || [];
+
+            // Filtrar solo estados activos (excluyendo cancelados)
+            const estadosActivos = estados.filter(estado => estado.activo !== false);
+
+            setEstadosProyecto(estadosActivos);
+
+            console.log("📊 Estados activos recibidos:", estadosActivos);
+        } catch (error) {
+            console.error("Error al cargar estados:", error);
+            message.error("Error al cargar los estados de proyecto");
+            setEstadosProyecto([]);
+        } finally {
+            setLoadingEstados(false);
+        }
+    }, []);
+
+    // Función para cargar los proyectos
     const fetchProyectos = useCallback(async () => {
         setLoading(true);
         const token = getStoredToken();
@@ -21,6 +56,8 @@ export const useProyectos = () => {
         try {
             const response = await getWithAuth(API_ENDPOINTS.PROYECTOS, token);
             setProyectos(response?.proyectos || []);
+
+            console.log("📁 Proyectos recibidos:", response?.proyectos);
         } catch (error) {
             console.error(error);
             message.error("Error al cargar los proyectos");
@@ -30,9 +67,15 @@ export const useProyectos = () => {
         }
     }, []);
 
+    // Cargar proyectos y estados al montar o cuando cambie refreshFlag
     useEffect(() => {
         fetchProyectos();
     }, [refreshFlag, fetchProyectos]);
+
+    // Cargar estados solo una vez al montar
+    useEffect(() => {
+        fetchEstadosProyecto();
+    }, [fetchEstadosProyecto]);
 
     const crearProyecto = async (values) => {
         const token = getStoredToken();
@@ -44,7 +87,7 @@ export const useProyectos = () => {
             const res = await postFormDataAuth(API_ENDPOINTS.CREAR_PROYECTO, formData, token);
             message.success(res.mensaje || "Proyecto creado exitosamente");
             setRefreshFlag(prev => prev + 1);
-            return { success: true };
+            return { success: true, data: res };
         } catch (error) {
             message.error(error.message);
             return { success: false, error };
@@ -72,10 +115,10 @@ export const useProyectos = () => {
         }
     };
 
-    const cambiarEstadoProyecto = async (proyectoId, nuevoEstado) => {
+    const cambiarEstadoProyecto = async (proyectoId, nombreEstado) => {
         const token = getStoredToken();
         const formData = new FormData();
-        formData.append("estado", nuevoEstado);
+        formData.append("estado", nombreEstado);
 
         try {
             const res = await postFormDataAuth(
@@ -85,7 +128,11 @@ export const useProyectos = () => {
             );
             message.success(res.mensaje || "Estado actualizado exitosamente");
             setRefreshFlag(prev => prev + 1);
-            return { success: true, estado: res.estado };
+            return {
+                success: true,
+                estadoAnterior: res.estado_anterior,
+                estadoActual: res.estado_actual
+            };
         } catch (error) {
             message.error(error.message);
             return { success: false, error };
@@ -97,7 +144,6 @@ export const useProyectos = () => {
         const formData = new FormData();
 
         try {
-            // Corregido: agregar la barra al final de la URL
             const res = await postFormDataAuth(
                 `${API_ENDPOINTS.ELIMINAR_PROYECTO}/${proyectoId}/`,
                 formData,
@@ -117,13 +163,20 @@ export const useProyectos = () => {
         setRefreshFlag(prev => prev + 1);
     };
 
+    const refreshEstados = () => {
+        fetchEstadosProyecto();
+    };
+
     return {
         proyectos,
+        estadosProyecto,
         loading,
+        loadingEstados,
         crearProyecto,
         editarProyecto,
         cambiarEstadoProyecto,
         eliminarProyecto,
-        refresh
+        refresh,
+        refreshEstados
     };
 };

@@ -17,7 +17,6 @@ import {
  */
 export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
     // ============== ESTADOS ==============
-    // Estados para las historias de usuario
     const [historiasUsuario, setHistoriasUsuario] = useState([]);
     const [historiaActual, setHistoriaActual] = useState(null);
     const [estimacionesActuales, setEstimacionesActuales] = useState([]);
@@ -25,12 +24,161 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
     // Estados para catálogos
     const [catalogos, setCatalogos] = useState(null);
 
+    // Catálogos procesados para formularios
+    const [catalogosFormulario, setCatalogosFormulario] = useState({
+        prioridades: [],
+        estados: [],
+        unidadesEstimacion: []
+    });
+
     // Estados de carga
     const [loading, setLoading] = useState(false);
     const [loadingDetalle, setLoadingDetalle] = useState(false);
     const [loadingAccion, setLoadingAccion] = useState(false);
     const [loadingCatalogos, setLoadingCatalogos] = useState(false);
     const [errorCatalogos, setErrorCatalogos] = useState(null);
+
+    // ============== FUNCIONES AUXILIARES DE CATÁLOGOS ==============
+
+    /**
+     * Procesa items de catálogo para uso en formularios
+     */
+    const procesarItemsCatalogo = useCallback((items, tipoColor) => {
+        if (!Array.isArray(items)) return [];
+
+        const defaultColors = {
+            prioridades: {
+                'muy-alta': '#ff4d4f',
+                'critica': '#ff4d4f',
+                'alta': '#fa8c16',
+                'media': '#fadb14',
+                'baja': '#52c41a',
+                'muy-baja': '#d9d9d9'
+            },
+            estados: {
+                'pendiente': '#d9d9d9',
+                'en-progreso': '#1890ff',
+                'en-desarrollo': '#1890ff',
+                'en-revision': '#fa8c16',
+                'completada': '#52c41a',
+                'completado': '#52c41a',
+                'cancelada': '#ff4d4f',
+                'cancelado': '#ff4d4f',
+                'bloqueada': '#ff4d4f'
+            },
+            estimaciones: {
+                'story-points': '#1890ff',
+                'horas': '#52c41a',
+                'dias': '#fa8c16',
+                'costo': '#722ed1'
+            }
+        };
+
+        return items
+            .filter(item => {
+                const id = item.id || item.prioridad_id || item.estado_id || item.estimacion_id;
+                return id !== undefined && id !== null && item.activo !== false;
+            })
+            .map(item => {
+                let id;
+                if (tipoColor === 'prioridades') {
+                    id = item.prioridad_id || item.id;
+                } else if (tipoColor === 'estados') {
+                    id = item.estado_id || item.id;
+                } else if (tipoColor === 'estimaciones') {
+                    id = item.estimacion_id || item.id;
+                } else {
+                    id = item.id || item.prioridad_id || item.estado_id || item.estimacion_id;
+                }
+
+                let key = item.key || item.nombre || 'unknown';
+                if (typeof key === 'string' && key !== item.key) {
+                    key = key.toLowerCase()
+                        .trim()
+                        .replace(/[\s_-]+/g, '-')
+                        .replace(/[áàäâ]/g, 'a')
+                        .replace(/[éèëê]/g, 'e')
+                        .replace(/[íìïî]/g, 'i')
+                        .replace(/[óòöô]/g, 'o')
+                        .replace(/[úùüû]/g, 'u')
+                        .replace(/ñ/g, 'n');
+                }
+
+                return {
+                    value: id.toString(),
+                    label: item.nombre || 'Sin nombre',
+                    key: key,
+                    color: defaultColors[tipoColor]?.[key] || '#d9d9d9',
+                    descripcion: item.descripcion || '',
+                    nivel: item.nivel || undefined,
+                    activo: item.activo !== false,
+                    tipo: item.tipo || undefined,
+                    orden: item.orden || undefined,
+                    ...item
+                };
+            });
+    }, []);
+
+    /**
+     * Busca item por key o ID
+     */
+    const findByKeyOrId = useCallback((items, keyOrId) => {
+        if (!keyOrId || !Array.isArray(items)) return null;
+
+        const keyOrIdStr = keyOrId.toString().toLowerCase();
+
+        let found = items.find(item => item.value === keyOrId.toString());
+        if (found) return found;
+
+        found = items.find(item => item.key === keyOrIdStr);
+        if (found) return found;
+
+        found = items.find(item =>
+            item.label && item.label.toLowerCase().replace(/\s+/g, '-') === keyOrIdStr
+        );
+
+        return found;
+    }, []);
+
+    /**
+     * Obtiene ID por key o ID
+     */
+    const getIdByKeyOrId = useCallback((items, keyOrId) => {
+        const found = findByKeyOrId(items, keyOrId);
+        return found ? found.value : null;
+    }, [findByKeyOrId]);
+
+    /**
+     * Mapea key a ID en catálogo crudo
+     */
+    const mapearKeyAId = useCallback((keyOrId, catalogo) => {
+        if (!keyOrId || !catalogo || !Array.isArray(catalogo)) return null;
+
+        const keyOrIdStr = keyOrId.toString();
+
+        let found = catalogo.find(item => item.id?.toString() === keyOrIdStr);
+        if (found) return found.id.toString();
+
+        const normalizedKey = keyOrIdStr.toLowerCase();
+        found = catalogo.find(item => item.key === normalizedKey);
+        if (found) return found.id.toString();
+
+        found = catalogo.find(item => {
+            if (!item.nombre) return false;
+            const nombreNormalizado = item.nombre.toLowerCase()
+                .replace(/[\s_-]+/g, '-')
+                .replace(/[áàäâ]/g, 'a')
+                .replace(/[éèëê]/g, 'e')
+                .replace(/[íìïî]/g, 'i')
+                .replace(/[óòöô]/g, 'o')
+                .replace(/[úùüû]/g, 'u')
+                .replace(/ñ/g, 'n');
+            return nombreNormalizado === normalizedKey;
+        });
+
+        if (found) return found.id.toString();
+        return null;
+    }, []);
 
     // ============== FUNCIONES DE CATÁLOGOS ==============
 
@@ -74,7 +222,7 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
                 }
             }
 
-            // Procesar estados (filtrar para historias de usuario)
+            // Procesar estados
             if (estados.status === 'fulfilled' && estados.value) {
                 const data = estados.value.estados_elemento || estados.value.estados ||
                     estados.value.data || estados.value;
@@ -108,6 +256,15 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
             }
 
             setCatalogos(catalogosData);
+
+            // Procesar catálogos para formulario
+            const catalogosProc = {
+                prioridades: procesarItemsCatalogo(catalogosData.prioridades, 'prioridades'),
+                estados: procesarItemsCatalogo(catalogosData.estados, 'estados'),
+                unidadesEstimacion: procesarItemsCatalogo(catalogosData.tipos_estimacion, 'estimaciones')
+            };
+
+            setCatalogosFormulario(catalogosProc);
             return catalogosData;
 
         } catch (error) {
@@ -118,7 +275,7 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         } finally {
             setLoadingCatalogos(false);
         }
-    }, []);
+    }, [procesarItemsCatalogo]);
 
     // ============== FUNCIONES DE CARGA ==============
 
@@ -134,16 +291,13 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         setLoading(true);
         try {
             const token = getStoredToken();
-            if (!token) {
-                throw new Error('No hay token de autenticación');
-            }
+            if (!token) throw new Error('No hay token de autenticación');
 
             const response = await getWithAuth(
                 `${API_ENDPOINTS.LISTAR_HISTORIAS_USUARIO}/${proyectoId}/`,
                 token
             );
 
-            // Intentar diferentes estructuras de respuesta
             const historiasData = response.historias || response.historias_usuario || response.data || [];
 
             if (Array.isArray(historiasData)) {
@@ -243,6 +397,105 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
             setLoadingDetalle(false);
         }
     }, []);
+
+    /**
+     * Prepara historia para edición en formulario
+     */
+    const prepararHistoriaParaEdicion = useCallback(async (historiaId) => {
+        try {
+            const historiaBackend = await obtenerHistoriaUsuario(historiaId);
+
+            if (!historiaBackend) {
+                throw new Error('No se pudo obtener la información de la historia de usuario');
+            }
+
+            if (!catalogos) {
+                throw new Error('Los catálogos no están disponibles');
+            }
+
+            const historiaParaEditar = {
+                id: historiaBackend.id,
+                descripcion_historia: historiaBackend.descripcion || historiaBackend.titulo || '',
+                actor_rol: historiaBackend.actor_rol || '',
+                funcionalidad_accion: historiaBackend.funcionalidad_accion || '',
+                beneficio_razon: historiaBackend.beneficio_razon || '',
+                criterios_aceptacion: historiaBackend.criterios_aceptacion || '',
+                dependencias_relaciones: historiaBackend.dependencias_relaciones || '',
+                componentes_relacionados: historiaBackend.componentes_relacionados || '',
+                valor_negocio: historiaBackend.valor_negocio || '',
+                notas_adicionales: historiaBackend.notas_adicionales || '',
+                proyecto_id: historiaBackend.proyecto_id,
+                prioridad: null,
+                estado: null,
+                estimaciones: []
+            };
+
+            // Mapear prioridad
+            if (historiaBackend.prioridad && catalogos.prioridades) {
+                const prioridadId = mapearKeyAId(historiaBackend.prioridad, catalogos.prioridades);
+                if (prioridadId) historiaParaEditar.prioridad = prioridadId;
+            }
+
+            // Mapear estado  
+            if (historiaBackend.estado && catalogos.estados) {
+                const estadoId = mapearKeyAId(historiaBackend.estado, catalogos.estados);
+                if (estadoId) historiaParaEditar.estado = estadoId;
+            }
+
+            const estimacionesParaFormulario = [];
+
+            // Procesar múltiples estimaciones
+            if (historiaBackend.estimaciones && Array.isArray(historiaBackend.estimaciones) && historiaBackend.estimaciones.length > 0) {
+                historiaBackend.estimaciones.forEach((est, index) => {
+                    let tipoEstimacionId = null;
+
+                    if (est.tipo_estimacion_id) {
+                        const tipoExiste = catalogos.tipos_estimacion?.find(
+                            t => t.id.toString() === est.tipo_estimacion_id.toString()
+                        );
+                        if (tipoExiste) {
+                            tipoEstimacionId = est.tipo_estimacion_id.toString();
+                        }
+                    } else if (est.tipo_estimacion_nombre) {
+                        tipoEstimacionId = mapearKeyAId(
+                            est.tipo_estimacion_nombre,
+                            catalogos.tipos_estimacion
+                        );
+                    }
+
+                    if (tipoEstimacionId && (est.valor !== null && est.valor !== undefined)) {
+                        estimacionesParaFormulario.push({
+                            id: est.id || `existing_${Date.now()}_${index}`,
+                            tipo_estimacion_id: tipoEstimacionId,
+                            valor: est.valor
+                        });
+                    }
+                });
+            }
+            // Procesar estimación única (formato legacy)
+            else if (historiaBackend.estimacion_valor && historiaBackend.unidad_estimacion) {
+                const tipoEstimacionId = mapearKeyAId(
+                    historiaBackend.unidad_estimacion,
+                    catalogos.tipos_estimacion
+                );
+
+                if (tipoEstimacionId) {
+                    estimacionesParaFormulario.push({
+                        id: `existing_single_${Date.now()}`,
+                        tipo_estimacion_id: tipoEstimacionId,
+                        valor: historiaBackend.estimacion_valor
+                    });
+                }
+            }
+
+            historiaParaEditar.estimaciones = estimacionesParaFormulario;
+            return historiaParaEditar;
+
+        } catch (error) {
+            message.error(`Error al preparar historia para edición: ${error.message}`);
+            throw error;
+        }
+    }, [obtenerHistoriaUsuario, catalogos, mapearKeyAId]);
 
     /**
      * Obtener las estimaciones de una historia específica
@@ -402,9 +655,6 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
 
     // ============== FUNCIONES AUXILIARES ==============
 
-    /**
-     * Buscar historias de usuario por texto
-     */
     const buscarHistoriasUsuario = useCallback((texto) => {
         if (!texto || texto.trim() === '') {
             return historiasUsuario;
@@ -420,9 +670,6 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         );
     }, [historiasUsuario]);
 
-    /**
-     * Filtrar historias de usuario por criterios
-     */
     const filtrarHistoriasUsuario = useCallback((filtros = {}) => {
         let resultado = [...historiasUsuario];
 
@@ -461,9 +708,6 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         return resultado;
     }, [historiasUsuario]);
 
-    /**
-     * Obtener estadísticas de historias de usuario
-     */
     const obtenerEstadisticas = useCallback(() => {
         const stats = {
             total: historiasUsuario.length,
@@ -480,23 +724,19 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         let countValorNegocio = 0;
 
         historiasUsuario.forEach(h => {
-            // Por prioridad
             if (h.prioridad) {
                 stats.porPrioridad[h.prioridad] = (stats.porPrioridad[h.prioridad] || 0) + 1;
             }
 
-            // Por estado
             if (h.estado) {
                 stats.porEstado[h.estado] = (stats.porEstado[h.estado] || 0) + 1;
             }
 
-            // Valor de negocio
             if (h.valor_negocio) {
                 sumaValorNegocio += h.valor_negocio;
                 countValorNegocio++;
             }
 
-            // Estimaciones
             if (h.estimaciones && h.estimaciones.length > 0) {
                 stats.conEstimaciones++;
                 stats.totalEstimaciones += h.estimaciones.length;
@@ -518,7 +758,6 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
             }
         });
 
-        // Calcular promedios
         if (countValorNegocio > 0) {
             stats.valorNegocioPromedio = Math.round(sumaValorNegocio / countValorNegocio);
         }
@@ -531,9 +770,6 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         return stats;
     }, [historiasUsuario]);
 
-    /**
-     * Generar formato de historia de usuario (As a... I want... So that...)
-     */
     const generarFormatoHistoria = useCallback((historia) => {
         const partes = [];
 
@@ -552,9 +788,6 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         return partes.length > 0 ? partes.join(', ') : historia.titulo || '';
     }, []);
 
-    /**
-     * Validar datos de historia de usuario antes de crear/actualizar
-     */
     const validarDatosHistoria = useCallback((datos) => {
         const errores = [];
 
@@ -596,9 +829,6 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         };
     }, []);
 
-    /**
-     * Calcular total de estimaciones por tipo
-     */
     const calcularTotalEstimaciones = useCallback((tipoEstimacionId) => {
         let total = 0;
 
@@ -615,26 +845,17 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         return total;
     }, [historiasUsuario]);
 
-    /**
-     * Obtener historias con alta prioridad de negocio
-     */
     const obtenerHistoriasAltaPrioridad = useCallback((umbral = 70) => {
         return historiasUsuario.filter(h =>
             h.valor_negocio && h.valor_negocio >= umbral
         ).sort((a, b) => (b.valor_negocio || 0) - (a.valor_negocio || 0));
     }, [historiasUsuario]);
 
-    /**
-     * Limpiar estado
-     */
     const limpiarEstado = useCallback(() => {
         setHistoriaActual(null);
         setEstimacionesActuales([]);
     }, []);
 
-    /**
-     * Recargar todo (catálogos y historias)
-     */
     const recargarTodo = useCallback(async () => {
         try {
             await Promise.all([
@@ -648,16 +869,11 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
 
     // ============== EFECTOS ==============
 
-    /**
-     * Efecto para carga automática
-     */
     useEffect(() => {
         if (autoLoad && proyectoId) {
-            // Cargar catálogos solo si no están cargados
             if (!catalogos) {
                 cargarCatalogos();
             }
-            // Cargar historias de usuario cuando cambia el proyecto
             cargarHistoriasUsuario();
         }
     }, [proyectoId, autoLoad]);
@@ -681,6 +897,7 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         historiaActual,
         estimacionesActuales,
         catalogos,
+        catalogosFormulario, // Catálogos procesados para formularios
         contadores,
         estadisticas: obtenerEstadisticas(),
 
@@ -697,6 +914,7 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
 
         // Funciones CRUD
         obtenerHistoriaUsuario,
+        prepararHistoriaParaEdicion,
         crearHistoriaUsuario,
         actualizarHistoriaUsuario,
         eliminarHistoriaUsuario,
@@ -711,6 +929,11 @@ export const useHistoriasUsuario = (proyectoId, autoLoad = true) => {
         obtenerHistoriasAltaPrioridad,
         limpiarEstado,
         recargarTodo,
+
+        // Funciones de mapeo para formularios
+        findByKeyOrId,
+        getIdByKeyOrId,
+        mapearKeyAId,
 
         // Setters
         setHistoriasUsuario,

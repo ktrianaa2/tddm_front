@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Form, Input, Select, Button, Divider, Space, Row, Col, Typography, Card, Spin, Alert, Tag, message } from 'antd'; import { PlusOutlined, DeleteOutlined, LinkOutlined } from '@ant-design/icons';
+import { Form, Input, Select, Button, Divider, Space, Row, Col, Typography, Card, Spin, Alert, Tag, message } from 'antd';
+import { PlusOutlined, DeleteOutlined, LinkOutlined } from '@ant-design/icons';
 import '../../../styles/forms.css';
 import '../../../styles/buttons.css';
 
@@ -14,7 +15,7 @@ const CasosUsoForm = ({
   proyectoId,
   loading = false,
 
-  // Datos de los catálogos
+  // Datos de los catálogos (ya procesados)
   prioridades = [],
   estados = [],
   tiposRelacion = [],
@@ -22,7 +23,6 @@ const CasosUsoForm = ({
   // Estados de carga
   loadingPrioridades = false,
   loadingTiposRelacion = false,
-  loadingEstados = false,
   loadingRelaciones = false,
 
   // Estados de error
@@ -30,9 +30,7 @@ const CasosUsoForm = ({
   errorTiposRelacion = null,
 
   // Funciones utilitarias
-  cargarRelacionesExistentes,
-  retryFunctions = {},
-  onLoadCasosUso
+  cargarRelacionesExistentes
 }) => {
   const [form] = Form.useForm();
   const [actoresList, setActoresList] = useState([]);
@@ -40,25 +38,21 @@ const CasosUsoForm = ({
   const [isEditing, setIsEditing] = useState(false);
   const [relacionesCargadas, setRelacionesCargadas] = useState(false);
 
-  // Funciones helper para mapear entre keys y IDs
+  // ============== FUNCIONES HELPER ==============
+
   const findByKeyOrId = useCallback((items, keyOrId) => {
     if (!keyOrId || !Array.isArray(items)) return null;
-
     const keyOrIdStr = keyOrId.toString().toLowerCase();
 
-    // Buscar por ID exacto primero
     let found = items.find(item => item.value === keyOrId.toString());
     if (found) return found;
 
-    // Buscar por key
     found = items.find(item => item.key === keyOrIdStr);
     if (found) return found;
 
-    // Buscar por label normalizado
     found = items.find(item =>
       item.label && item.label.toLowerCase().replace(/\s+/g, '-') === keyOrIdStr
     );
-
     return found;
   }, []);
 
@@ -66,6 +60,16 @@ const CasosUsoForm = ({
     const found = findByKeyOrId(items, keyOrId);
     return found ? found.value : null;
   }, [findByKeyOrId]);
+
+  const getItemByKey = useCallback((items, key) => {
+    return items.find(item => item.key === key);
+  }, []);
+
+  const getCasoUsoInfo = useCallback((casoUsoId) => {
+    return casosUsoExistentes.find(cu => cu.id.toString() === casoUsoId.toString());
+  }, [casosUsoExistentes]);
+
+  // ============== CARGAR RELACIONES ==============
 
   const cargarRelaciones = useCallback(async (casoUsoId) => {
     if (!casoUsoId || !cargarRelacionesExistentes || relacionesCargadas) {
@@ -82,19 +86,20 @@ const CasosUsoForm = ({
     }
   }, [cargarRelacionesExistentes, relacionesCargadas]);
 
-  // USEEFFECT principal
+  // ============== USEEFFECT PRINCIPAL ==============
+
   useEffect(() => {
-    // Verificar que los catálogos básicos estén disponibles
     const catalogosBasicosDisponibles = prioridades.length > 0 && estados.length > 0;
     if (!catalogosBasicosDisponibles) {
       return;
     }
+
     const casoUsoId = initialValues?.id;
+
     if (casoUsoId) {
       // MODO EDICIÓN
       setIsEditing(true);
 
-      // Preparar valores para edición
       const formValues = {
         nombre: initialValues.nombre || '',
         actores: initialValues.actores || '',
@@ -107,7 +112,6 @@ const CasosUsoForm = ({
         riesgos_consideraciones: initialValues.riesgos_consideraciones || ''
       };
 
-      // Mapear prioridad
       if (initialValues.prioridad) {
         const prioridadId = getIdByKeyOrId(prioridades, initialValues.prioridad);
         if (prioridadId) {
@@ -115,7 +119,6 @@ const CasosUsoForm = ({
         }
       }
 
-      // Mapear estado
       if (initialValues.estado) {
         const estadoId = getIdByKeyOrId(estados, initialValues.estado);
         if (estadoId) {
@@ -123,7 +126,6 @@ const CasosUsoForm = ({
         }
       }
 
-      // Procesar actores
       if (initialValues.actores) {
         const actores = typeof initialValues.actores === 'string'
           ? initialValues.actores.split(",").map(a => a.trim()).filter(Boolean)
@@ -132,20 +134,18 @@ const CasosUsoForm = ({
       }
 
       form.setFieldsValue(formValues);
+
       if (initialValues.relaciones && Array.isArray(initialValues.relaciones)) {
-        const relacionesProcesadas = initialValues.relaciones.map(rel => {
-          return {
-            id: rel.id || `temp_${Date.now()}_${Math.random()}`,
-            casoUsoRelacionado: (rel.casoUsoRelacionado || rel.caso_uso_destino_id || '').toString(),
-            tipo: (rel.tipo || rel.tipo_relacion_id || '').toString(),
-            descripcion: rel.descripcion || ''
-          };
-        });
+        const relacionesProcesadas = initialValues.relaciones.map(rel => ({
+          id: rel.id || `temp_${Date.now()}_${Math.random()}`,
+          casoUsoRelacionado: (rel.casoUsoRelacionado || rel.caso_uso_destino_id || '').toString(),
+          tipo: (rel.tipo || rel.tipo_relacion_id || '').toString(),
+          descripcion: rel.descripcion || ''
+        }));
 
         setRelaciones(relacionesProcesadas);
         setRelacionesCargadas(true);
       } else {
-        // Solo cargar relaciones desde API si no vienen en initialValues
         if (tiposRelacion.length > 0 && !relacionesCargadas) {
           cargarRelaciones(casoUsoId);
         }
@@ -158,7 +158,6 @@ const CasosUsoForm = ({
 
       const valoresPorDefecto = {};
 
-      // Establecer valores por defecto
       const prioridadPorDefecto = findByKeyOrId(prioridades, 'media') || prioridades[0];
       if (prioridadPorDefecto) {
         valoresPorDefecto.prioridad = prioridadPorDefecto.value;
@@ -182,11 +181,7 @@ const CasosUsoForm = ({
     JSON.stringify(initialValues?.relaciones)
   ]);
 
-  useEffect(() => {
-    if (onLoadCasosUso && casosUsoExistentes.length === 0) {
-      onLoadCasosUso();
-    }
-  }, [onLoadCasosUso, casosUsoExistentes.length]);
+  // ============== HANDLERS ==============
 
   const handleSubmit = (values) => {
     const finalValues = {
@@ -204,7 +199,6 @@ const CasosUsoForm = ({
       estado: values.estado || '',
 
       relaciones: relaciones.map(rel => {
-        // Validar que los valores sean números válidos
         const casoUsoRelacionado = parseInt(rel.casoUsoRelacionado);
         const tipo = parseInt(rel.tipo);
 
@@ -217,10 +211,9 @@ const CasosUsoForm = ({
           tipo: tipo,
           descripcion: rel.descripcion || ''
         };
-      }).filter(rel => rel !== null) // Filtrar relaciones inválidas
+      }).filter(rel => rel !== null)
     };
 
-    // Solo agregar ID si estamos editando
     if (isEditing && initialValues.id) {
       finalValues.id = initialValues.id;
     }
@@ -260,13 +253,11 @@ const CasosUsoForm = ({
     onSubmit(finalValues);
   };
 
-  // Convierte el input de actores en lista usable
   const handleActoresChange = (value) => {
     const actores = value.split(",").map(a => a.trim()).filter(Boolean);
     setActoresList(actores);
   };
 
-  // Funciones para relaciones
   const agregarRelacion = () => {
     const nuevaRelacion = {
       id: `temp_${Date.now()}_${Math.random()}`,
@@ -287,14 +278,7 @@ const CasosUsoForm = ({
     ));
   };
 
-  // Funciones helper para obtener información
-  const getItemByKey = useCallback((items, key) => {
-    return items.find(item => item.key === key);
-  }, []);
-
-  const getCasoUsoInfo = useCallback((casoUsoId) => {
-    return casosUsoExistentes.find(cu => cu.id.toString() === casoUsoId.toString());
-  }, [casosUsoExistentes]);
+  // ============== RENDERIZADO ==============
 
   return (
     <div className="form-container">
@@ -307,20 +291,11 @@ const CasosUsoForm = ({
         </p>
       </div>
 
-      {/* Alertas de error */}
       {(errorPrioridades || errorTiposRelacion) && (
         <Alert
           message="Error al cargar catálogos"
           description="Algunos catálogos no se pudieron cargar. Puedes continuar con valores por defecto."
           type="warning"
-          action={
-            <Button
-              size="small"
-              onClick={() => retryFunctions.cargarTodosCatalogos && retryFunctions.cargarTodosCatalogos()}
-            >
-              Reintentar
-            </Button>
-          }
           style={{ marginBottom: '1rem' }}
           closable
         />
@@ -406,6 +381,7 @@ const CasosUsoForm = ({
                 maxLength={400}
               />
             </Form.Item>
+
             <Form.Item
               name="postcondiciones"
               label="Postcondiciones"
@@ -426,16 +402,6 @@ const CasosUsoForm = ({
             <Form.Item
               label="Flujo Principal/Escenario Principal *"
               required
-              rules={[
-                {
-                  validator: (_, value) => {
-                    if (!value || value.length === 0) {
-                      return Promise.reject(new Error('Debe definir al menos un paso en el flujo principal'));
-                    }
-                    return Promise.resolve();
-                  }
-                }
-              ]}
             >
               <Form.List name="flujo_principal">
                 {(fields, { add, remove }) => (
@@ -522,7 +488,6 @@ const CasosUsoForm = ({
               </Form.List>
             </Form.Item>
 
-            {/* Prioridad - usando datos de la API */}
             <Form.Item name="prioridad" label="Prioridad/Frecuencia de Uso" className="form-field">
               <Select
                 placeholder="Nivel de importancia"
@@ -554,14 +519,10 @@ const CasosUsoForm = ({
               </Select>
             </Form.Item>
 
-            <Form.Item
-              name="estado"
-              label="Estado del Caso de Uso"
-              className="form-field"
-            >
+            <Form.Item name="estado" label="Estado del Caso de Uso" className="form-field">
               <Select
                 placeholder="Estado actual"
-                loading={loadingEstados}
+                loading={loadingPrioridades}
               >
                 {estados.map(e => (
                   <Select.Option key={e.value} value={e.value} title={e.descripcion}>
@@ -614,7 +575,6 @@ const CasosUsoForm = ({
               Define las relaciones UML entre este caso de uso y otros casos de uso existentes (Include, Extend, Generalización)
             </p>
 
-            {/* Mostrar loading solo si está cargando relaciones por primera vez */}
             {loadingRelaciones && relaciones.length === 0 && isEditing && (
               <div style={{
                 textAlign: 'center',
@@ -629,7 +589,6 @@ const CasosUsoForm = ({
               </div>
             )}
 
-            {/* Lista de relaciones - Solo mostrar si no está cargando */}
             {!loadingRelaciones && relaciones.map((relacion) => {
               const casoUsoInfo = getCasoUsoInfo(relacion.casoUsoRelacionado);
               return (
@@ -780,7 +739,6 @@ const CasosUsoForm = ({
               );
             })}
 
-            {/* Botón para agregar nueva relación - solo si hay tipos de relación cargados */}
             {tiposRelacion.length > 0 && !loadingRelaciones && (
               <Button
                 type="dashed"
@@ -793,7 +751,6 @@ const CasosUsoForm = ({
               </Button>
             )}
 
-            {/* Mensaje de carga para tipos de relación */}
             {loadingTiposRelacion && tiposRelacion.length === 0 && (
               <div style={{
                 textAlign: 'center',
@@ -808,31 +765,16 @@ const CasosUsoForm = ({
               </div>
             )}
 
-            {/* Mensaje de error para tipos de relación */}
             {errorTiposRelacion && tiposRelacion.length === 0 && (
               <Alert
                 message="Error cargando tipos de relación"
-                description={
-                  <div>
-                    <p>{errorTiposRelacion}</p>
-                    {retryFunctions.cargarTiposRelacion && (
-                      <Button
-                        size="small"
-                        onClick={retryFunctions.cargarTiposRelacion}
-                        style={{ marginTop: '8px' }}
-                      >
-                        Reintentar
-                      </Button>
-                    )}
-                  </div>
-                }
+                description={errorTiposRelacion}
                 type="warning"
                 showIcon
                 style={{ marginTop: '1rem' }}
               />
             )}
 
-            {/* Estado vacío */}
             {relaciones.length === 0 && !loadingTiposRelacion && !loadingRelaciones && tiposRelacion.length > 0 && (
               <div style={{
                 textAlign: 'center',

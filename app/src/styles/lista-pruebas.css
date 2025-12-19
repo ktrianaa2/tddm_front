@@ -1,0 +1,310 @@
+/* lista-pruebas.css - Estilos para el componente de lista de pruebas */
+
+/* === CONTENEDOR PRINCIPAL === */
+.lista-pruebas-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    transition: all var(--transition-normal);
+}
+
+/* === HEADER DE LA LISTA === */
+.lista-pruebas-header {
+    padding: var(--space-xl);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-card);
+}
+
+.lista-pruebas-header-title-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+}
+
+.lista-pruebas-title {
+    margin: 0;
+    fontSize: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.lista-pruebas-search {
+    background: var(--bg-hover);
+    border-color: var(--border-color);
+    transition: all var(--transition-normal);
+}
+
+.lista-pruebas-search:hover,
+.lista-pruebas-search:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+/* === TABS DE FILTRO === */
+.lista-pruebas-tabs {
+    padding: 0 var(--space-md);
+    margin-bottom: 0;
+}
+
+.lista-pruebas-tabs .ant-tabs-tab {
+    color: var(--text-secondary);
+    transition: all var(--transition-normal);
+}
+
+.lista-pruebas-tabs .ant-tabs-tab:hover {
+    color: var(--primary-color);
+}
+
+.lista-pruebas-tabs .ant-tabs-tab-active {
+    color: var(--primary-color);
+}
+
+.lista-pruebas-tabs .ant-tabs-ink-bar {
+    background: var(--primary-color);
+}
+
+/* === CONTENEDOR DE ITEMS === */
+.lista-pruebas-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-md);
+}
+
+/* Scrollbar personalizado */
+.lista-pruebas-items::-webkit-scrollbar {
+    width: 8px;
+}
+
+.lista-pruebas-items::-webkit-scrollbar-track {
+    background: var(--bg-hover);
+    border-radius: var(--border-radius);
+}
+
+.lista-pruebas-items::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: var(--border-radius);
+    transition: background var(--transition-normal);
+}
+
+.lista-pruebas-items::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+
+/* === ITEM DE PRUEBA === */
+.lista-pruebas-item {
+    padding: var(--space-md);
+    margin-bottom: var(--space-md);
+    background: var(--bg-hover);
+    border-radius: var(--border-radius);
+    border: 2px solid var(--border-color);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+}
+
+.lista-pruebas-item:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+.lista-pruebas-item.active {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+/* === ICONO DEL ITEM === */
+.lista-pruebas-item-icon {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: var(--border-radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: all var(--transition-normal);
+}
+
+/* Colores por tipo de prueba */
+.lista-pruebas-item-icon.unitaria {
+    background: #f6ffed;
+    color: #52c41a;
+}
+
+.lista-pruebas-item-icon.sistema {
+    background: #e6f4ff;
+    color: #1890ff;
+}
+
+.lista-pruebas-item-icon.componente {
+    background: #f9f0ff;
+    color: #722ed1;
+}
+
+.lista-pruebas-item:hover .lista-pruebas-item-icon {
+    transform: scale(1.1);
+}
+
+.lista-pruebas-item.active .lista-pruebas-item-icon {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* === CONTENIDO DEL ITEM === */
+.lista-pruebas-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.lista-pruebas-item-header {
+    margin-bottom: var(--space-sm);
+}
+
+.lista-pruebas-item-title {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    margin: 0 0 var(--space-sm) 0;
+    line-height: var(--line-height-tight);
+}
+
+.lista-pruebas-item-meta {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.lista-pruebas-item-tag {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    padding: 2px 8px;
+    border-radius: var(--border-radius);
+}
+
+.lista-pruebas-item-code {
+    font-size: var(--font-size-sm);
+    color: var(--text-tertiary);
+    font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+}
+
+.lista-pruebas-item-description {
+    font-size: var(--font-size-sm);
+    margin-top: var(--space-sm);
+    color: var(--text-secondary);
+    line-height: var(--line-height-normal);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* === ESTADO VACÍO === */
+.lista-pruebas-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2xl);
+    text-align: center;
+    background: var(--bg-hover);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--border-radius-lg);
+    margin: var(--space-xl) 0;
+    transition: all var(--transition-normal);
+}
+
+.lista-pruebas-empty:hover {
+    border-color: var(--primary-color);
+}
+
+.lista-pruebas-empty-icon {
+    font-size: 3rem;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-md);
+}
+
+.lista-pruebas-empty-text {
+    font-size: var(--font-size-base);
+    color: var(--text-secondary);
+}
+
+/* === ANIMACIONES === */
+@keyframes listItemSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.lista-pruebas-item {
+    animation: listItemSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Retraso progresivo para múltiples items */
+.lista-pruebas-item:nth-child(1) { animation-delay: 0s; }
+.lista-pruebas-item:nth-child(2) { animation-delay: 0.05s; }
+.lista-pruebas-item:nth-child(3) { animation-delay: 0.1s; }
+.lista-pruebas-item:nth-child(4) { animation-delay: 0.15s; }
+.lista-pruebas-item:nth-child(5) { animation-delay: 0.2s; }
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .lista-pruebas-header {
+        padding: var(--space-lg);
+    }
+
+    .lista-pruebas-items {
+        padding: var(--space-sm);
+    }
+
+    .lista-pruebas-item {
+        padding: var(--space-sm);
+    }
+
+    .lista-pruebas-item-icon {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        font-size: 1.25rem;
+    }
+
+    .lista-pruebas-item-title {
+        font-size: var(--font-size-sm);
+    }
+}
+
+@media (max-width: 480px) {
+    .lista-pruebas-header {
+        padding: var(--space-md);
+    }
+
+    .lista-pruebas-title {
+        font-size: var(--font-size-base);
+    }
+
+    .lista-pruebas-item {
+        flex-direction: column;
+        gap: var(--space-sm);
+    }
+
+    .lista-pruebas-item-icon {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        font-size: 1rem;
+    }
+}

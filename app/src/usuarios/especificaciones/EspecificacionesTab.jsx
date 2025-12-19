@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, Button } from 'antd';
 import {
     FileTextOutlined,
@@ -24,47 +24,43 @@ const EspecificacionesTab = ({ proyecto }) => {
 
     const proyectoId = proyecto?.proyecto_id;
 
-    // SOLUCIÓN: Usar autoLoad = true pero solo cargar los datos necesarios para contadores
-    // Los hooks cargarán los datos mínimos automáticamente
+    // Usar autoLoad = true para cargar datos automáticamente
     const {
         contadores: contadoresCasosUso,
         loading: loadingCasosUso,
-        casosUso // Necesitamos acceder a los datos cargados
-    } = useCasosUso(proyectoId, true); // ← Cambiar a true
+        casosUso
+    } = useCasosUso(proyectoId, true);
 
     const {
         contadores: contadoresRequisitos,
         loading: loadingRequisitos,
-        requisitos // Necesitamos acceder a los datos cargados
-    } = useRequisitos(proyectoId, true); // ← Cambiar a true
+        requisitos
+    } = useRequisitos(proyectoId, true);
 
     const {
         contadores: contadoresHistorias,
         loading: loadingHistorias,
-        historiasUsuario // Necesitamos acceder a los datos cargados
-    } = useHistoriasUsuario(proyectoId, true); // ← Cambiar a true
+        historiasUsuario
+    } = useHistoriasUsuario(proyectoId, true);
 
-    // Estado local para contadores consolidados
-    const [contadores, setContadores] = useState({
-        requisitos: 0,
-        casosUso: 0,
-        historiasUsuario: 0,
-        total: 0
-    });
-
-    // Actualizar contadores cuando cambien las estadísticas
-    useEffect(() => {
+    // 🔧 FIX: Usar useMemo para calcular contadores consolidados
+    // Esto evita recrear el objeto en cada render y previene el ciclo infinito
+    const contadores = useMemo(() => {
         const requisitos = contadoresRequisitos?.total || 0;
         const casosUso = contadoresCasosUso?.total || 0;
         const historiasUsuario = contadoresHistorias?.total || 0;
 
-        setContadores({
+        return {
             requisitos,
             casosUso,
             historiasUsuario,
             total: requisitos + casosUso + historiasUsuario
-        });
-    }, [contadoresRequisitos, contadoresCasosUso, contadoresHistorias]);
+        };
+    }, [
+        contadoresRequisitos?.total,
+        contadoresCasosUso?.total,
+        contadoresHistorias?.total
+    ]);
 
     const especificacionesCards = [
         {

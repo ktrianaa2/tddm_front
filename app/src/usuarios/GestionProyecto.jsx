@@ -25,7 +25,7 @@ import EjecutarPruebasTab from './pruebas/ejecutar_pruebas/EjecutarPruebasTab';
 
 const { Title } = Typography;
 
-const GestionProyecto = ({ proyecto, onBack, onEditar }) => {
+const GestionProyecto = ({ proyecto, onBack, onEditar, onCambiarEstado }) => {
   const [activeTab, setActiveTab] = useState('info');
 
   if (!proyecto) {

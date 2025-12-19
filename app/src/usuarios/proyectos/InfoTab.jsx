@@ -39,36 +39,36 @@ import { usePruebas } from '../../hooks/usePruebas';
 const { Text, Paragraph, Title } = Typography;
 
 const InfoTab = ({ proyecto, onBack, onEditar }) => {
-  // Inicializar hooks con el ID del proyecto - CORRECCIÓN: usar proyecto_id en lugar de id
+  // Inicializar hooks con el ID del proyecto
   const {
     requisitos,
     loading: loadingRequisitos,
     estadisticas: statsRequisitos,
     contadores: contadoresRequisitos
-  } = useRequisitos(proyecto?.proyecto_id, true); // ← Cambiar proyecto?.id a proyecto?.proyecto_id
+  } = useRequisitos(proyecto?.proyecto_id, true);
 
   const {
     casosUso,
     loading: loadingCasosUso,
     estadisticas: statsCasosUso,
     contadores: contadoresCasosUso
-  } = useCasosUso(proyecto?.proyecto_id, true); // ← Cambiar proyecto?.id a proyecto?.proyecto_id
+  } = useCasosUso(proyecto?.proyecto_id, true);
 
   const {
     historiasUsuario,
     loading: loadingHistorias,
     estadisticas: statsHistorias,
     contadores: contadoresHistorias
-  } = useHistoriasUsuario(proyecto?.proyecto_id, true); // ← Cambiar proyecto?.id a proyecto?.proyecto_id
+  } = useHistoriasUsuario(proyecto?.proyecto_id, true);
 
   const {
     pruebas,
     contadores: contadoresPruebas,
     loading: loadingPruebas,
     cargarPruebas
-  } = usePruebas(proyecto?.proyecto_id, true); // ← Cambiar proyecto?.id a proyecto?.proyecto_id
+  } = usePruebas(proyecto?.proyecto_id, true);
 
-  // Cargar pruebas al montar - OPCIONAL: ya no necesario si usePruebas tiene autoLoad
+  // Cargar pruebas al montar
   useEffect(() => {
     if (proyecto?.proyecto_id && !loadingPruebas && pruebas.length === 0) {
       cargarPruebas();
@@ -83,14 +83,36 @@ const InfoTab = ({ proyecto, onBack, onEditar }) => {
   const isLoading = loadingRequisitos || loadingCasosUso || loadingHistorias || loadingPruebas;
 
   const getStatusTag = (estado) => {
-    const statusMap = {
-      'Especificaciones': { color: 'blue', text: 'En Requisitos' },
-      'Generación': { color: 'orange', text: 'En Desarrollo' },
-      'Ejecución': { color: 'green', text: 'Completado' },
+    // Ahora estado es un objeto con {id, nombre, color, orden}
+    if (!estado) {
+      return <Tag style={{ fontSize: '14px', padding: '4px 12px' }}>Sin estado</Tag>;
+    }
+
+    // Usar el color del objeto estado, o un color por defecto
+    const colorMap = {
+      'blue': 'blue',
+      'orange': 'orange',
+      'green': 'green',
+      'red': 'red',
+      'purple': 'purple',
+      'cyan': 'cyan',
+      'magenta': 'magenta',
+      'volcano': 'volcano',
+      'gold': 'gold',
+      'lime': 'lime',
+      'default': 'default'
     };
 
-    const status = statusMap[estado] || { color: 'default', text: estado };
-    return <Tag className={`tag tag-${status.color}`} style={{ fontSize: '14px', padding: '4px 12px' }}>{status.text}</Tag>;
+    const tagColor = colorMap[estado.color] || estado.color || 'default';
+
+    return (
+      <Tag
+        color={tagColor}
+        style={{ fontSize: '14px', padding: '4px 12px' }}
+      >
+        {estado.nombre}
+      </Tag>
+    );
   };
 
   const handleEditarProyecto = () => {

@@ -22,69 +22,7 @@ const EditorPrueba = ({
     const [hasChanges, setHasChanges] = useState(false);
     const [guardando, setGuardando] = useState(false);
 
-    // 💡 Función para formatear la prueba en código
-    const formatearPruebas = (prueba) => {
-        if (!prueba) return '';
-
-        // Usar el objeto anidado 'prueba' (detalle) si existe, sino usar el objeto de primer nivel (fallback)
-        const detalle = prueba.prueba || prueba;
-
-        // Convertir los pasos en comentarios de código para el editor
-        const pasosComentarios = detalle.pasos?.map(p =>
-            `    // Paso ${p.numero}: ${p.descripcion}`
-        ).join('\n') || '    // No hay pasos definidos';
-
-        // Convertir aserciones en comentarios
-        const asercionesComentarios = detalle.criterios_aceptacion?.map(c =>
-            `        // Criterio de Aceptación: ${c}`
-        ).join('\n') || '        // Añadir aserciones';
-
-        return `// ${detalle.nombre || prueba.nombre}
-// Código: ${prueba.codigo}
-// Tipo: ${detalle.tipo_prueba || prueba.tipo}
-// Estado: ${prueba.estado || 'Pendiente'}
-
-describe('${detalle.nombre || prueba.nombre}', () => {
-    
-    // ⬇️ PRECONDICIONES
-    beforeEach(() => {
-        // ${detalle.precondiciones?.join('\n        // ') || 'Inicializar entorno de prueba'}
-    });
-
-    // 🎯 OBJETIVO: ${detalle.objetivo || 'N/A'}
-
-${pasosComentarios}
-
-    test('debe cumplir con el flujo principal', async () => {
-        // Arrange
-        const entrada = {};
-        
-        // Act
-        const resultado = await funcionBajoPrueba(entrada);
-        
-        // Assert
-${asercionesComentarios}
-        expect(resultado).toBeDefined();
-    });
-    
-    // ⬆️ POSTCONDICIONES
-    afterEach(() => {
-        // ${detalle.postcondiciones?.join('\n        // ') || 'Limpiar recursos'}
-    });
-});
-
-/*
- * ESPECIFICACIÓN RELACIONADA:
- * ${prueba.especificacion_relacionada || 'N/A'}
- * 
- * DATOS DE PRUEBA:
- * - Caso válido: ${detalle.datos_prueba?.ejemplos?.[0]?.caso || 'N/A'}
- * - Caso límite: ${detalle.datos_prueba?.ejemplos?.[1]?.caso || 'N/A'}
- * - Caso inválido: ${detalle.datos_prueba?.ejemplos?.[2]?.caso || 'N/A'}
- */`;
-    };
-
-    // Función mejorada para formatear prueba
+    // Función para formatear prueba en Python/Pytest
     const formatearPrueba = (prueba) => {
         if (!prueba) return '';
 
@@ -95,128 +33,139 @@ ${asercionesComentarios}
 
             if (!pasos.length || pasos[0]?.accion === 'undefined') {
                 // Fallback si no hay pasos válidos
-                return `    test('debe cumplir con el flujo principal', async () => {
-        // ⚠️ Esta prueba necesita implementación
-        // TODO: Implementar la lógica de prueba
-        
-        const entrada = ${detalle.datos_prueba?.entrada || '{}'};
-        const resultado = await funcionBajoPrueba(entrada);
-        
-        expect(resultado).toBeDefined();
-    });`;
+                return `def test_flujo_principal():
+    """⚠️ Esta prueba necesita implementación"""
+    # TODO: Implementar la lógica de prueba
+    
+    entrada = ${detalle.datos_prueba?.entrada || '{}'}
+    resultado = funcion_bajo_prueba(entrada)
+    
+    assert resultado is not None`;
             }
 
             // Generar código real desde los pasos
-            let codigoTest = `    test('debe cumplir con ${detalle.objetivo || 'el flujo principal'}', async () => {\n`;
-            codigoTest += `        // Arrange\n`;
+            let codigoTest = `def test_${(detalle.objetivo || 'flujo_principal').toLowerCase().replace(/\s+/g, '_')}():\n`;
+            codigoTest += `    """${detalle.objetivo || 'Verificar el flujo principal'}"""\n`;
+            codigoTest += `    # Arrange\n`;
 
             // Pasos de configuración (mocks, datos)
             const pasosArrange = pasos.filter(p =>
-                p.accion.includes('const ') ||
+                p.accion.includes('=') ||
                 p.accion.includes('mock') ||
+                p.accion.includes('Mock') ||
                 p.paso <= 3
             );
 
             pasosArrange.forEach(paso => {
-                codigoTest += `        ${paso.accion}\n`;
+                codigoTest += `    ${paso.accion}\n`;
             });
 
-            codigoTest += `\n        // Act\n`;
+            codigoTest += `\n    # Act\n`;
 
             // Pasos de ejecución
             const pasosAct = pasos.filter(p =>
-                p.accion.includes('await ') &&
-                !p.accion.includes('expect')
+                (p.accion.includes('=') && !p.accion.includes('assert')) ||
+                p.accion.includes('llamar') ||
+                p.accion.includes('ejecutar')
             );
 
             if (pasosAct.length > 0) {
                 pasosAct.forEach(paso => {
-                    codigoTest += `        ${paso.accion}\n`;
+                    codigoTest += `    ${paso.accion}\n`;
                 });
             } else {
-                // Si no hay paso Act explícito, usar el primero con await
-                const pasoConAwait = pasos.find(p => p.accion.includes('await'));
-                if (pasoConAwait) {
-                    codigoTest += `        ${pasoConAwait.accion}\n`;
-                }
+                // Si no hay paso Act explícito, generar uno genérico
+                codigoTest += `    resultado = funcion_bajo_prueba(entrada)\n`;
             }
 
-            codigoTest += `\n        // Assert\n`;
+            codigoTest += `\n    # Assert\n`;
 
             // Pasos de verificación
-            const pasosAssert = pasos.filter(p => p.accion.includes('expect('));
+            const pasosAssert = pasos.filter(p =>
+                p.accion.includes('assert') ||
+                p.accion.includes('verificar')
+            );
 
             if (pasosAssert.length > 0) {
                 pasosAssert.forEach(paso => {
-                    codigoTest += `        ${paso.accion}\n`;
+                    codigoTest += `    ${paso.accion}\n`;
                 });
             } else {
-                // Fallback: generar expects desde criterios
-                (detalle.criterios_aceptacion || []).forEach((criterio, i) => {
-                    codigoTest += `        // ${criterio}\n`;
+                // Fallback: generar asserts desde criterios
+                (detalle.criterios_aceptacion || []).forEach((criterio) => {
+                    codigoTest += `    # ${criterio}\n`;
                 });
-                codigoTest += `        expect(resultado).toBeDefined();\n`;
+                codigoTest += `    assert resultado is not None\n`;
             }
-
-            codigoTest += `    });`;
 
             return codigoTest;
         };
 
-        // Precondiciones
+        // Imports necesarios
+        const imports = `import pytest
+from unittest.mock import Mock, patch, MagicMock`;
+
+        // Precondiciones como fixture
         const precondicionesCode = (detalle.precondiciones || [])
-            .map(p => `        // ${p}`)
-            .join('\n') || '        // Configurar entorno de prueba';
+            .map(p => `    # ${p}`)
+            .join('\n') || '    # Configurar entorno de prueba';
 
-        return `// ${detalle.nombre || prueba.nombre}
-// Código: ${prueba.codigo}
-// Tipo: ${detalle.tipo_prueba || prueba.tipo}
-// Estado: ${prueba.estado || 'Pendiente'}
+        // Fixtures si hay precondiciones
+        const fixtureCode = detalle.precondiciones?.length ? `
 
-describe('${detalle.nombre || prueba.nombre}', () => {
-    let mockRepositorio;
-    let service;
-    
-    beforeEach(() => {
+@pytest.fixture
+def setup_prueba():
+    """Configuración inicial de la prueba"""
 ${precondicionesCode}
-        
-        mockRepositorio = {
-            findByCodigo: jest.fn(),
-            save: jest.fn()
-        };
-        
-        service = new ProductoService(mockRepositorio);
-    });
+    
+    mock_repositorio = Mock()
+    mock_repositorio.find_by_codigo = Mock()
+    mock_repositorio.save = Mock()
+    
+    service = ProductoService(mock_repositorio)
+    
+    yield {
+        'service': service,
+        'repositorio': mock_repositorio
+    }
+    
+    # Limpieza (teardown)
+    pass
+` : '';
 
-${generarCodigoDesdePasos()
-            }
+        return `# ${detalle.nombre || prueba.nombre}
+# Código: ${prueba.codigo}
+# Tipo: ${detalle.tipo_prueba || prueba.tipo}
+# Estado: ${prueba.estado || 'Pendiente'}
 
-    afterEach(() => {
-        jest.clearAllMocks();
-    });
-});
+${imports}
 
-/*
- * ESPECIFICACIÓN: ${prueba.especificacion_relacionada || 'N/A'}
- * 
- * OBJETIVO: ${detalle.objetivo || 'N/A'}
- * 
- * DATOS DE PRUEBA:
- * Entrada: ${detalle.datos_prueba?.entrada || 'N/A'}
- * Salida: ${detalle.datos_prueba?.salida_esperada || 'N/A'}
- */`;
+"""
+ESPECIFICACIÓN: ${prueba.especificacion_relacionada || 'N/A'}
+
+OBJETIVO: ${detalle.objetivo || 'N/A'}
+
+DATOS DE PRUEBA:
+- Entrada: ${detalle.datos_prueba?.entrada || 'N/A'}
+- Salida: ${detalle.datos_prueba?.salida_esperada || 'N/A'}
+"""
+${fixtureCode}
+
+class Test${(detalle.nombre || prueba.nombre).replace(/\s+/g, '')}:
+    """Suite de pruebas para ${detalle.nombre || prueba.nombre}"""
+    
+    ${generarCodigoDesdePasos().split('\n').map(line => '    ' + line).join('\n')}`;
     };
 
     // Cargar código cuando cambia la prueba
     useEffect(() => {
         if (prueba) {
-            // Si ya existe código editado, usar ese, sino formatear la prueba
             const codigoExistente = prueba.codigo_editado || formatearPrueba(prueba);
             setCodigo(codigoExistente);
             setCodigoOriginal(codigoExistente);
             setHasChanges(false);
         }
-    }, [prueba?.id_prueba]); // Solo recargar si cambia el ID de la prueba
+    }, [prueba?.id_prueba]);
 
     // Manejar cambios en el editor
     const handleEditorChange = (value) => {
@@ -230,10 +179,8 @@ ${generarCodigoDesdePasos()
 
         setGuardando(true);
         try {
-            // Preparar la prueba actualizada con el código editado
             const pruebaActualizada = {
                 ...prueba,
-                // Mantener el objeto prueba original pero agregar el código editado
                 prueba: {
                     ...(prueba.prueba || {}),
                     codigo_editado: codigo,
@@ -243,7 +190,6 @@ ${generarCodigoDesdePasos()
 
             await onGuardarCambios(pruebaActualizada);
 
-            // Actualizar el código original solo si se guardó exitosamente
             setCodigoOriginal(codigo);
             setHasChanges(false);
             message.success('Cambios guardados exitosamente');
@@ -265,7 +211,6 @@ ${generarCodigoDesdePasos()
     // Manejar atajo de teclado Ctrl+S
     useEffect(() => {
         const handleKeyDown = (e) => {
-            // Ctrl+S o Cmd+S (Mac)
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
                 if (hasChanges && !guardando) {
@@ -395,7 +340,7 @@ ${generarCodigoDesdePasos()
             <div style={{ flex: 1, overflow: 'hidden' }}>
                 <Editor
                     height="100%"
-                    defaultLanguage="javascript"
+                    defaultLanguage="python"
                     value={codigo}
                     onChange={handleEditorChange}
                     theme="vs-dark"
@@ -405,7 +350,7 @@ ${generarCodigoDesdePasos()
                         lineNumbers: 'on',
                         scrollBeyondLastLine: false,
                         automaticLayout: true,
-                        tabSize: 2,
+                        tabSize: 4,
                         wordWrap: 'on',
                         formatOnPaste: true,
                         formatOnType: true,
@@ -429,7 +374,7 @@ ${generarCodigoDesdePasos()
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>
-                        💡 <kbd>Ctrl+S</kbd> para guardar cambios
+                        💡 <kbd>Ctrl+S</kbd> para guardar cambios | 🐍 Python/Pytest
                     </span>
                     <span>
                         {prueba.especificacion_relacionada && `📋 ${prueba.especificacion_relacionada} `}

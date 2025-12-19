@@ -5,35 +5,77 @@ import ProyectoCard from "./ProyectoCard";
 import '../../styles/dashboard.css';
 import '../../styles/buttons.css';
 
-
 const { Search } = Input;
 
-const ListaProyectos = ({ proyectos, loading, onEditar, onVer, onEliminar, onCrear }) => {
+const ListaProyectos = ({ proyectos, estadosProyecto, loading, loadingEstados, onEditar, onVer, onEliminar, onCrear, onCambiarEstado }) => {
     const [searchTerm, setSearchTerm] = useState("");
-    const [estadoFiltro, setEstadoFiltro] = useState("todos"); // todos | Especificaciones | Generación | Ejecución
+    const [estadoFiltro, setEstadoFiltro] = useState("todos");
 
-    // Calcular estadísticas
-    const stats = useMemo(() => ({
-        total: proyectos.length,
-        especificaciones: proyectos.filter(p => p.estado === "Especificaciones").length,
-        generacion: proyectos.filter(p => p.estado === "Generación").length,
-        ejecucion: proyectos.filter(p => p.estado === "Ejecución").length
-    }), [proyectos]);
+    // Helper function para obtener nombre del estado
+    const getEstadoNombre = (estado) => {
+        if (!estado) return "";
+        return typeof estado === 'object' ? estado.nombre : estado;
+    };
 
-    // Filtrar proyectos
+    // Helper para obtener el objeto estado completo (con color)
+    const getEstadoObject = (nombreEstado) => {
+        return estadosProyecto.find(e => e.nombre === nombreEstado);
+    };
+
+    // Calcular estadísticas basadas en los estados disponibles del backend
+    const stats = useMemo(() => {
+        // Filtrar proyectos NO cancelados para el total
+        const proyectosActivos = proyectos.filter(p => {
+            const nombreEstado = getEstadoNombre(p.estado);
+            const estadoObj = getEstadoObject(nombreEstado);
+            return !estadoObj || estadoObj.activo !== false;
+        });
+
+        const statsObj = {
+            total: proyectosActivos.length
+        };
+
+        // Crear contadores dinámicos para cada estado activo del backend
+        if (estadosProyecto && Array.isArray(estadosProyecto)) {
+            estadosProyecto.forEach(estado => {
+                const nombreEstado = estado.nombre;
+                statsObj[nombreEstado] = proyectosActivos.filter(p =>
+                    getEstadoNombre(p.estado) === nombreEstado
+                ).length;
+            });
+        }
+
+        return statsObj;
+    }, [proyectos, estadosProyecto]);
+
+    // Filtrar proyectos: mostrar solo activos en "todos", y cancelados en su filtro
     const proyectosFiltrados = useMemo(() => {
         return proyectos.filter(proyecto => {
+            const proyectoEstadoNombre = getEstadoNombre(proyecto.estado);
+            const estadoObj = getEstadoObject(proyectoEstadoNombre);
+            const esEstadoCancelado = !estadoObj || estadoObj.activo === false;
+
             // Filtro por búsqueda
             const matchSearch = proyecto.nombre.toLowerCase().includes(searchTerm.toLowerCase());
 
-            // Filtro por estado
-            const matchEstado = estadoFiltro === "todos" || proyecto.estado === estadoFiltro;
+            // Lógica de filtrado por estado:
+            // - Si filtro es "todos": mostrar solo proyectos activos (no cancelados)
+            // - Si filtro es un estado específico: mostrar solo ese estado
+            let matchEstado = false;
+
+            if (estadoFiltro === "todos") {
+                // Mostrar solo los que NO estén cancelados
+                matchEstado = !esEstadoCancelado;
+            } else {
+                // Mostrar proyectos del estado específico
+                matchEstado = proyectoEstadoNombre === estadoFiltro;
+            }
 
             return matchSearch && matchEstado;
         });
-    }, [proyectos, searchTerm, estadoFiltro]);
+    }, [proyectos, searchTerm, estadoFiltro, estadosProyecto]);
 
-    if (loading) {
+    if (loading || loadingEstados) {
         return (
             <div className="dashboard-loading">
                 <Spin size="large" />
@@ -42,8 +84,14 @@ const ListaProyectos = ({ proyectos, loading, onEditar, onVer, onEliminar, onCre
         );
     }
 
+    // Filtrar proyectos NO cancelados para el estado vacío
+    const proyectosActivos = proyectos.filter(p => {
+        const nombreEstado = getEstadoNombre(p.estado);
+        const estadoObj = getEstadoObject(nombreEstado);
+        return !estadoObj || estadoObj.activo !== false;
+    });
 
-    if (proyectos.length === 0) {
+    if (proyectosActivos.length === 0) {
         return (
             <div className="dashboard-empty-state">
                 <div className="dashboard-empty-icon">
@@ -68,7 +116,6 @@ const ListaProyectos = ({ proyectos, loading, onEditar, onVer, onEliminar, onCre
     }
 
     return (
-
         <div className="dashboard-proyectos-container">
             <Row gutter={[24, 24]}>
                 {/* Columna izquierda - Estadísticas/Filtros */}
@@ -83,32 +130,29 @@ const ListaProyectos = ({ proyectos, loading, onEditar, onVer, onEliminar, onCre
                             <div className="dashboard-stat-label">Total Proyectos</div>
                         </div>
 
-                        {/* Card de Requisitos */}
-                        <div
-                            className={`dashboard-stat-card ${estadoFiltro === "Especificaciones" ? "active" : ""}`}
-                            onClick={() => setEstadoFiltro("Especificaciones")}
-                        >
-                            <div className="dashboard-stat-number">{stats.especificaciones}</div>
-                            <div className="dashboard-stat-label">Fase de especificaciones</div>
-                        </div>
-
-                        {/* Card de Generación */}
-                        <div
-                            className={`dashboard-stat-card ${estadoFiltro === "Generación" ? "active" : ""}`}
-                            onClick={() => setEstadoFiltro("Generación")}
-                        >
-                            <div className="dashboard-stat-number">{stats.generacion}</div>
-                            <div className="dashboard-stat-label">Fase de generación</div>
-                        </div>
-
-                                                {/* Card de Ejecucion */}
-                        <div
-                            className={`dashboard-stat-card ${estadoFiltro === "Ejecución" ? "active" : ""}`}
-                            onClick={() => setEstadoFiltro("Ejecución")}
-                        >
-                            <div className="dashboard-stat-number">{stats.ejecucion}</div>
-                            <div className="dashboard-stat-label">Fase de ejecución</div>
-                        </div>
+                        {/* Renderizar cards dinámicamente basadas en estadosProyecto del backend */}
+                        {estadosProyecto && Array.isArray(estadosProyecto) && estadosProyecto.length > 0 ? (
+                            estadosProyecto.map((estado) => (
+                                <div
+                                    key={estado.id}
+                                    className={`dashboard-stat-card ${estadoFiltro === estado.nombre ? "active" : ""}`}
+                                    onClick={() => setEstadoFiltro(estado.nombre)}
+                                    style={{
+                                        borderLeft: `4px solid ${estado.color || '#1890ff'}`
+                                    }}
+                                >
+                                    <div className="dashboard-stat-number">
+                                        {stats[estado.nombre] || 0}
+                                    </div>
+                                    <div className="dashboard-stat-label">{estado.nombre}</div>
+                                </div>
+                            ))
+                        ) : (
+                            // Fallback si no hay estados del backend (no debería pasar)
+                            <div className="dashboard-stat-card">
+                                <div className="dashboard-stat-label">Sin estados disponibles</div>
+                            </div>
+                        )}
                     </div>
                 </Col>
 
@@ -168,9 +212,11 @@ const ListaProyectos = ({ proyectos, loading, onEditar, onVer, onEliminar, onCre
                                 >
                                     <ProyectoCard
                                         proyecto={proyecto}
+                                        estadosProyecto={estadosProyecto}
                                         onEditar={onEditar}
                                         onEliminar={onEliminar}
                                         onVer={onVer}
+                                        onCambiarEstado={onCambiarEstado}
                                     />
                                 </Col>
                             ))}

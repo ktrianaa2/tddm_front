@@ -67,13 +67,13 @@ const EjecutarPruebasTab = ({ proyecto }) => {
     if (pruebas.length > 0) {
       setEstadisticas(prev => ({
         ...prev,
-        pendientes: pruebas.filter(p => p.estado === 'aprobada').length
+        pendientes: pruebas.filter(p => p.estado === 'Aprobada').length
       }));
     }
   }, [pruebas]);
 
   const handleSeleccionarPrueba = (prueba) => {
-    if (prueba.estado !== 'aprobada') {
+    if (prueba.estado !== 'Aprobada') {
       message.warning('Solo se pueden ejecutar pruebas aprobadas');
       return;
     }
@@ -232,7 +232,7 @@ const EjecutarPruebasTab = ({ proyecto }) => {
   };
 
   const handleEjecutarTodas = async () => {
-    const pruebasAprobadas = pruebas.filter(p => p.estado === 'aprobada');
+    const pruebasAprobadas = pruebas.filter(p => p.estado === 'Aprobada');
 
     if (pruebasAprobadas.length === 0) {
       message.warning('No hay pruebas aprobadas para ejecutar');
@@ -368,7 +368,7 @@ const EjecutarPruebasTab = ({ proyecto }) => {
   };
 
   const tieneModificaciones = codigoUsuario !== codigoGuardado;
-  const pruebasAprobadas = pruebas.filter(p => p.estado === 'aprobada');
+  const pruebasAprobadas = pruebas.filter(p => p.estado === 'Aprobada');
 
   const menuOpciones = {
     items: [

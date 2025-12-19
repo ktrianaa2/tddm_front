@@ -1,200 +1,57 @@
-import React, { useState } from "react";
-import { Card, Button, Typography, message, Spin, Modal, Row, Col } from "antd";
+import React from "react";
+import { Card, Button, Typography, Spin, Row, Col } from "antd";
 import { PlusOutlined, FileTextOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import { useRequisitos } from '../../../hooks/useRequisitos';
-import RequisitosFormContainer from "./RequisitosFormContainer";
+import RequisitosForm from "./RequisitosForm";
 import RequisitoItem from "./RequisitoItem";
 import '../../../styles/forms.css';
 import '../../../styles/buttons.css';
 
 const { Title, Text } = Typography;
-const { confirm } = Modal;
 
 const RequisitosSection = ({ proyectoId }) => {
-    const [editing, setEditing] = useState(null);
-
-    // Usar el hook refactorizado
     const {
         // Datos
         requisitos,
-        catalogos,
         contadores,
 
-        // Estados de carga
+        // Estado del formulario
+        formularioAbierto,
+        modoEdicion,
+        valoresFormulario,
+        relacionesFormulario,
+
+        // Catálogos para el formulario
+        tiposRequisito,
+        prioridades,
+        estados,
+        tiposRelacion,
+
+        // Estados
+        catalogosDisponibles,
         loading,
         loadingDetalle,
         loadingAccion,
         loadingCatalogos,
+        loadingRelaciones,
         errorCatalogos,
 
-        // Funciones CRUD
-        obtenerRequisito,
-        crearRequisito,
-        actualizarRequisito,
+        // Funciones
+        abrirFormularioCrear,
+        abrirFormularioEditar,
+        cerrarFormulario,
+        guardarRequisito,
         eliminarRequisito,
-
-        // Funciones auxiliares
-        cargarRequisitos,
+        agregarRelacion,
+        actualizarRelacion,
+        eliminarRelacion,
         recargarTodo,
-        limpiarEstado
+        getRequisitoInfo,
+        getItemByKey,
+        cargarRelaciones
     } = useRequisitos(proyectoId, true);
 
-    // Función helper para mapear keys a IDs
-    const mapearKeyAId = (key, catalogo) => {
-        if (!key || !catalogo) return undefined;
-
-        const item = catalogo.find(item =>
-            item.key === key ||
-            item.nombre?.toLowerCase() === key.toLowerCase() ||
-            item.id?.toString() === key.toString()
-        );
-        return item ? item.id.toString() : undefined;
-    };
-
-    // Cargar requisito completo para edición
-    const cargarRequisitoParaEdicion = async (requisitoId) => {
-        try {
-            const requisitoCompleto = await obtenerRequisito(requisitoId, false);
-
-            if (!requisitoCompleto) {
-                throw new Error('No se pudo obtener la información del requisito');
-            }
-
-            // Preparar los valores para el formulario
-            const requisitoParaEditar = {
-                id: requisitoCompleto.id,
-                nombre: requisitoCompleto.nombre || '',
-                descripcion: requisitoCompleto.descripcion || '',
-                criterios: requisitoCompleto.criterios || '',
-                origen: requisitoCompleto.origen || '',
-                condiciones_previas: requisitoCompleto.condiciones_previas || '',
-                proyecto_id: requisitoCompleto.proyecto_id,
-
-                // Mapear usando los catálogos disponibles
-                tipo: mapearKeyAId(requisitoCompleto.tipo, catalogos?.tipos_requisito),
-                prioridad: mapearKeyAId(requisitoCompleto.prioridad, catalogos?.prioridades),
-                estado: mapearKeyAId(requisitoCompleto.estado, catalogos?.estados),
-
-                relaciones_requisitos: []
-            };
-
-            // Procesar relaciones si existen
-            if (Array.isArray(requisitoCompleto.relaciones_requisitos) &&
-                requisitoCompleto.relaciones_requisitos.length > 0) {
-                requisitoParaEditar.relaciones_requisitos = requisitoCompleto.relaciones_requisitos.map(rel => ({
-                    id: rel.id || `temp_${Date.now()}_${Math.random()}`,
-                    requisito_id: (rel.requisito_id || rel.requisito_relacionado_id || '').toString(),
-                    tipo_relacion: (rel.tipo_relacion_id || rel.tipo_relacion || '').toString(),
-                    descripcion: rel.descripcion || ''
-                }));
-            }
-
-            setEditing(requisitoParaEditar);
-
-        } catch (error) {
-            message.error(`Error al cargar requisito: ${error.message}`);
-        }
-    };
-
-    const handleGuardar = async (values) => {
-        if (!proyectoId) {
-            message.error('No se ha especificado el ID del proyecto');
-            return;
-        }
-
-        try {
-            // Preparar datos para enviar
-            const dataToSend = {
-                nombre: values.nombre,
-                descripcion: values.descripcion,
-                tipo_id: values.tipo ? parseInt(values.tipo) : null,
-                criterios: values.criterios,
-                prioridad_id: values.prioridad ? parseInt(values.prioridad) : null,
-                estado_id: values.estado ? parseInt(values.estado) : null,
-                origen: values.origen || '',
-                condiciones_previas: values.condiciones_previas || '',
-                relaciones_requisitos: (values.relaciones_requisitos || [])
-                    .filter(rel => rel.requisito_id && rel.tipo_relacion)
-                    .map(rel => ({
-                        requisito_id: parseInt(rel.requisito_id),
-                        tipo_relacion_id: parseInt(rel.tipo_relacion),
-                        descripcion: rel.descripcion || ''
-                    }))
-            };
-
-            let resultado;
-
-            if (editing && editing.id) {
-                // Actualizar
-                resultado = await actualizarRequisito(editing.id, dataToSend);
-            } else {
-                // Crear
-                resultado = await crearRequisito(dataToSend);
-            }
-
-            if (resultado.success) {
-                setEditing(null);
-                limpiarEstado();
-            }
-
-        } catch (error) {
-            message.error(`Error al guardar requisito: ${error.message}`);
-        }
-    };
-
-    const handleEliminar = (requisito) => {
-        confirm({
-            title: 'Confirmar Eliminación',
-            icon: <ExclamationCircleOutlined />,
-            content: (
-                <div>
-                    <p>¿Estás seguro de que deseas eliminar el requisito:</p>
-                    <p><strong>"{requisito.nombre}"</strong></p>
-                    <p style={{ color: '#ff4d4f', fontSize: '0.9em', marginTop: '0.5rem' }}>
-                        Esta acción no se puede deshacer y eliminará todas las relaciones asociadas.
-                    </p>
-                </div>
-            ),
-            okText: 'Eliminar',
-            okType: 'danger',
-            cancelText: 'Cancelar',
-            async onOk() {
-                const resultado = await eliminarRequisito(requisito.id);
-                if (resultado.success) {
-                    limpiarEstado();
-                }
-            },
-        });
-    };
-
-    const handleEditar = async (requisito) => {
-        // Verificar que los catálogos estén disponibles
-        const catalogosDisponibles = catalogos &&
-            Array.isArray(catalogos.tipos_requisito) && catalogos.tipos_requisito.length > 0 &&
-            Array.isArray(catalogos.prioridades) && catalogos.prioridades.length > 0 &&
-            Array.isArray(catalogos.estados) && catalogos.estados.length > 0;
-
-        if (!catalogosDisponibles) {
-            message.error('Los catálogos necesarios no están disponibles. Reintentando carga...');
-            return;
-        }
-
-        await cargarRequisitoParaEdicion(requisito.id);
-    };
-
-    const handleCancelar = () => {
-        setEditing(null);
-        limpiarEstado();
-    };
-
-    // Verificar si hay catálogos disponibles
-    const catalogosDisponibles = catalogos &&
-        Array.isArray(catalogos.tipos_requisito) && catalogos.tipos_requisito.length > 0 &&
-        Array.isArray(catalogos.prioridades) && catalogos.prioridades.length > 0 &&
-        Array.isArray(catalogos.estados) && catalogos.estados.length > 0 &&
-        Array.isArray(catalogos.tipos_relacion_requisito);
-
-    // VALIDACIONES Y ESTADOS DE CARGA
+    // VALIDACIONES
 
     if (!proyectoId) {
         return (
@@ -212,8 +69,7 @@ const RequisitosSection = ({ proyectoId }) => {
         );
     }
 
-    // MOSTRAR LOADING SI ESTÁN CARGANDO LOS CATÁLOGOS CRÍTICOS
-    if (loadingCatalogos && !catalogos) {
+    if (loadingCatalogos) {
         return (
             <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
                 <Spin size="large" />
@@ -224,8 +80,7 @@ const RequisitosSection = ({ proyectoId }) => {
         );
     }
 
-    // MOSTRAR ERROR SI NO SE PUDIERON CARGAR LOS CATÁLOGOS
-    if (errorCatalogos || (!catalogos && !loadingCatalogos)) {
+    if (errorCatalogos || !catalogosDisponibles) {
         return (
             <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
                 <ExclamationCircleOutlined style={{
@@ -248,15 +103,34 @@ const RequisitosSection = ({ proyectoId }) => {
 
     return (
         <div>
-            {editing !== null ? (
-                <RequisitosFormContainer
-                    initialValues={editing?.id ? editing : {}}
-                    onSubmit={handleGuardar}
-                    onCancel={handleCancelar}
+            {formularioAbierto ? (
+                <RequisitosForm
+                    // Valores
+                    initialValues={valoresFormulario}
+                    relacionesRequisitos={relacionesFormulario}
                     requisitosExistentes={requisitos}
                     proyectoId={proyectoId}
+
+                    // Catálogos
+                    tiposRequisito={tiposRequisito}
+                    prioridades={prioridades}
+                    estados={estados}
+                    tiposRelacion={tiposRelacion}
+
+                    // Estados
                     loading={loadingAccion}
-                    catalogosExternos={catalogos}
+                    loadingRelaciones={loadingRelaciones}
+                    isEditing={modoEdicion}
+
+                    // Funciones
+                    onSubmit={guardarRequisito}
+                    onCancel={cerrarFormulario}
+                    onAgregarRelacion={agregarRelacion}
+                    onActualizarRelacion={actualizarRelacion}
+                    onEliminarRelacion={eliminarRelacion}
+                    getRequisitoInfo={getRequisitoInfo}
+                    getItemByKey={getItemByKey}
+                    cargarRelacionesExistentes={cargarRelaciones}
                 />
             ) : (
                 <>
@@ -288,14 +162,8 @@ const RequisitosSection = ({ proyectoId }) => {
                         <Button
                             className="btn btn-primary"
                             icon={<PlusOutlined />}
-                            onClick={() => {
-                                if (!catalogosDisponibles) {
-                                    message.error('Los catálogos necesarios no están disponibles. Por favor, actualiza la página.');
-                                    return;
-                                }
-                                setEditing({});
-                            }}
-                            disabled={loading || loadingCatalogos || !catalogosDisponibles}
+                            onClick={abrirFormularioCrear}
+                            disabled={loading || loadingCatalogos}
                         >
                             Agregar Requisito
                         </Button>
@@ -329,8 +197,7 @@ const RequisitosSection = ({ proyectoId }) => {
                                         <Button
                                             type="primary"
                                             icon={<PlusOutlined />}
-                                            onClick={() => setEditing({})}
-                                            disabled={!catalogosDisponibles}
+                                            onClick={abrirFormularioCrear}
                                         >
                                             Crear Primer Requisito
                                         </Button>
@@ -350,10 +217,9 @@ const RequisitosSection = ({ proyectoId }) => {
                                         >
                                             <RequisitoItem
                                                 requisito={requisito}
-                                                onEditar={handleEditar}
-                                                onEliminar={handleEliminar}
+                                                onEditar={() => abrirFormularioEditar(requisito)}
+                                                onEliminar={() => eliminarRequisito(requisito)}
                                                 loading={loadingDetalle || loadingAccion}
-                                                catalogosDisponibles={catalogosDisponibles}
                                             />
                                         </Col>
                                     ))}

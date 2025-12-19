@@ -19,7 +19,7 @@ export const API_ENDPOINTS = {
   CAMBIAR_ESTADO_PROYECTO: '/app/proyectos/cambiar-estado', // Se concatena /:id en el componente
   ELIMINAR_PROYECTO: '/app/proyectos/eliminar',  // Se concatena /:id en el componente
 
-   // Tipos de Prueba
+  // Tipos de Prueba
   TIPOS_PRUEBA: '/app/pruebas/tipos-prueba/listar/',
   TIPOS_PRUEBA_CREAR: '/app/pruebas/tipos-prueba/crear/',
   TIPOS_PRUEBA_OBTENER: '/app/pruebas/tipos-prueba/obtener', // Se concatena /:id en el componente
@@ -32,7 +32,7 @@ export const API_ENDPOINTS = {
   OBTENER_PRUEBA: '/app/pruebas/obtener', // Se concatena /:prueba_id en el componente
   ACTUALIZAR_PRUEBA: '/app/pruebas/editar', // Se concatena /:prueba_id en el componente
   ELIMINAR_PRUEBA: '/app/pruebas/eliminar', // Se concatena /:prueba_id en el componente
-  
+
   // Generación de Pruebas con IA
   GENERAR_PRUEBAS_IA: '/app/chat/generar-pruebas', // Se concatena /:proyecto_id en el componente
   PREVISUALIZAR_PRUEBAS_IA: '/app/chat/previsualizar-pruebas', // Se concatena /:proyecto_id en el componente

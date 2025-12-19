@@ -17,12 +17,9 @@ import {
  */
 export const useCasosUso = (proyectoId, autoLoad = true) => {
     // ============== ESTADOS ==============
-    // Estados para los casos de uso
     const [casosUso, setCasosUso] = useState([]);
     const [casoUsoActual, setCasoUsoActual] = useState(null);
     const [relacionesActuales, setRelacionesActuales] = useState([]);
-
-    // Estados para catálogos
     const [catalogos, setCatalogos] = useState(null);
 
     // Estados de carga
@@ -30,7 +27,232 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
     const [loadingDetalle, setLoadingDetalle] = useState(false);
     const [loadingAccion, setLoadingAccion] = useState(false);
     const [loadingCatalogos, setLoadingCatalogos] = useState(false);
+    const [loadingRelaciones, setLoadingRelaciones] = useState(false);
     const [errorCatalogos, setErrorCatalogos] = useState(null);
+
+    // ============== FUNCIONES DE PROCESAMIENTO ==============
+
+    /**
+     * Procesa items de catálogo y normaliza los datos
+     */
+    const procesarItemsCatalogo = useCallback((items, tipoColor) => {
+        if (!Array.isArray(items)) return [];
+
+        const defaultColors = {
+            prioridades: {
+                'muy-alta': '#ff4d4f',
+                'alta': '#fa8c16',
+                'media': '#1890ff',
+                'baja': '#52c41a',
+                'muy-baja': '#d9d9d9'
+            },
+            'tipos-relacion': {
+                'include': '#1890ff',
+                'extend': '#52c41a',
+                'generalization': '#722ed1',
+                'generalizacion': '#722ed1',
+                'association': '#fa8c16',
+                'dependency': '#13c2c2',
+                'dependencia': '#13c2c2'
+            },
+            'estados': {
+                'pendiente': '#d9d9d9',
+                'aprobado': '#52c41a',
+                'en-analisis': '#1890ff',
+                'desarrollado': '#722ed1',
+                'rechazado': '#ff4d4f',
+                'probado': '#fa8c16'
+            }
+        };
+
+        return items
+            .filter(item => {
+                const id = item.id || item.prioridad_id || item.estado_id || item.relacion_id;
+                return id !== undefined && id !== null && item.activo !== false;
+            })
+            .map(item => {
+                let id;
+                if (tipoColor === 'prioridades') {
+                    id = item.prioridad_id || item.id;
+                } else if (tipoColor === 'tipos-relacion') {
+                    id = item.relacion_id || item.id;
+                } else if (tipoColor === 'estados') {
+                    id = item.estado_id || item.id;
+                } else {
+                    id = item.id || item.prioridad_id || item.relacion_id || item.estado_id;
+                }
+
+                let key = item.key || item.nombre || 'unknown';
+                if (typeof key === 'string' && key !== item.key) {
+                    key = key.toLowerCase()
+                        .trim()
+                        .replace(/[\s_-]+/g, '-')
+                        .replace(/[áàäâ]/g, 'a')
+                        .replace(/[éèëê]/g, 'e')
+                        .replace(/[íìïî]/g, 'i')
+                        .replace(/[óòöô]/g, 'o')
+                        .replace(/[úùüû]/g, 'u')
+                        .replace(/ñ/g, 'n');
+                }
+
+                return {
+                    value: id.toString(),
+                    label: item.nombre || 'Sin nombre',
+                    key: key,
+                    color: defaultColors[tipoColor]?.[key] || '#d9d9d9',
+                    descripcion: item.descripcion || '',
+                    nivel: item.nivel || undefined,
+                    activo: item.activo !== false,
+                    tipo: item.tipo || undefined,
+                    orden: item.orden || undefined,
+                    ...item
+                };
+            });
+    }, []);
+
+    /**
+     * Encuentra un item por key o ID
+     */
+    const findByKeyOrId = useCallback((items, keyOrId) => {
+        if (!keyOrId || !Array.isArray(items)) return null;
+        const keyOrIdStr = keyOrId.toString().toLowerCase();
+
+        let found = items.find(item => item.value === keyOrId.toString());
+        if (found) return found;
+
+        found = items.find(item => item.key === keyOrIdStr);
+        if (found) return found;
+
+        found = items.find(item =>
+            item.label && item.label.toLowerCase().replace(/\s+/g, '-') === keyOrIdStr
+        );
+        return found;
+    }, []);
+
+    /**
+     * Obtiene el ID por key o ID
+     */
+    const getIdByKeyOrId = useCallback((items, keyOrId) => {
+        const found = findByKeyOrId(items, keyOrId);
+        return found ? found.value : null;
+    }, [findByKeyOrId]);
+
+    /**
+     * Mapea key a ID usando el catálogo
+     */
+    const mapearKeyAId = useCallback((key, catalogo) => {
+        if (!key || !catalogo) return undefined;
+        const item = catalogo.find(item =>
+            item.key === key ||
+            item.label?.toLowerCase() === key.toLowerCase() ||
+            item.value?.toString() === key.toString()
+        );
+        return item ? item.value : undefined;
+    }, []);
+
+    /**
+     * Prepara valores iniciales para el formulario
+     */
+    const prepararValoresIniciales = useCallback((casoUso) => {
+        if (!casoUso || !catalogos) return {};
+
+        const prioridadesProcesadas = procesarItemsCatalogo(catalogos.prioridades, 'prioridades');
+        const estadosProcesados = procesarItemsCatalogo(catalogos.estados, 'estados');
+
+        const formValues = {
+            id: casoUso.id,
+            nombre: casoUso.nombre || '',
+            descripcion: casoUso.descripcion || '',
+            actores: casoUso.actores || '',
+            precondiciones: casoUso.precondiciones || '',
+            flujo_principal: casoUso.flujo_principal || [],
+            flujos_alternativos: casoUso.flujos_alternativos || [],
+            postcondiciones: casoUso.postcondiciones || '',
+            requisitos_especiales: casoUso.requisitos_especiales || '',
+            riesgos_consideraciones: casoUso.riesgos_consideraciones || '',
+            proyecto_id: casoUso.proyecto_id,
+        };
+
+        if (casoUso.prioridad) {
+            const prioridadId = getIdByKeyOrId(prioridadesProcesadas, casoUso.prioridad);
+            if (prioridadId) formValues.prioridad = prioridadId;
+        }
+
+        if (casoUso.estado) {
+            const estadoId = getIdByKeyOrId(estadosProcesados, casoUso.estado);
+            if (estadoId) formValues.estado = estadoId;
+        }
+
+        if (casoUso.relaciones && Array.isArray(casoUso.relaciones)) {
+            formValues.relaciones = casoUso.relaciones.map(rel => ({
+                id: rel.id || `temp_${Date.now()}_${Math.random()}`,
+                casoUsoRelacionado: (rel.casoUsoRelacionado || rel.caso_uso_destino_id || '').toString(),
+                tipo: (rel.tipo || rel.tipo_relacion_id || '').toString(),
+                descripcion: rel.descripcion || ''
+            }));
+        }
+
+        return formValues;
+    }, [catalogos, procesarItemsCatalogo, getIdByKeyOrId]);
+
+    /**
+     * Prepara datos para enviar al servidor
+     */
+    const prepararDatosParaEnvio = useCallback((values, esEdicion = false, casoUsoId = null) => {
+        const dataToSend = {
+            nombre: values.nombre,
+            descripcion: values.descripcion,
+            actores: Array.isArray(values.actores) ? values.actores.join(', ') : values.actores,
+            precondiciones: values.precondiciones || '',
+            flujo_principal: values.flujo_principal || [],
+            flujos_alternativos: values.flujos_alternativos || [],
+            postcondiciones: values.postcondiciones || '',
+            requisitos_especiales: values.requisitos_especiales || '',
+            riesgos_consideraciones: values.riesgos_consideraciones || '',
+            prioridad_id: values.prioridad ? parseInt(values.prioridad) : null,
+            estado_id: values.estado ? parseInt(values.estado) : null,
+            relaciones: (values.relaciones || [])
+                .filter(rel => rel.casoUsoRelacionado && rel.tipo)
+                .map(rel => ({
+                    casoUsoRelacionado: parseInt(rel.casoUsoRelacionado),
+                    tipo: parseInt(rel.tipo),
+                    descripcion: rel.descripcion || ''
+                }))
+        };
+
+        if (esEdicion && casoUsoId) {
+            dataToSend.id = casoUsoId;
+        }
+
+        return dataToSend;
+    }, []);
+
+    /**
+     * Procesa catálogos y retorna versión normalizada
+     */
+    const procesarCatalogos = useCallback((catalogosData) => {
+        if (!catalogosData) return null;
+
+        const catalogosProcesados = {
+            prioridades: [],
+            estados: [],
+            tipos_relacion_cu: []
+        };
+
+        if (catalogosData.prioridades && Array.isArray(catalogosData.prioridades)) {
+            catalogosProcesados.prioridades = procesarItemsCatalogo(catalogosData.prioridades, 'prioridades');
+        }
+
+        if (catalogosData.estados && Array.isArray(catalogosData.estados)) {
+            catalogosProcesados.estados = procesarItemsCatalogo(catalogosData.estados, 'estados');
+        }
+
+        if (catalogosData.tipos_relacion_cu && Array.isArray(catalogosData.tipos_relacion_cu)) {
+            catalogosProcesados.tipos_relacion_cu = procesarItemsCatalogo(catalogosData.tipos_relacion_cu, 'tipos-relacion');
+        }
+
+        return catalogosProcesados;
+    }, [procesarItemsCatalogo]);
 
     // ============== FUNCIONES DE CATÁLOGOS ==============
 
@@ -43,9 +265,7 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
 
         try {
             const token = getStoredToken();
-            if (!token) {
-                throw new Error('No hay token de autenticación');
-            }
+            if (!token) throw new Error('No hay token de autenticación');
 
             const [prioridades, estados, tiposRel] = await Promise.allSettled([
                 getWithAuth(API_ENDPOINTS.PRIORIDADES, token),
@@ -59,7 +279,6 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
                 tipos_relacion_cu: []
             };
 
-            // Procesar prioridades
             if (prioridades.status === 'fulfilled' && prioridades.value) {
                 const data = prioridades.value.prioridades || prioridades.value.data || prioridades.value;
                 if (Array.isArray(data)) {
@@ -74,7 +293,6 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
                 }
             }
 
-            // Procesar estados (filtrar solo para casos de uso)
             if (estados.status === 'fulfilled' && estados.value) {
                 const data = estados.value.estados_elemento || estados.value.estados ||
                     estados.value.data || estados.value;
@@ -92,7 +310,6 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
                 }
             }
 
-            // Procesar tipos de relación para casos de uso
             if (tiposRel.status === 'fulfilled' && tiposRel.value) {
                 const data = tiposRel.value.tipos_relacion_cu ||
                     tiposRel.value.tipos_relacion ||
@@ -108,8 +325,9 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
                 }
             }
 
-            setCatalogos(catalogosData);
-            return catalogosData;
+            const catalogosProcesados = procesarCatalogos(catalogosData);
+            setCatalogos(catalogosProcesados);
+            return catalogosProcesados;
 
         } catch (error) {
             const errorMsg = error.message || 'Error desconocido';
@@ -119,7 +337,7 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
         } finally {
             setLoadingCatalogos(false);
         }
-    }, []);
+    }, [procesarCatalogos]);
 
     // ============== FUNCIONES DE CARGA ==============
 
@@ -135,16 +353,13 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
         setLoading(true);
         try {
             const token = getStoredToken();
-            if (!token) {
-                throw new Error('No hay token de autenticación');
-            }
+            if (!token) throw new Error('No hay token de autenticación');
 
             const response = await getWithAuth(
                 `${API_ENDPOINTS.LISTAR_CASOS_USO}/${proyectoId}/`,
                 token
             );
 
-            // Intentar diferentes estructuras de respuesta
             const casosUsoData = response.casos_uso || response.data || [];
 
             if (Array.isArray(casosUsoData)) {
@@ -242,6 +457,9 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
      * Obtener las relaciones de un caso de uso específico
      */
     const obtenerRelaciones = useCallback(async (casoUsoId) => {
+        if (!casoUsoId) return [];
+
+        setLoadingRelaciones(true);
         try {
             const token = getStoredToken();
             if (!token) throw new Error('No hay token de autenticación');
@@ -251,14 +469,31 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
                 token
             );
 
-            const relaciones = response.relaciones || [];
-            setRelacionesActuales(relaciones);
-            return relaciones;
+            let relacionesData = [];
+            if (response.relaciones && Array.isArray(response.relaciones)) {
+                relacionesData = response.relaciones;
+            } else if (response.data && Array.isArray(response.data)) {
+                relacionesData = response.data;
+            } else if (Array.isArray(response)) {
+                relacionesData = response;
+            }
+
+            const relacionesProcesadas = relacionesData.map(rel => ({
+                id: rel.id || `temp_${Date.now()}_${Math.random()}`,
+                casoUsoRelacionado: (rel.casoUsoRelacionado || rel.caso_uso_destino_id || '').toString(),
+                tipo: (rel.tipo || rel.tipo_relacion_id || '').toString(),
+                descripcion: rel.descripcion || ''
+            }));
+
+            setRelacionesActuales(relacionesProcesadas);
+            return relacionesProcesadas;
 
         } catch (error) {
             const errorMsg = error.message || 'Error desconocido';
             message.error(`Error al obtener relaciones: ${errorMsg}`);
             return [];
+        } finally {
+            setLoadingRelaciones(false);
         }
     }, []);
 
@@ -393,14 +628,8 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
 
     // ============== FUNCIONES AUXILIARES ==============
 
-    /**
-     * Buscar casos de uso por texto
-     */
     const buscarCasosUso = useCallback((texto) => {
-        if (!texto || texto.trim() === '') {
-            return casosUso;
-        }
-
+        if (!texto || texto.trim() === '') return casosUso;
         const textoLower = texto.toLowerCase();
         return casosUso.filter(cu =>
             cu.nombre?.toLowerCase().includes(textoLower) ||
@@ -410,33 +639,23 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
         );
     }, [casosUso]);
 
-    /**
-     * Filtrar casos de uso por criterios
-     */
     const filtrarCasosUso = useCallback((filtros = {}) => {
         let resultado = [...casosUso];
-
         if (filtros.prioridad) {
             resultado = resultado.filter(cu => cu.prioridad === filtros.prioridad);
         }
-
         if (filtros.estado) {
             resultado = resultado.filter(cu => cu.estado === filtros.estado);
         }
-
         if (filtros.actor) {
             const actorLower = filtros.actor.toLowerCase();
             resultado = resultado.filter(cu =>
                 cu.actores?.toLowerCase().includes(actorLower)
             );
         }
-
         return resultado;
     }, [casosUso]);
 
-    /**
-     * Obtener estadísticas de casos de uso
-     */
     const obtenerEstadisticas = useCallback(() => {
         const stats = {
             total: casosUso.length,
@@ -451,14 +670,11 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
             if (cu.prioridad) {
                 stats.porPrioridad[cu.prioridad] = (stats.porPrioridad[cu.prioridad] || 0) + 1;
             }
-
             if (cu.estado) {
                 stats.porEstado[cu.estado] = (stats.porEstado[cu.estado] || 0) + 1;
             }
-
             const numRelaciones = cu.relaciones?.length || 0;
             stats.totalRelaciones += numRelaciones;
-
             if (numRelaciones > 0) {
                 stats.conRelaciones++;
             } else {
@@ -469,12 +685,8 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
         return stats;
     }, [casosUso]);
 
-    /**
-     * Obtener actores únicos de todos los casos de uso
-     */
     const obtenerActoresUnicos = useCallback(() => {
         const actoresSet = new Set();
-
         casosUso.forEach(cu => {
             if (cu.actores) {
                 const actores = cu.actores.split(',').map(a => a.trim());
@@ -483,21 +695,15 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
                 });
             }
         });
-
         return Array.from(actoresSet).sort();
     }, [casosUso]);
 
-    /**
-     * Validar flujos (principal y alternativos)
-     */
     const validarFlujos = useCallback((flujos, tipo = 'principal') => {
         const errores = [];
-
         if (!Array.isArray(flujos)) {
             errores.push(`El flujo ${tipo} debe ser un array`);
             return errores;
         }
-
         flujos.forEach((paso, index) => {
             if (!paso.paso || paso.paso.trim() === '') {
                 errores.push(`El paso ${index + 1} del flujo ${tipo} está vacío`);
@@ -506,57 +712,41 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
                 errores.push(`La descripción del paso ${index + 1} del flujo ${tipo} está vacía`);
             }
         });
-
         return errores;
     }, []);
 
-    /**
-     * Validar datos de caso de uso antes de crear/actualizar
-     */
     const validarDatosCasoUso = useCallback((datos) => {
         const errores = [];
-
         if (!datos.nombre || datos.nombre.trim() === '') {
             errores.push('El nombre es obligatorio');
         } else if (datos.nombre.trim().length > 100) {
             errores.push('El nombre no puede exceder 100 caracteres');
         }
-
         if (!datos.actores || datos.actores.trim() === '') {
             errores.push('Los actores son obligatorios');
         }
-
         if (!datos.precondiciones || datos.precondiciones.trim() === '') {
             errores.push('Las precondiciones son obligatorias');
         }
-
         if (datos.flujo_principal && datos.flujo_principal.length > 0) {
             const erroresFlujo = validarFlujos(datos.flujo_principal, 'principal');
             errores.push(...erroresFlujo);
         }
-
         if (datos.flujos_alternativos && datos.flujos_alternativos.length > 0) {
             const erroresFlujos = validarFlujos(datos.flujos_alternativos, 'alternativos');
             errores.push(...erroresFlujos);
         }
-
         return {
             valido: errores.length === 0,
             errores
         };
     }, [validarFlujos]);
 
-    /**
-     * Limpiar estado
-     */
     const limpiarEstado = useCallback(() => {
         setCasoUsoActual(null);
         setRelacionesActuales([]);
     }, []);
 
-    /**
-     * Recargar todo (catálogos y casos de uso)
-     */
     const recargarTodo = useCallback(async () => {
         try {
             await Promise.all([
@@ -570,16 +760,11 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
 
     // ============== EFECTOS ==============
 
-    /**
-     * Efecto para carga automática
-     */
     useEffect(() => {
         if (autoLoad && proyectoId) {
-            // Cargar catálogos solo si no están cargados
             if (!catalogos) {
                 cargarCatalogos();
             }
-            // Cargar casos de uso cuando cambia el proyecto
             cargarCasosUso();
         }
     }, [proyectoId, autoLoad]);
@@ -610,6 +795,7 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
         loadingDetalle,
         loadingAccion,
         loadingCatalogos,
+        loadingRelaciones,
         errorCatalogos,
 
         // Funciones de carga
@@ -630,6 +816,15 @@ export const useCasosUso = (proyectoId, autoLoad = true) => {
         validarFlujos,
         limpiarEstado,
         recargarTodo,
+
+        // Funciones de procesamiento
+        procesarItemsCatalogo,
+        findByKeyOrId,
+        getIdByKeyOrId,
+        mapearKeyAId,
+        prepararValoresIniciales,
+        prepararDatosParaEnvio,
+        procesarCatalogos,
 
         // Setters
         setCasosUso,

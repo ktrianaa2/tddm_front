@@ -479,6 +479,18 @@
     --card-accent-color: #eb2f96;
 }
 
+.panel-contenido {
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+  background: var(--bg-card);
+  padding: var(--space-xl);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+}
+
 /* === ANIMACIONES === */
 @keyframes tabSlideIn {
     from {

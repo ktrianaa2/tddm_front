@@ -114,7 +114,7 @@ const RequisitoItem = ({
                                     icon={<EditOutlined />}
                                     onClick={() => onEditar(requisito)}
                                     loading={loading}
-                                    disabled={!catalogosDisponibles}
+                                    //disabled={!catalogosDisponibles}
                                     className="action-btn edit-btn"
                                 />
                             </Tooltip>

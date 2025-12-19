@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { Card, Button, Typography, message, Spin, Modal, Row, Col } from "antd";
+import React, { useState } from "react";
+import { Card, Button, Typography, Modal, Row, Col, Spin } from "antd";
 import { PlusOutlined, ExclamationCircleOutlined, UserOutlined } from "@ant-design/icons";
 import { useCasosUso } from "../../../hooks/useCasosdeUso";
-import CasosUsoFormContainer from "./CasosUsoFormContainer";
+import CasosUsoForm from "./CasosUsoForm";
 import CasoUsoItem from "./CasoUsoItem";
 import '../../../styles/forms.css';
 import '../../../styles/buttons.css';
@@ -13,7 +13,6 @@ const { confirm } = Modal;
 const CasosDeUsoSection = ({ proyectoId }) => {
   const [editing, setEditing] = useState(null);
 
-  // Usar el hook refactorizado
   const {
     // Datos
     casosUso,
@@ -25,6 +24,7 @@ const CasosDeUsoSection = ({ proyectoId }) => {
     loadingDetalle,
     loadingAccion,
     loadingCatalogos,
+    loadingRelaciones,
     errorCatalogos,
 
     // Funciones CRUD
@@ -32,104 +32,32 @@ const CasosDeUsoSection = ({ proyectoId }) => {
     crearCasoUso,
     actualizarCasoUso,
     eliminarCasoUso,
+    obtenerRelaciones,
+
+    // Funciones de procesamiento
+    prepararValoresIniciales,
+    prepararDatosParaEnvio,
 
     // Funciones auxiliares
-    cargarCasosUso,
     recargarTodo
   } = useCasosUso(proyectoId, true);
 
-  // Función helper para mapear keys a IDs
-  const mapearKeyAId = (key, catalogo) => {
-    if (!key || !catalogo) return undefined;
-
-    const item = catalogo.find(item =>
-      item.key === key ||
-      item.nombre?.toLowerCase() === key.toLowerCase() ||
-      item.id?.toString() === key.toString()
-    );
-    return item ? item.id.toString() : undefined;
-  };
-
-  // Cargar un caso de uso específico para edición
-  const cargarCasoUsoParaEdicion = async (casoUsoId) => {
-    try {
-      const casoUso = await obtenerCasoUso(casoUsoId);
-
-      if (!casoUso || !casoUso.id) {
-        throw new Error('No se pudo obtener la información del caso de uso');
-      }
-
-      // Preparar los valores para el formulario
-      const casoUsoParaEditar = {
-        id: casoUso.id,
-        nombre: casoUso.nombre || '',
-        descripcion: casoUso.descripcion || '',
-        actores: casoUso.actores || '',
-        precondiciones: casoUso.precondiciones || '',
-        flujo_principal: casoUso.flujo_principal || [],
-        flujos_alternativos: casoUso.flujos_alternativos || [],
-        postcondiciones: casoUso.postcondiciones || '',
-        requisitos_especiales: casoUso.requisitos_especiales || '',
-        riesgos_consideraciones: casoUso.riesgos_consideraciones || '',
-        proyecto_id: casoUso.proyecto_id,
-
-        // Mapear usando los catálogos disponibles
-        prioridad: mapearKeyAId(casoUso.prioridad, catalogos?.prioridades),
-        estado: mapearKeyAId(casoUso.estado, catalogos?.estados),
-      };
-
-      setEditing(casoUsoParaEditar);
-
-    } catch (error) {
-      message.error(`Error al cargar caso de uso: ${error.message}`);
-    }
-  };
+  // ============== HANDLERS ==============
 
   const handleGuardar = async (values) => {
-    if (!proyectoId) {
-      message.error('No se ha especificado el ID del proyecto');
-      return;
-    }
-
     try {
-      // Preparar datos para enviar
-      const dataToSend = {
-        nombre: values.nombre,
-        descripcion: values.descripcion,
-        actores: Array.isArray(values.actores) ? values.actores.join(', ') : values.actores,
-        precondiciones: values.precondiciones || '',
-        flujo_principal: values.flujo_principal || [],
-        flujos_alternativos: values.flujos_alternativos || [],
-        postcondiciones: values.postcondiciones || '',
-        requisitos_especiales: values.requisitos_especiales || '',
-        riesgos_consideraciones: values.riesgos_consideraciones || '',
-        prioridad_id: values.prioridad ? parseInt(values.prioridad) : null,
-        estado_id: values.estado ? parseInt(values.estado) : null,
-        relaciones: (values.relaciones || [])
-          .filter(rel => rel.casoUsoRelacionado && rel.tipo)
-          .map(rel => ({
-            casoUsoRelacionado: parseInt(rel.casoUsoRelacionado),
-            tipo: parseInt(rel.tipo),
-            descripcion: rel.descripcion || ''
-          }))
-      };
+      const esEdicion = editing && editing.id;
+      const dataToSend = prepararDatosParaEnvio(values, esEdicion, editing?.id);
 
-      let resultado;
-
-      if (editing && editing.id) {
-        // Actualizar
-        resultado = await actualizarCasoUso(editing.id, dataToSend);
-      } else {
-        // Crear
-        resultado = await crearCasoUso(dataToSend);
-      }
+      const resultado = esEdicion
+        ? await actualizarCasoUso(editing.id, dataToSend)
+        : await crearCasoUso(dataToSend);
 
       if (resultado.success) {
         setEditing(null);
       }
-
     } catch (error) {
-      message.error(`Error al guardar caso de uso: ${error.message}`);
+      console.error('Error al guardar caso de uso:', error);
     }
   };
 
@@ -156,30 +84,47 @@ const CasosDeUsoSection = ({ proyectoId }) => {
   };
 
   const handleEditar = async (casoUso) => {
-    // Verificar que los catálogos estén disponibles
     const catalogosDisponibles = catalogos &&
       Array.isArray(catalogos.prioridades) && catalogos.prioridades.length > 0 &&
       Array.isArray(catalogos.estados) && catalogos.estados.length > 0;
 
     if (!catalogosDisponibles) {
-      message.error('Los catálogos necesarios no están disponibles. Reintentando carga...');
       return;
     }
 
-    await cargarCasoUsoParaEdicion(casoUso.id);
+    // Obtener caso de uso completo desde la API
+    const casoUsoCompleto = await obtenerCasoUso(casoUso.id);
+    if (!casoUsoCompleto) return;
+
+    // Preparar valores usando la función del hook
+    const valoresParaEditar = prepararValoresIniciales(casoUsoCompleto);
+    setEditing(valoresParaEditar);
   };
 
   const handleCancelar = () => {
     setEditing(null);
   };
 
-  // Verificar si los catálogos están disponibles
+  const handleAgregar = () => {
+    const catalogosDisponibles = catalogos &&
+      Array.isArray(catalogos.prioridades) && catalogos.prioridades.length > 0 &&
+      Array.isArray(catalogos.estados) && catalogos.estados.length > 0 &&
+      Array.isArray(catalogos.tipos_relacion_cu);
+
+    if (!catalogosDisponibles) {
+      return;
+    }
+    setEditing({});
+  };
+
+  // ============== VALIDACIONES ==============
+
   const catalogosDisponibles = catalogos &&
     Array.isArray(catalogos.prioridades) && catalogos.prioridades.length > 0 &&
     Array.isArray(catalogos.estados) && catalogos.estados.length > 0 &&
     Array.isArray(catalogos.tipos_relacion_cu);
 
-  // VALIDACIONES Y ESTADOS DE CARGA
+  // ============== RENDERIZADO CONDICIONAL ==============
 
   if (!proyectoId) {
     return (
@@ -191,7 +136,6 @@ const CasosDeUsoSection = ({ proyectoId }) => {
     );
   }
 
-  // MOSTRAR LOADING SI ESTÁN CARGANDO LOS CATÁLOGOS CRÍTICOS
   if (loadingCatalogos && !catalogos) {
     return (
       <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
@@ -203,7 +147,6 @@ const CasosDeUsoSection = ({ proyectoId }) => {
     );
   }
 
-  // MOSTRAR ERROR SI NO SE PUDIERON CARGAR LOS CATÁLOGOS
   if (errorCatalogos || (!catalogos && !loadingCatalogos)) {
     return (
       <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
@@ -219,19 +162,35 @@ const CasosDeUsoSection = ({ proyectoId }) => {
     );
   }
 
-  // RENDERIZADO PRINCIPAL
+  // ============== RENDERIZADO PRINCIPAL ==============
 
   return (
     <div>
       {editing !== null ? (
-        <CasosUsoFormContainer
+        <CasosUsoForm
           initialValues={editing?.id ? editing : {}}
           onSubmit={handleGuardar}
           onCancel={handleCancelar}
           casosUsoExistentes={casosUso}
           proyectoId={proyectoId}
           loading={loadingAccion}
-          catalogosExternos={catalogos}
+
+          // Catálogos ya procesados desde el hook
+          prioridades={catalogos?.prioridades || []}
+          estados={catalogos?.estados || []}
+          tiposRelacion={catalogos?.tipos_relacion_cu || []}
+
+          // Estados de carga
+          loadingPrioridades={loadingCatalogos}
+          loadingTiposRelacion={loadingCatalogos}
+          loadingRelaciones={loadingRelaciones}
+
+          // Estados de error
+          errorPrioridades={errorCatalogos}
+          errorTiposRelacion={errorCatalogos}
+
+          // Función para cargar relaciones
+          cargarRelacionesExistentes={obtenerRelaciones}
         />
       ) : (
         <>
@@ -260,13 +219,7 @@ const CasosDeUsoSection = ({ proyectoId }) => {
             <Button
               className="btn btn-primary"
               icon={<PlusOutlined />}
-              onClick={() => {
-                if (!catalogosDisponibles) {
-                  message.error('Los catálogos necesarios no están disponibles. Por favor, actualiza la página.');
-                  return;
-                }
-                setEditing({});
-              }}
+              onClick={handleAgregar}
               disabled={loading || loadingCatalogos || !catalogosDisponibles}
             >
               Agregar Caso de Uso
@@ -301,7 +254,7 @@ const CasosDeUsoSection = ({ proyectoId }) => {
                     <Button
                       type="primary"
                       icon={<PlusOutlined />}
-                      onClick={() => setEditing({})}
+                      onClick={handleAgregar}
                       disabled={!catalogosDisponibles}
                     >
                       Crear Primer Caso de Uso

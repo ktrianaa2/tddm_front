@@ -1,0 +1,212 @@
+/* admin-content.css - Contenido del panel de administración */
+
+/* === CONTENEDOR PRINCIPAL === */
+.admin-content {
+  width: 100%;
+  animation: contentFadeIn 0.4s ease-out;
+}
+
+/* === HEADER DEL CONTENIDO === */
+.admin-content-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+  padding-bottom: var(--space-md);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.admin-content-icon {
+  font-size: var(--font-size-3xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-content-title {
+  color: var(--text-primary) !important;
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0 !important;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* === GRID DE ESTADÍSTICAS === */
+.admin-stats-grid {
+  margin-top: var(--space-xl);
+}
+
+/* === CARDS DE ESTADÍSTICAS === */
+.admin-stat-card {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-color) !important;
+}
+
+.admin-stat-card:hover::before {
+  opacity: 1;
+}
+
+/* Estilos para los títulos de estadísticas */
+.admin-stat-card .ant-statistic-title {
+  color: var(--text-secondary) !important;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-sm);
+}
+
+/* Estilos para los valores de estadísticas */
+.admin-stat-card .ant-statistic-content {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.admin-stat-card .ant-statistic-content-prefix {
+  margin-right: var(--space-sm);
+}
+
+/* === CARD INFORMATIVO === */
+.admin-info-card {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  margin-top: var(--space-xl);
+  transition: all var(--transition-normal);
+}
+
+.admin-info-card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.admin-info-card .ant-alert {
+  background: transparent !important;
+  border: none !important;
+}
+
+.admin-info-card .ant-alert-message {
+  color: var(--text-primary) !important;
+  font-weight: var(--font-weight-semibold);
+}
+
+.admin-info-card .ant-alert-description {
+  color: var(--text-secondary) !important;
+}
+
+/* === ACCIONES === */
+.admin-actions {
+  margin-top: var(--space-lg);
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+/* === ANIMACIONES === */
+@keyframes contentFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes statCardIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.admin-stat-card {
+  animation: statCardIn 0.3s ease-out;
+  animation-fill-mode: both;
+}
+
+.admin-stat-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.admin-stat-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.admin-stat-card:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.admin-stat-card:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .admin-content-header {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .admin-content-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .admin-content-icon {
+    font-size: var(--font-size-2xl);
+  }
+
+  .admin-stats-grid {
+    margin-top: var(--space-lg);
+  }
+
+  .admin-actions {
+    flex-direction: column;
+  }
+
+  .admin-actions .ant-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-content-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .admin-content-icon {
+    font-size: var(--font-size-xl);
+  }
+}

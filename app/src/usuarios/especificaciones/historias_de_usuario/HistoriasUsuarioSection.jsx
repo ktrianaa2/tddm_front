@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Typography, message, Spin, Modal, Row, Col } from 'antd';
 import { PlusOutlined, BookOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
-import HistoriasUsuarioFormContainer from './HistoriasUsuarioFormContainer';
+import HistoriasUsuarioForm from './HistoriasUsuarioForm';
 import HistoriaUsuarioItem from './HistoriaUsuarioItem';
 import { useHistoriasUsuario } from '../../../hooks/useHistoriasdeUsuario';
 import '../../../styles/forms.css';
@@ -11,29 +11,25 @@ const { Title, Text } = Typography;
 const { confirm } = Modal;
 
 const HistoriasUsuarioSection = ({ proyectoId }) => {
-  const [editing, setEditing] = useState(null); // null = lista, {} = creando, {datos} = editando
+  const [editing, setEditing] = useState(null);
 
-  // Usar el hook refactorizado con autoLoad en true
+  // Usar el hook con todas las funciones y datos necesarios
   const {
     historiasUsuario,
     catalogos,
+    catalogosFormulario,
     loading,
     loadingCatalogos,
     loadingAccion,
     errorCatalogos,
-    obtenerHistoriaUsuario,
+    prepararHistoriaParaEdicion,
     crearHistoriaUsuario,
     actualizarHistoriaUsuario,
     eliminarHistoriaUsuario,
-    cargarCatalogos
+    cargarCatalogos,
+    findByKeyOrId,
+    getIdByKeyOrId
   } = useHistoriasUsuario(proyectoId, true);
-
-  // Adaptar catálogos para compatibilidad con el formulario
-  // El formulario espera 'unidades_estimacion' pero el hook retorna 'tipos_estimacion'
-  const catalogosAdaptados = catalogos ? {
-    ...catalogos,
-    unidades_estimacion: catalogos.tipos_estimacion || []
-  } : null;
 
   // Recargar catálogos si hay error
   useEffect(() => {
@@ -45,132 +41,23 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
     }
   }, [errorCatalogos, proyectoId, cargarCatalogos]);
 
-  const cargarHistoriaParaEdicion = async (historiaId) => {
+  const handleEditar = async (historia) => {
+    const catalogosDisponibles = catalogos &&
+      Array.isArray(catalogos.prioridades) && catalogos.prioridades.length > 0 &&
+      Array.isArray(catalogos.estados) && catalogos.estados.length > 0 &&
+      Array.isArray(catalogos.tipos_estimacion) && catalogos.tipos_estimacion.length > 0;
+
+    if (!catalogosDisponibles) {
+      message.error('Los catálogos necesarios no están disponibles. Reintentando carga...');
+      await cargarCatalogos();
+      return;
+    }
+
     try {
-      const historiaBackend = await obtenerHistoriaUsuario(historiaId);
-
-      if (!historiaBackend) {
-        throw new Error('No se pudo obtener la información de la historia de usuario');
-      }
-
-      // Función helper para mapear keys a IDs
-      const mapearKeyAId = (keyOrId, catalogo) => {
-        if (!keyOrId || !catalogo || !Array.isArray(catalogo)) return null;
-
-        const keyOrIdStr = keyOrId.toString();
-
-        // 1. Buscar por ID exacto primero
-        let found = catalogo.find(item => item.id?.toString() === keyOrIdStr);
-        if (found) return found.id.toString();
-
-        // 2. Buscar por key normalizada
-        const normalizedKey = keyOrIdStr.toLowerCase();
-        found = catalogo.find(item => item.key === normalizedKey);
-        if (found) return found.id.toString();
-
-        // 3. Buscar por nombre normalizado
-        found = catalogo.find(item => {
-          if (!item.nombre) return false;
-          const nombreNormalizado = item.nombre.toLowerCase()
-            .replace(/[\s_-]+/g, '-')
-            .replace(/[áàäâ]/g, 'a')
-            .replace(/[éèëê]/g, 'e')
-            .replace(/[íìïî]/g, 'i')
-            .replace(/[óòöô]/g, 'o')
-            .replace(/[úùüû]/g, 'u')
-            .replace(/ñ/g, 'n');
-          return nombreNormalizado === normalizedKey;
-        });
-
-        if (found) return found.id.toString();
-        return null;
-      };
-
-      // Preparar datos básicos de la historia
-      const historiaParaEditar = {
-        id: historiaBackend.id,
-        descripcion_historia: historiaBackend.descripcion || historiaBackend.titulo || '',
-        actor_rol: historiaBackend.actor_rol || '',
-        funcionalidad_accion: historiaBackend.funcionalidad_accion || '',
-        beneficio_razon: historiaBackend.beneficio_razon || '',
-        criterios_aceptacion: historiaBackend.criterios_aceptacion || '',
-        dependencias_relaciones: historiaBackend.dependencias_relaciones || '',
-        componentes_relacionados: historiaBackend.componentes_relacionados || '',
-        valor_negocio: historiaBackend.valor_negocio || '',
-        notas_adicionales: historiaBackend.notas_adicionales || '',
-        proyecto_id: historiaBackend.proyecto_id,
-        prioridad: null,
-        estado: null,
-        estimaciones: []
-      };
-
-      // Mapear prioridad
-      if (historiaBackend.prioridad && catalogos.prioridades) {
-        const prioridadId = mapearKeyAId(historiaBackend.prioridad, catalogos.prioridades);
-        if (prioridadId) historiaParaEditar.prioridad = prioridadId;
-      }
-
-      // Mapear estado  
-      if (historiaBackend.estado && catalogos.estados) {
-        const estadoId = mapearKeyAId(historiaBackend.estado, catalogos.estados);
-        if (estadoId) historiaParaEditar.estado = estadoId;
-      }
-
-      const estimacionesParaFormulario = [];
-
-      // Procesar múltiples estimaciones
-      if (historiaBackend.estimaciones && Array.isArray(historiaBackend.estimaciones) && historiaBackend.estimaciones.length > 0) {
-        historiaBackend.estimaciones.forEach((est, index) => {
-          let tipoEstimacionId = null;
-
-          if (est.tipo_estimacion_id) {
-            // Verificar que existe en nuestro catálogo
-            const tipoExiste = catalogos.tipos_estimacion?.find(
-              t => t.id.toString() === est.tipo_estimacion_id.toString()
-            );
-            if (tipoExiste) {
-              tipoEstimacionId = est.tipo_estimacion_id.toString();
-            }
-          }
-          // Fallback: buscar por nombre
-          else if (est.tipo_estimacion_nombre) {
-            tipoEstimacionId = mapearKeyAId(
-              est.tipo_estimacion_nombre,
-              catalogos.tipos_estimacion
-            );
-          }
-
-          // Si tenemos tipo válido y valor válido, agregar la estimación
-          if (tipoEstimacionId && (est.valor !== null && est.valor !== undefined)) {
-            estimacionesParaFormulario.push({
-              id: est.id || `existing_${Date.now()}_${index}`,
-              tipo_estimacion_id: tipoEstimacionId,
-              valor: est.valor
-            });
-          }
-        });
-      }
-      // Procesar estimación única (formato legacy)
-      else if (historiaBackend.estimacion_valor && historiaBackend.unidad_estimacion) {
-        const tipoEstimacionId = mapearKeyAId(
-          historiaBackend.unidad_estimacion,
-          catalogos.tipos_estimacion
-        );
-
-        if (tipoEstimacionId) {
-          estimacionesParaFormulario.push({
-            id: `existing_single_${Date.now()}`,
-            tipo_estimacion_id: tipoEstimacionId,
-            valor: historiaBackend.estimacion_valor
-          });
-        }
-      }
-
-      historiaParaEditar.estimaciones = estimacionesParaFormulario;
+      const historiaParaEditar = await prepararHistoriaParaEdicion(historia.id);
       setEditing(historiaParaEditar);
-
     } catch (error) {
-      message.error(`Error al cargar historia de usuario: ${error.message}`);
+      // El error ya se maneja en prepararHistoriaParaEdicion
     }
   };
 
@@ -181,7 +68,7 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
     }
 
     try {
-      // Construir título basado en los campos disponibles
+      // Construir título
       let titulo = values.descripcion_historia || '';
       if (!titulo && values.actor_rol && values.funcionalidad_accion) {
         titulo = `Como ${values.actor_rol}, quiero ${values.funcionalidad_accion}`;
@@ -229,10 +116,8 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
       let result;
 
       if (editing && editing.id) {
-        // Actualizar historia existente
         result = await actualizarHistoriaUsuario(editing.id, dataToSend);
       } else {
-        // Crear nueva historia
         result = await crearHistoriaUsuario(dataToSend);
       }
 
@@ -267,27 +152,10 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
     });
   };
 
-  const handleEditar = async (historia) => {
-    // Verificar que los catálogos estén disponibles
-    const catalogosDisponibles = catalogos &&
-      Array.isArray(catalogos.prioridades) && catalogos.prioridades.length > 0 &&
-      Array.isArray(catalogos.estados) && catalogos.estados.length > 0 &&
-      Array.isArray(catalogos.tipos_estimacion) && catalogos.tipos_estimacion.length > 0;
-
-    if (!catalogosDisponibles) {
-      message.error('Los catálogos necesarios no están disponibles. Reintentando carga...');
-      await cargarCatalogos();
-      return;
-    }
-
-    await cargarHistoriaParaEdicion(historia.id);
-  };
-
   const handleCancelar = () => {
     setEditing(null);
   };
 
-  // Extraer el título de la descripción de la historia
   const extraerTitulo = (texto) => {
     if (!texto) return 'Sin título';
     return texto.length > 50 ? `${texto.substring(0, 50)}...` : texto;
@@ -303,7 +171,6 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
     );
   }
 
-  // MOSTRAR LOADING SI ESTÁN CARGANDO LOS CATÁLOGOS CRÍTICOS
   if (loadingCatalogos && !catalogos) {
     return (
       <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
@@ -315,7 +182,6 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
     );
   }
 
-  // MOSTRAR ERROR SI NO SE PUDIERON CARGAR LOS CATÁLOGOS
   if (errorCatalogos && !catalogos) {
     return (
       <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
@@ -334,18 +200,21 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
   return (
     <div>
       {editing !== null ? (
-        <HistoriasUsuarioFormContainer
+        <HistoriasUsuarioForm
           initialValues={editing?.id ? editing : {}}
           onSubmit={handleGuardar}
           onCancel={handleCancelar}
-          historiasExistentes={historiasUsuario}
           proyectoId={proyectoId}
           loading={loadingAccion}
-          catalogosExternos={catalogosAdaptados}
+          catalogosFormulario={catalogosFormulario}
+          loadingCatalogos={loadingCatalogos}
+          errorCatalogos={errorCatalogos}
+          findByKeyOrId={findByKeyOrId}
+          getIdByKeyOrId={getIdByKeyOrId}
+          cargarCatalogos={cargarCatalogos}
         />
       ) : (
         <>
-          {/* Header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
             <div>
               <Title level={3} style={{ margin: 0 }}>
@@ -361,12 +230,11 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
               className="btn btn-primary"
               icon={<PlusOutlined />}
               onClick={() => {
-                // Verificar que los catálogos estén disponibles antes de crear
                 if (!catalogos || !catalogos.prioridades || catalogos.prioridades.length === 0) {
                   message.error('Los catálogos necesarios no están disponibles. Por favor, actualiza la página.');
                   return;
                 }
-                setEditing({}); // Objeto vacío para crear nuevo
+                setEditing({});
               }}
               disabled={loading || loadingCatalogos || !catalogos}
             >
@@ -374,7 +242,6 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
             </Button>
           </div>
 
-          {/* Loading */}
           {loading ? (
             <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
               <Spin size="large" />
@@ -384,7 +251,6 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
             </Card>
           ) : (
             <>
-              {/* Lista de historias */}
               {historiasUsuario.length === 0 ? (
                 <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
                   <BookOutlined style={{ fontSize: "3rem", color: "var(--text-disabled)", marginBottom: "1rem" }} />

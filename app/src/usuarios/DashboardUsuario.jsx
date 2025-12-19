@@ -20,7 +20,9 @@ const DashboardUsuario = ({ onLogout, userProfile }) => {
 
   const {
     proyectos,
+    estadosProyecto,
     loading,
+    loadingEstados,
     crearProyecto,
     editarProyecto,
     eliminarProyecto
@@ -55,7 +57,7 @@ const DashboardUsuario = ({ onLogout, userProfile }) => {
   // Handler para abrir modal de eliminación
   const handleEliminar = (proyectoId) => {
     const proyecto = proyectos.find(p => p.proyecto_id === proyectoId);
-    
+
     setModalEliminar({
       visible: true,
       proyectoId: proyectoId,
@@ -75,9 +77,9 @@ const DashboardUsuario = ({ onLogout, userProfile }) => {
   // Handler para confirmar eliminación
   const handleConfirmarEliminar = async () => {
     const { proyectoId } = modalEliminar;
-    
+
     const result = await eliminarProyecto(proyectoId);
-    
+
     if (result.success) {
       // Cerrar modal
       setModalEliminar({
@@ -101,7 +103,9 @@ const DashboardUsuario = ({ onLogout, userProfile }) => {
           <>
             <ListaProyectos
               proyectos={proyectos}
+              estadosProyecto={estadosProyecto}
               loading={loading}
+              loadingEstados={loadingEstados}
               onEditar={openEditar}
               onVer={openProyecto}
               onEliminar={handleEliminar}

@@ -1,0 +1,364 @@
+
+.catalogos-container {
+  padding: 24px;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.catalogos-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.catalogos-icon {
+  font-size: 32px;
+  color: #ffffff;
+  margin-right: 16px;
+}
+
+.catalogos-title {
+  color: #ffffff;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.catalogos-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.catalogos-card .ant-card-body {
+  padding: 24px;
+}
+
+/* Tabs */
+.catalogos-card .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  border-radius: 8px 8px 0 0;
+  background: #fafafa;
+  border: 1px solid #d9d9d9;
+  transition: all 0.3s;
+}
+
+.catalogos-card .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
+  background: #ffffff;
+  border-bottom-color: #ffffff;
+}
+
+.catalogos-card .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab:hover {
+  background: #f0f0f0;
+}
+
+.tab-actions {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Tabla */
+.catalogos-table {
+  margin-top: 16px;
+}
+
+.catalogos-table .ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.catalogos-table .ant-table-thead > tr > th {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  font-weight: 600;
+  border-bottom: 2px solid #5a67d8;
+  padding: 16px;
+}
+
+.catalogos-table .ant-table-tbody > tr {
+  transition: all 0.3s;
+}
+
+.catalogos-table .ant-table-tbody > tr:hover {
+  background-color: #f5f5ff;
+  transform: scale(1.01);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.catalogos-table .ant-table-tbody > tr > td {
+  padding: 12px 16px;
+}
+
+/* Key Code */
+.key-code {
+  background: #f5f5f5;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #d63384;
+  border: 1px solid #e0e0e0;
+}
+
+/* Tags */
+.catalogos-table .ant-tag {
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: none;
+}
+
+/* Botones */
+.catalogos-table .ant-btn-link {
+  padding: 4px 8px;
+  height: auto;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.catalogos-table .ant-btn-link:hover {
+  transform: translateY(-2px);
+}
+
+/* Modal */
+.ant-modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.ant-modal-title {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.ant-modal-close {
+  color: #ffffff;
+}
+
+.ant-modal-close:hover {
+  color: #f0f0f0;
+}
+
+.modal-form {
+  padding: 20px 0;
+}
+
+.form-item {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.form-item .ant-input,
+.form-item .ant-input-number,
+.form-item textarea {
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  transition: all 0.3s;
+}
+
+.form-item .ant-input:hover,
+.form-item .ant-input-number:hover,
+.form-item textarea:hover {
+  border-color: #667eea;
+}
+
+.form-item .ant-input:focus,
+.form-item .ant-input-number:focus,
+.form-item textarea:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+/* Switch */
+.form-item .ant-switch {
+  background-color: #bfbfbf;
+}
+
+.form-item .ant-switch-checked {
+  background-color: #52c41a;
+}
+
+/* Pagination */
+.catalogos-table .ant-pagination {
+  margin-top: 24px;
+}
+
+.catalogos-table .ant-pagination-item {
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+.catalogos-table .ant-pagination-item:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+}
+
+.catalogos-table .ant-pagination-item-active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+}
+
+.catalogos-table .ant-pagination-item-active a {
+  color: #ffffff;
+}
+
+/* Popconfirm */
+.ant-popconfirm .ant-popconfirm-buttons .ant-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+/* Error Message */
+.error-message {
+  padding: 24px;
+  text-align: center;
+  color: #ff4d4f;
+  font-size: 16px;
+  background-color: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .catalogos-container {
+    padding: 16px;
+  }
+
+  .catalogos-header {
+    flex-direction: column;
+    text-align: center;
+    padding: 16px;
+  }
+
+  .catalogos-icon {
+    margin-right: 0;
+    margin-bottom: 8px;
+  }
+
+  .catalogos-title {
+    font-size: 20px;
+  }
+
+  .catalogos-table .ant-table {
+    font-size: 12px;
+  }
+
+  .catalogos-table .ant-table-thead > tr > th,
+  .catalogos-table .ant-table-tbody > tr > td {
+    padding: 8px;
+  }
+
+  .tab-actions {
+    justify-content: center;
+  }
+}
+
+/* Loading State */
+.catalogos-table .ant-spin-nested-loading {
+  min-height: 300px;
+}
+
+/* Empty State */
+.catalogos-table .ant-empty {
+  padding: 40px 0;
+}
+
+.catalogos-table .ant-empty-description {
+  color: #999;
+  font-size: 14px;
+}
+
+/* Button Hover Effects */
+.ant-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  transition: all 0.3s;
+}
+
+.ant-btn-primary:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b3fa0 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Modal Footer */
+.ant-modal-footer {
+  border-top: 1px solid #f0f0f0;
+  padding: 16px 24px;
+}
+
+.ant-modal-footer .ant-btn {
+  border-radius: 6px;
+  padding: 6px 20px;
+  height: auto;
+  font-weight: 500;
+}
+
+/* Table Row Actions */
+.catalogos-table .ant-space {
+  gap: 8px;
+}
+
+.catalogos-table .ant-btn-link.ant-btn-dangerous:hover {
+  color: #ff7875;
+}
+
+/* Card Animations */
+.catalogos-card {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Success/Error States */
+.ant-message-success .anticon {
+  color: #52c41a;
+}
+
+.ant-message-error .anticon {
+  color: #ff4d4f;
+}
+
+/* Table Scroll */
+.catalogos-table .ant-table-body {
+  overflow-x: auto;
+}
+
+.catalogos-table .ant-table-body::-webkit-scrollbar {
+  height: 8px;
+}
+
+.catalogos-table .ant-table-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.catalogos-table .ant-table-body::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.catalogos-table .ant-table-body::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

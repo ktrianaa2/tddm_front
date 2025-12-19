@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { Input, Tabs, Badge, Empty } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
-import ItemPrueba from './ItemPrueba';
+import {
+  SearchOutlined,
+  ExperimentOutlined,
+  ApiOutlined,
+  AppstoreOutlined
+} from '@ant-design/icons';
+import '../../../styles/lista-pruebas.css';
 
 const ListaPruebas = ({ pruebas, pruebaActiva, onSeleccionarPrueba }) => {
   const [busqueda, setBusqueda] = useState('');
@@ -11,6 +16,31 @@ const ListaPruebas = ({ pruebas, pruebaActiva, onSeleccionarPrueba }) => {
   const getTipoPrueba = (prueba) => {
     const tipo = (prueba.tipo_prueba || prueba.tipo || '').toLowerCase();
     return tipo;
+  };
+
+  // Configuración de íconos y colores por tipo
+  const getTipoConfig = (tipo) => {
+    const configs = {
+      unitaria: {
+        icon: <ExperimentOutlined />,
+        color: '#52c41a',
+        label: 'Unitaria',
+        className: 'unitaria'
+      },
+      sistema: {
+        icon: <ApiOutlined />,
+        color: '#1890ff',
+        label: 'Sistema',
+        className: 'sistema'
+      },
+      componente: {
+        icon: <AppstoreOutlined />,
+        color: '#722ed1',
+        label: 'Componente',
+        className: 'componente'
+      }
+    };
+    return configs[tipo] || configs.unitaria;
   };
 
   // Contar por tipo
@@ -70,28 +100,15 @@ const ListaPruebas = ({ pruebas, pruebaActiva, onSeleccionarPrueba }) => {
   ];
 
   return (
-    <div style={{
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      background: 'white',
-      borderRight: '1px solid var(--border-color)',
-      borderRadius: '8px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-    }}>
+    <div className="lista-pruebas-container">
       {/* Header */}
-      <div style={{
-        padding: '1rem',
-        borderBottom: '1px solid var(--border-color)'
-      }}>
-        <h3 style={{
-          margin: 0,
-          marginBottom: '0.75rem',
-          fontSize: '1.1rem',
-          color: 'var(--text-primary)'
-        }}>
-          Pruebas Generadas
-        </h3>
+      <div className="lista-pruebas-header">
+        <div className="lista-pruebas-header-title-wrapper">
+          <h3 className="lista-pruebas-title">
+            Casos de Prueba
+          </h3>
+          <Badge count={pruebasFiltradas.length} showZero />
+        </div>
 
         <Input
           prefix={<SearchOutlined />}
@@ -99,6 +116,7 @@ const ListaPruebas = ({ pruebas, pruebaActiva, onSeleccionarPrueba }) => {
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           allowClear
+          className="lista-pruebas-search"
         />
       </div>
 
@@ -108,36 +126,85 @@ const ListaPruebas = ({ pruebas, pruebaActiva, onSeleccionarPrueba }) => {
         onChange={setTipoFiltro}
         items={tabs}
         size="small"
-        style={{
-          padding: '0 1rem',
-          marginBottom: 0
-        }}
+        className="lista-pruebas-tabs"
       />
 
       {/* Lista de pruebas */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '1rem'
-      }}>
-        {pruebasFiltradas.length > 0 ? (
-          pruebasFiltradas.map(prueba => (
-            <ItemPrueba
-              key={prueba.id_prueba || prueba.id}
-              prueba={prueba}
-              isActive={pruebaActiva?.id_prueba === prueba.id_prueba}
-              onClick={() => onSeleccionarPrueba(prueba)}
-            />
-          ))
+      <div className="lista-pruebas-items">
+        {pruebas.length === 0 ? (
+          <div className="lista-pruebas-empty">
+            <div className="lista-pruebas-empty-icon">📋</div>
+            <div className="lista-pruebas-empty-text">
+              No hay pruebas creadas
+            </div>
+          </div>
+        ) : pruebasFiltradas.length === 0 ? (
+          <div className="lista-pruebas-empty">
+            <div className="lista-pruebas-empty-icon">🔍</div>
+            <div className="lista-pruebas-empty-text">
+              {busqueda ? "No se encontraron pruebas" : "No hay pruebas de este tipo"}
+            </div>
+          </div>
         ) : (
-          <Empty
-            description={
-              busqueda
-                ? "No se encontraron pruebas"
-                : "No hay pruebas de este tipo"
-            }
-            style={{ marginTop: '2rem' }}
-          />
+          pruebasFiltradas.map(prueba => {
+            const tipoPrueba = getTipoPrueba(prueba);
+            const config = getTipoConfig(tipoPrueba);
+            const isActive = pruebaActiva?.id_prueba === (prueba.id_prueba || prueba.id);
+
+            return (
+              <div
+                key={prueba.id_prueba || prueba.id}
+                className={`lista-pruebas-item ${isActive ? 'active' : ''}`}
+                onClick={() => onSeleccionarPrueba(prueba)}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.borderColor = config.color;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.borderColor = 'var(--border-color)';
+                  }
+                }}
+              >
+                {/* Icono */}
+                <div className={`lista-pruebas-item-icon ${config.className}`}>
+                  {config.icon}
+                </div>
+
+                {/* Contenido */}
+                <div className="lista-pruebas-item-content">
+                  <div className="lista-pruebas-item-header">
+                    <h4 className="lista-pruebas-item-title">
+                      {prueba.nombre || 'Sin nombre'}
+                    </h4>
+                    <div className="lista-pruebas-item-meta">
+                      <span
+                        className="lista-pruebas-item-tag"
+                        style={{
+                          background: config.color + '20',
+                          color: config.color,
+                          border: `1px solid ${config.color}`
+                        }}
+                      >
+                        {config.label}
+                      </span>
+                      {prueba.codigo && (
+                        <span className="lista-pruebas-item-code">
+                          {prueba.codigo}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {prueba.descripcion && (
+                    <div className="lista-pruebas-item-description">
+                      {prueba.descripcion}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
     </div>

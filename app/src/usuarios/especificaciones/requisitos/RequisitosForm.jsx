@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Form, Input, Select, Button, Divider, Space, Row, Col, Card, Tag, Typography, Spin, Alert } from 'antd';
+import React, { useEffect } from 'react';
+import { Form, Input, Select, Button, Divider, Space, Row, Col, Card, Tag, Typography, Spin } from 'antd';
 import { PlusOutlined, DeleteOutlined, LinkOutlined } from '@ant-design/icons';
 import '../../../styles/forms.css';
 import '../../../styles/buttons.css';
@@ -7,237 +7,50 @@ import '../../../styles/buttons.css';
 const { TextArea } = Input;
 const { Title } = Typography;
 
+/**
+ * Componente de formulario PURO - Solo renderizado
+ * Toda la lógica está en el hook useRequisitos
+ */
 const RequisitosForm = ({
+    // Valores
     initialValues = {},
-    onSubmit,
-    onCancel,
+    relacionesRequisitos = [],
     requisitosExistentes = [],
     proyectoId,
-    loading = false,
 
-    // Datos de los catálogos
+    // Catálogos
     tiposRequisito = [],
     prioridades = [],
     estados = [],
     tiposRelacion = [],
 
-    // Estados de carga
-    loadingTipos = false,
-    loadingPrioridades = false,
-    loadingEstados = false,
-    loadingTiposRelacion = false,
+    // Estados
+    loading = false,
     loadingRelaciones = false,
+    isEditing = false,
 
-    // Estados de error
-    errorTipos = null,
-    errorPrioridades = null,
-    errorEstados = null,
-    errorTiposRelacion = null,
-
-    // Funciones utilitarias
-    cargarRelacionesExistentes,
-    retryFunctions = {}
+    // Funciones
+    onSubmit,
+    onCancel,
+    onAgregarRelacion,
+    onActualizarRelacion,
+    onEliminarRelacion,
+    getRequisitoInfo,
+    getItemByKey,
+    cargarRelacionesExistentes
 }) => {
     const [form] = Form.useForm();
-    const [relacionesRequisitos, setRelacionesRequisitos] = useState([]);
-    const [isEditing, setIsEditing] = useState(false);
-    const [relacionesCargadas, setRelacionesCargadas] = useState(false);
 
-    // Funciones helper para mapear entre keys y IDs
-    const findByKeyOrId = useCallback((items, keyOrId) => {
-        if (!keyOrId || !Array.isArray(items)) return null;
-
-        const keyOrIdStr = keyOrId.toString().toLowerCase();
-
-        // Buscar por ID exacto primero
-        let found = items.find(item => item.value === keyOrId.toString());
-        if (found) return found;
-
-        // Buscar por key
-        found = items.find(item => item.key === keyOrIdStr);
-        if (found) return found;
-
-        // Buscar por label normalizado
-        found = items.find(item =>
-            item.label && item.label.toLowerCase().replace(/\s+/g, '-') === keyOrIdStr
-        );
-
-        return found;
-    }, []);
-
-    const getIdByKeyOrId = useCallback((items, keyOrId) => {
-        const found = findByKeyOrId(items, keyOrId);
-        return found ? found.value : null;
-    }, [findByKeyOrId]);
-
-    const cargarRelaciones = useCallback(async (requisitoId) => {
-        if (!requisitoId || !cargarRelacionesExistentes || relacionesCargadas) {
-            return;
-        }
-
-        setRelacionesCargadas(true); // MARCAR COMO CARGADAS para evitar bucles
-
-        try {
-            const relacionesExistentes = await cargarRelacionesExistentes(requisitoId);
-            setRelacionesRequisitos(relacionesExistentes || []);
-        } catch (error) {
-            // No mostrar error al usuario si es problema de CORS/conexión
-            if (!error.message.includes('CORS') && !error.message.includes('conexión')) {
-                // Solo loggear el error, no interferir con la UI
-            }
-            setRelacionesRequisitos([]); // Establecer array vacío en caso de error
-        }
-    }, [cargarRelacionesExistentes, relacionesCargadas]);
-
+    // Inicializar formulario con valores
     useEffect(() => {
-        // Verificar que los catálogos básicos estén disponibles
-        const catalogosBasicosDisponibles = tiposRequisito.length > 0 &&
-            prioridades.length > 0 &&
-            estados.length > 0;
-
-        if (!catalogosBasicosDisponibles) {
-            return;
+        if (initialValues) {
+            form.setFieldsValue(initialValues);
         }
-
-        // Resetear flag de relaciones si cambia el requisito
-        const requisitoId = initialValues?.id;
-        const esNuevoRequisito = !requisitoId;
-
-        if (esNuevoRequisito || !relacionesCargadas) {
-            setRelacionesCargadas(false);
-        }
-
-        if (requisitoId) {
-            // MODO EDICIÓN
-            setIsEditing(true);
-
-            // Preparar valores para edición
-            const formValues = {
-                nombre: initialValues.nombre || '',
-                descripcion: initialValues.descripcion || '',
-                criterios: initialValues.criterios || '',
-                origen: initialValues.origen || '',
-                condiciones_previas: initialValues.condiciones_previas || '',
-            };
-
-            // Mapear tipo de requisito
-            if (initialValues.tipo) {
-                const tipoId = getIdByKeyOrId(tiposRequisito, initialValues.tipo);
-                if (tipoId) {
-                    formValues.tipo = tipoId;
-                }
-            }
-
-            // Mapear prioridad
-            if (initialValues.prioridad) {
-                const prioridadId = getIdByKeyOrId(prioridades, initialValues.prioridad);
-                if (prioridadId) {
-                    formValues.prioridad = prioridadId;
-                }
-            }
-
-            // Mapear estado
-            if (initialValues.estado) {
-                const estadoId = getIdByKeyOrId(estados, initialValues.estado);
-                if (estadoId) {
-                    formValues.estado = estadoId;
-                }
-            }
-
-            form.setFieldsValue(formValues);
-
-            // Cargar relaciones si tiene tipos de relación disponibles y no han sido cargadas
-            if (tiposRelacion.length > 0 && !relacionesCargadas) {
-                cargarRelaciones(requisitoId);
-            }
-
-        } else {
-            // MODO CREACIÓN
-            setIsEditing(false);
-            setRelacionesCargadas(true);
-
-            const valoresPorDefecto = {};
-
-            // Establecer valores por defecto
-            const estadoPorDefecto = findByKeyOrId(estados, 'pendiente') || estados[0];
-            if (estadoPorDefecto) {
-                valoresPorDefecto.estado = estadoPorDefecto.value;
-            }
-
-            const prioridadPorDefecto = findByKeyOrId(prioridades, 'media') || prioridades[0];
-            if (prioridadPorDefecto) {
-                valoresPorDefecto.prioridad = prioridadPorDefecto.value;
-            }
-
-            form.setFieldsValue(valoresPorDefecto);
-            setRelacionesRequisitos([]);
-        }
-
-    }, [
-        // DEPENDENCIAS ESPECÍFICAS - No incluir funciones que cambien en cada render
-        initialValues?.id,
-        tiposRequisito.length,
-        prioridades.length,
-        estados.length,
-        tiposRelacion.length,
-    ]);
-
-    useEffect(() => {
-        // Solo resetear relacionesCargadas cuando cambie el ID del requisito
-        const requisitoId = initialValues?.id;
-        if (requisitoId && !relacionesCargadas && tiposRelacion.length > 0) {
-            setRelacionesCargadas(false);
-        }
-    }, [initialValues?.id]);
+    }, [initialValues, form]);
 
     const handleSubmit = (values) => {
-
-        const finalValues = {
-            ...values,
-            proyecto_id: proyectoId,
-            relaciones_requisitos: relacionesRequisitos.map(rel => ({
-                requisito_id: parseInt(rel.requisito_id),
-                tipo_relacion: parseInt(rel.tipo_relacion),
-                descripcion: rel.descripcion || ''
-            })).filter(rel => rel.requisito_id && rel.tipo_relacion)
-        };
-
-        if (isEditing && initialValues.id) {
-            finalValues.id = initialValues.id;
-        }
-
-        onSubmit(finalValues);
+        onSubmit(values);
     };
-
-    // Funciones para relaciones
-    const agregarRelacionRequisito = () => {
-        const nuevaRelacion = {
-            id: `temp_${Date.now()}_${Math.random()}`,
-            requisito_id: '',
-            tipo_relacion: '',
-            descripcion: ''
-        };
-        setRelacionesRequisitos(prev => [...prev, nuevaRelacion]);
-    };
-
-    const eliminarRelacionRequisito = (id) => {
-        setRelacionesRequisitos(prev => prev.filter(r => r.id !== id));
-    };
-
-    const actualizarRelacionRequisito = (id, campo, valor) => {
-        setRelacionesRequisitos(prev => prev.map(r =>
-            r.id === id ? { ...r, [campo]: valor } : r
-        ));
-    };
-
-    // Funciones helper para obtener información
-    const getItemByKey = useCallback((items, key) => {
-        return items.find(item => item.key === key);
-    }, []);
-
-    const getRequisitoInfo = useCallback((requisitoId) => {
-        return requisitosExistentes.find(r => r.id.toString() === requisitoId.toString());
-    }, [requisitosExistentes]);
 
     return (
         <div className="form-container">
@@ -257,7 +70,7 @@ const RequisitosForm = ({
                     onFinish={handleSubmit}
                     size="large"
                 >
-                    {/* === SECCIÓN DE CAMPOS OBLIGATORIOS === */}
+                    {/* === INFORMACIÓN BÁSICA === */}
                     <div className="form-section">
                         <h3 className="form-section-title">Información Básica (Obligatorio)</h3>
 
@@ -304,12 +117,8 @@ const RequisitosForm = ({
                         >
                             <Select
                                 placeholder="Selecciona el tipo de requisito"
-                                loading={loadingTipos}
                                 showSearch
                                 optionFilterProp="children"
-                                filterOption={(input, option) =>
-                                    option.children.props.children[1].toLowerCase().indexOf(input.toLowerCase()) >= 0
-                                }
                             >
                                 {tiposRequisito.map(tipo => (
                                     <Select.Option key={tipo.value} value={tipo.value} title={tipo.descripcion}>
@@ -341,7 +150,7 @@ const RequisitosForm = ({
                         >
                             <TextArea
                                 rows={4}
-                                placeholder="Define las condiciones específicas que deben cumplirse para considerar el requisito satisfecho..."
+                                placeholder="Define las condiciones específicas que deben cumplirse..."
                                 showCount
                                 maxLength={500}
                             />
@@ -350,7 +159,7 @@ const RequisitosForm = ({
 
                     <Divider />
 
-                    {/* === SECCIÓN DE CAMPOS OPCIONALES === */}
+                    {/* === INFORMACIÓN ADICIONAL === */}
                     <div className="form-section">
                         <h3 className="form-section-title">Información Adicional (Opcional)</h3>
 
@@ -361,10 +170,7 @@ const RequisitosForm = ({
                                     label="Prioridad"
                                     className="form-field"
                                 >
-                                    <Select
-                                        placeholder="Nivel de importancia"
-                                        loading={loadingPrioridades}
-                                    >
+                                    <Select placeholder="Nivel de importancia">
                                         {prioridades.map(p => (
                                             <Select.Option key={p.value} value={p.value} title={p.descripcion}>
                                                 <Space>
@@ -395,10 +201,7 @@ const RequisitosForm = ({
                                     label="Estado del Requisito"
                                     className="form-field"
                                 >
-                                    <Select
-                                        placeholder="Estado actual"
-                                        loading={loadingEstados}
-                                    >
+                                    <Select placeholder="Estado actual">
                                         {estados.map(e => (
                                             <Select.Option key={e.value} value={e.value} title={e.descripcion}>
                                                 <Space>
@@ -436,7 +239,7 @@ const RequisitosForm = ({
                         >
                             <TextArea
                                 rows={3}
-                                placeholder="Precondiciones necesarias para la implementación de este requisito..."
+                                placeholder="Precondiciones necesarias para la implementación..."
                                 showCount
                                 maxLength={300}
                             />
@@ -445,7 +248,7 @@ const RequisitosForm = ({
 
                     <Divider />
 
-                    {/* === SECCIÓN DE RELACIONES CON REQUISITOS === */}
+                    {/* === RELACIONES === */}
                     <div className="form-section">
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
                             <LinkOutlined style={{ marginRight: '8px', color: 'var(--primary-color)' }} />
@@ -454,10 +257,9 @@ const RequisitosForm = ({
                             </Title>
                         </div>
                         <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-                            Define las relaciones de dependencia, conflicto o complemento con otros requisitos del sistema
+                            Define las relaciones de dependencia, conflicto o complemento con otros requisitos
                         </p>
 
-                        {/* Mostrar loading solo si está cargando relaciones por primera vez */}
                         {loadingRelaciones && relacionesRequisitos.length === 0 && isEditing && (
                             <div style={{
                                 textAlign: 'center',
@@ -472,7 +274,6 @@ const RequisitosForm = ({
                             </div>
                         )}
 
-                        {/* Lista de relaciones de requisitos - Solo mostrar si no está cargando */}
                         {!loadingRelaciones && relacionesRequisitos.map((relacion) => {
                             const requisitoInfo = getRequisitoInfo(relacion.requisito_id);
                             return (
@@ -489,7 +290,7 @@ const RequisitosForm = ({
                                             type="text"
                                             danger
                                             icon={<DeleteOutlined />}
-                                            onClick={() => eliminarRelacionRequisito(relacion.id)}
+                                            onClick={() => onEliminarRelacion(relacion.id)}
                                         >
                                             Eliminar
                                         </Button>
@@ -510,9 +311,8 @@ const RequisitosForm = ({
                                                 <Select
                                                     placeholder="Tipo de relación"
                                                     value={relacion.tipo_relacion}
-                                                    onChange={(value) => actualizarRelacionRequisito(relacion.id, 'tipo_relacion', value)}
+                                                    onChange={(value) => onActualizarRelacion(relacion.id, 'tipo_relacion', value)}
                                                     style={{ width: '100%' }}
-                                                    loading={loadingTiposRelacion}
                                                 >
                                                     {tiposRelacion.map(tr => (
                                                         <Select.Option key={tr.value} value={tr.value} title={tr.descripcion}>
@@ -536,25 +336,16 @@ const RequisitosForm = ({
                                                 <Select
                                                     placeholder="Seleccionar requisito"
                                                     value={relacion.requisito_id}
-                                                    onChange={(value) => actualizarRelacionRequisito(relacion.id, 'requisito_id', value)}
+                                                    onChange={(value) => onActualizarRelacion(relacion.id, 'requisito_id', value)}
                                                     style={{ width: '100%' }}
                                                     showSearch
                                                     optionFilterProp="children"
-                                                    filterOption={(input, option) => {
-                                                        const children = option.children;
-                                                        if (typeof children === 'string') {
-                                                            return children.toLowerCase().indexOf(input.toLowerCase()) >= 0;
-                                                        }
-                                                        // Para elementos más complejos, buscar en el texto del nombre
-                                                        const nombre = children.props?.children?.[0]?.props?.children?.[0] || '';
-                                                        return nombre.toLowerCase().indexOf(input.toLowerCase()) >= 0;
-                                                    }}
                                                 >
                                                     {requisitosExistentes
                                                         .filter(req => req.id !== initialValues.id)
                                                         .map(req => {
-                                                            const tipoInfo = getItemByKey(tiposRequisito, req.tipo);
-                                                            const prioridadInfo = getItemByKey(prioridades, req.prioridad);
+                                                            const tipoInfo = getItemByKey('tipos_requisito', req.tipo);
+                                                            const prioridadInfo = getItemByKey('prioridades', req.prioridad);
 
                                                             return (
                                                                 <Select.Option key={req.id} value={req.id.toString()}>
@@ -614,7 +405,7 @@ const RequisitosForm = ({
                                                 <Input
                                                     placeholder="Describe la relación..."
                                                     value={relacion.descripcion}
-                                                    onChange={(e) => actualizarRelacionRequisito(relacion.id, 'descripcion', e.target.value)}
+                                                    onChange={(e) => onActualizarRelacion(relacion.id, 'descripcion', e.target.value)}
                                                     maxLength={200}
                                                     showCount
                                                 />
@@ -625,11 +416,10 @@ const RequisitosForm = ({
                             );
                         })}
 
-                        {/* Botón para agregar nueva relación - solo si hay tipos de relación cargados */}
                         {tiposRelacion.length > 0 && !loadingRelaciones && (
                             <Button
                                 type="dashed"
-                                onClick={agregarRelacionRequisito}
+                                onClick={onAgregarRelacion}
                                 block
                                 icon={<PlusOutlined />}
                                 style={{ marginTop: relacionesRequisitos.length > 0 ? '1rem' : 0 }}
@@ -638,47 +428,7 @@ const RequisitosForm = ({
                             </Button>
                         )}
 
-                        {/* Mensaje de carga para tipos de relación */}
-                        {loadingTiposRelacion && tiposRelacion.length === 0 && (
-                            <div style={{
-                                textAlign: 'center',
-                                padding: '1rem',
-                                color: 'var(--text-secondary)',
-                                background: 'var(--bg-light)',
-                                borderRadius: 'var(--border-radius)',
-                                border: '1px dashed var(--border-color)'
-                            }}>
-                                <Spin size="small" />
-                                <p style={{ marginTop: '8px', marginBottom: 0 }}>Cargando tipos de relación...</p>
-                            </div>
-                        )}
-
-                        {/* Mensaje de error para tipos de relación */}
-                        {errorTiposRelacion && tiposRelacion.length === 0 && (
-                            <Alert
-                                message="Error cargando tipos de relación"
-                                description={
-                                    <div>
-                                        <p>{errorTiposRelacion}</p>
-                                        {retryFunctions.cargarTiposRelacion && (
-                                            <Button
-                                                size="small"
-                                                onClick={retryFunctions.cargarTiposRelacion}
-                                                style={{ marginTop: '8px' }}
-                                            >
-                                                Reintentar
-                                            </Button>
-                                        )}
-                                    </div>
-                                }
-                                type="warning"
-                                showIcon
-                                style={{ marginTop: '1rem' }}
-                            />
-                        )}
-
-                        {/* Estado vacío */}
-                        {relacionesRequisitos.length === 0 && !loadingTiposRelacion && !loadingRelaciones && tiposRelacion.length > 0 && (
+                        {relacionesRequisitos.length === 0 && !loadingRelaciones && tiposRelacion.length > 0 && (
                             <div style={{
                                 textAlign: 'center',
                                 padding: '2rem',

@@ -11,82 +11,50 @@ const HistoriasUsuarioForm = ({
     initialValues = {},
     onSubmit,
     onCancel,
-    historiasExistentes = [],
     proyectoId,
     loading = false,
-
-    // Datos de los catálogos
-    prioridades = [],
-    estados = [],
-    unidadesEstimacion = [],
-
+    
+    // Catálogos procesados desde el hook
+    catalogosFormulario = {
+        prioridades: [],
+        estados: [],
+        unidadesEstimacion: []
+    },
+    
     // Estados de carga
-    loadingPrioridades = false,
-    loadingEstados = false,
-    loadingUnidadesEstimacion = false,
-
-    // Estados de error
-    errorPrioridades = null,
-    errorEstados = null,
-    errorUnidadesEstimacion = null,
-
-    // Funciones utilitarias
-    retryFunctions = {}
+    loadingCatalogos = false,
+    errorCatalogos = null,
+    
+    // Funciones del hook
+    findByKeyOrId,
+    getIdByKeyOrId,
+    cargarCatalogos
 }) => {
     const [form] = Form.useForm();
     const [isEditing, setIsEditing] = useState(false);
     const [estimaciones, setEstimaciones] = useState([]);
 
-    // Funciones helper para mapear entre keys y IDs
-    const findByKeyOrId = useCallback((items, keyOrId) => {
-        if (!keyOrId || !Array.isArray(items)) return null;
+    const { prioridades, estados, unidadesEstimacion } = catalogosFormulario;
 
-        const keyOrIdStr = keyOrId.toString().toLowerCase();
-
-        // Buscar por ID exacto primero
-        let found = items.find(item => item.value === keyOrId.toString());
-        if (found) return found;
-
-        // Buscar por key
-        found = items.find(item => item.key === keyOrIdStr);
-        if (found) return found;
-
-        // Buscar por label normalizado
-        found = items.find(item =>
-            item.label && item.label.toLowerCase().replace(/\s+/g, '-') === keyOrIdStr
-        );
-
-        return found;
-    }, []);
-
-    const getIdByKeyOrId = useCallback((items, keyOrId) => {
-        const found = findByKeyOrId(items, keyOrId);
-        return found ? found.value : null;
-    }, [findByKeyOrId]);
-
+    // Helper para obtener item por value
     const getItemByKey = useCallback((items, value) => {
         return items.find(item => item.value === value);
     }, []);
 
     useEffect(() => {
-        // Verificar que los catálogos básicos estén disponibles
-        const catalogosBasicosDisponibles = prioridades.length > 0 &&
+        const catalogosDisponibles = 
+            prioridades.length > 0 &&
             estados.length > 0 &&
             unidadesEstimacion.length > 0;
 
-        if (!catalogosBasicosDisponibles) {
-            return;
-        }
+        if (!catalogosDisponibles) return;
 
-        // Verificar si es edición o creación
         const historiaId = initialValues?.id;
-        const esNuevaHistoria = !historiaId;
 
         if (historiaId) {
             // MODO EDICIÓN
             setIsEditing(true);
 
-            // Preparar valores para edición
             const formValues = {
                 descripcion_historia: initialValues.descripcion_historia || initialValues.descripcion || '',
                 actor_rol: initialValues.actor_rol || '',
@@ -102,65 +70,40 @@ const HistoriasUsuarioForm = ({
             // Mapear prioridad
             if (initialValues.prioridad) {
                 const prioridadId = getIdByKeyOrId(prioridades, initialValues.prioridad);
-                if (prioridadId) {
-                    formValues.prioridad = prioridadId;
-                }
+                if (prioridadId) formValues.prioridad = prioridadId;
             }
 
             // Mapear estado
             if (initialValues.estado) {
                 const estadoId = getIdByKeyOrId(estados, initialValues.estado);
-                if (estadoId) {
-                    formValues.estado = estadoId;
-                }
+                if (estadoId) formValues.estado = estadoId;
             }
 
             form.setFieldsValue(formValues);
+
+            // Procesar estimaciones
             const estimacionesParaFormulario = [];
-            // Procesar múltiples estimaciones (formato nuevo)
+
             if (initialValues.estimaciones && Array.isArray(initialValues.estimaciones) && initialValues.estimaciones.length > 0) {
-
                 initialValues.estimaciones.forEach((est, index) => {
-
                     let unidadId = null;
 
-                    // Intentar diferentes formas de obtener el ID de la unidad
                     if (est.tipo_estimacion_id) {
                         unidadId = est.tipo_estimacion_id.toString();
                     } else if (est.tipo_estimacion_nombre) {
-                        // Buscar por nombre del tipo
                         unidadId = getIdByKeyOrId(unidadesEstimacion, est.tipo_estimacion_nombre);
                     } else if (est.unidad_estimacion) {
-                        // Formato legacy
                         unidadId = getIdByKeyOrId(unidadesEstimacion, est.unidad_estimacion);
                     }
 
-                    // Verificar que tenemos tanto unidad como valor válidos
                     if (unidadId && (est.valor !== null && est.valor !== undefined)) {
-                        const estimacionFormulario = {
+                        estimacionesParaFormulario.push({
                             id: est.id || `existing_${Date.now()}_${index}`,
                             unidad_estimacion: unidadId,
                             valor: est.valor
-                        };
-
-                        estimacionesParaFormulario.push(estimacionFormulario);
+                        });
                     }
                 });
-            }
-            // Procesar estimación única (formato legacy de compatibilidad)
-            else if (initialValues.estimacion_valor && initialValues.unidad_estimacion) {
-
-                const unidadId = getIdByKeyOrId(unidadesEstimacion, initialValues.unidad_estimacion);
-
-                if (unidadId) {
-                    const estimacionFormulario = {
-                        id: `existing_single_${Date.now()}`,
-                        unidad_estimacion: unidadId,
-                        valor: initialValues.estimacion_valor
-                    };
-
-                    estimacionesParaFormulario.push(estimacionFormulario);
-                }
             }
 
             setEstimaciones(estimacionesParaFormulario);
@@ -171,7 +114,6 @@ const HistoriasUsuarioForm = ({
 
             const valoresPorDefecto = {};
 
-            // Establecer valores por defecto
             const estadoPorDefecto = findByKeyOrId(estados, 'pendiente') || estados[0];
             if (estadoPorDefecto) {
                 valoresPorDefecto.estado = estadoPorDefecto.value;
@@ -208,16 +150,17 @@ const HistoriasUsuarioForm = ({
             return;
         }
 
-        // Si no hay descripción pero sí hay narrativa completa, generarla automáticamente
+        // Generar descripción automáticamente si es necesario
         if (!values.descripcion_historia && values.actor_rol && values.funcionalidad_accion && values.beneficio_razon) {
             values.descripcion_historia = `Como ${values.actor_rol}, quiero ${values.funcionalidad_accion} para ${values.beneficio_razon}`;
         }
+
         const finalValues = {
             ...values,
             proyecto_id: proyectoId
         };
 
-        // Procesar estimaciones desde el estado local
+        // Procesar estimaciones
         if (estimaciones && Array.isArray(estimaciones) && estimaciones.length > 0) {
             const estimacionesProcesadas = estimaciones
                 .filter(est => {
@@ -227,30 +170,27 @@ const HistoriasUsuarioForm = ({
                     const valorValido = !isNaN(valorNumerico) && valorNumerico > 0;
                     return tieneUnidad && tieneValor && valorValido;
                 })
-                .map(est => {
-                    const estimacionParaBackend = {
-                        tipo_estimacion_id: parseInt(est.unidad_estimacion),
-                        valor: parseFloat(est.valor)
-                    };
-                    return estimacionParaBackend;
-                });
+                .map(est => ({
+                    tipo_estimacion_id: parseInt(est.unidad_estimacion),
+                    valor: parseFloat(est.valor)
+                }));
 
             finalValues.estimaciones = estimacionesProcesadas;
         } else {
             finalValues.estimaciones = [];
         }
 
-        // Mantener compatibilidad con campos individuales si solo hay una estimación
+        // Compatibilidad con campos individuales
         if (finalValues.estimaciones.length === 1) {
             finalValues.estimacion_valor = finalValues.estimaciones[0].valor;
             finalValues.unidad_estimacion = finalValues.estimaciones[0].tipo_estimacion_id;
         }
 
-        // Si estamos editando, incluir el ID
+        // Incluir ID si es edición
         if (isEditing && initialValues.id) {
             finalValues.id = initialValues.id;
         }
-        // Llamar a la función onSubmit del componente padre
+
         onSubmit(finalValues);
     };
 
@@ -293,7 +233,7 @@ const HistoriasUsuarioForm = ({
                     size="large"
                 >
 
-                    {/* === SECCIÓN 1: NARRATIVA PRINCIPAL === */}
+                    {/* SECCIÓN 1: NARRATIVA PRINCIPAL */}
                     <div className="form-section">
                         <h3 className="form-section-title">Narrativa de la Historia *</h3>
                         <Row gutter={16}>
@@ -346,7 +286,7 @@ const HistoriasUsuarioForm = ({
 
                     <Divider />
 
-                    {/* === SECCIÓN 2: CRITERIOS DE ACEPTACIÓN === */}
+                    {/* SECCIÓN 2: CRITERIOS DE ACEPTACIÓN */}
                     <div className="form-section">
                         <h3 className="form-section-title">Criterios de Aceptación *</h3>
                         <Form.Item
@@ -356,10 +296,7 @@ const HistoriasUsuarioForm = ({
                         >
                             <TextArea
                                 rows={6}
-                                placeholder="- El usuario ingresa email y contraseña
-- El sistema valida credenciales
-- Si son correctas, redirige al dashboard
-- Si son incorrectas, muestra error"
+                                placeholder="- El usuario ingresa email y contraseña&#10;- El sistema valida credenciales&#10;- Si son correctas, redirige al dashboard&#10;- Si son incorrectas, muestra error"
                                 maxLength={800}
                                 showCount
                             />
@@ -368,7 +305,7 @@ const HistoriasUsuarioForm = ({
 
                     <Divider />
 
-                    {/* === SECCIÓN 3: INFORMACIÓN ADICIONAL === */}
+                    {/* SECCIÓN 3: INFORMACIÓN ADICIONAL */}
                     <div className="form-section">
                         <h3 className="form-section-title">Información Adicional</h3>
 
@@ -377,7 +314,7 @@ const HistoriasUsuarioForm = ({
                                 <Form.Item name="prioridad" label="Prioridad" className="form-field">
                                     <Select
                                         placeholder="Nivel de importancia"
-                                        loading={loadingPrioridades}
+                                        loading={loadingCatalogos}
                                         showSearch
                                         optionFilterProp="children"
                                         filterOption={(input, option) =>
@@ -406,20 +343,12 @@ const HistoriasUsuarioForm = ({
                                         ))}
                                     </Select>
                                 </Form.Item>
-                                {errorPrioridades && (
-                                    <Alert
-                                        message="Error cargando prioridades"
-                                        type="error"
-                                        size="small"
-                                        showIcon
-                                    />
-                                )}
                             </Col>
                             <Col xs={24} sm={8}>
                                 <Form.Item name="estado" label="Estado de la Historia" className="form-field">
                                     <Select
                                         placeholder="Estado actual"
-                                        loading={loadingEstados}
+                                        loading={loadingCatalogos}
                                         showSearch
                                         optionFilterProp="children"
                                         filterOption={(input, option) =>
@@ -443,14 +372,6 @@ const HistoriasUsuarioForm = ({
                                         ))}
                                     </Select>
                                 </Form.Item>
-                                {errorEstados && (
-                                    <Alert
-                                        message="Error cargando estados"
-                                        type="error"
-                                        size="small"
-                                        showIcon
-                                    />
-                                )}
                             </Col>
                             <Col xs={24} sm={8}>
                                 <Form.Item name="valor_negocio" label="Valor de Negocio" className="form-field">
@@ -489,7 +410,7 @@ const HistoriasUsuarioForm = ({
 
                     <Divider />
 
-                    {/* === SECCIÓN 4: ESTIMACIONES === */}
+                    {/* SECCIÓN 4: ESTIMACIONES */}
                     <div className="form-section">
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
                             <CalculatorOutlined style={{ marginRight: '8px', color: 'var(--primary-color)' }} />
@@ -498,7 +419,7 @@ const HistoriasUsuarioForm = ({
                             </Title>
                         </div>
                         <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-                            Define una o múltiples estimaciones usando diferentes unidades de medida (Story Points, Horas, T-Shirt Sizes, etc.)
+                            Define una o múltiples estimaciones usando diferentes unidades de medida
                         </p>
 
                         {/* Lista de estimaciones */}
@@ -541,7 +462,7 @@ const HistoriasUsuarioForm = ({
                                                     value={estimacion.unidad_estimacion}
                                                     onChange={(value) => actualizarEstimacion(estimacion.id, 'unidad_estimacion', value)}
                                                     style={{ width: '100%' }}
-                                                    loading={loadingUnidadesEstimacion}
+                                                    loading={loadingCatalogos}
                                                     showSearch
                                                     optionFilterProp="children"
                                                     filterOption={(input, option) =>
@@ -605,7 +526,7 @@ const HistoriasUsuarioForm = ({
                             );
                         })}
 
-                        {/* Botón para agregar nueva estimación - solo si hay unidades de estimación cargadas */}
+                        {/* Botón para agregar nueva estimación */}
                         {unidadesEstimacion.length > 0 && (
                             <Button
                                 type="dashed"
@@ -618,8 +539,8 @@ const HistoriasUsuarioForm = ({
                             </Button>
                         )}
 
-                        {/* Mensaje de carga para unidades de estimación */}
-                        {loadingUnidadesEstimacion && unidadesEstimacion.length === 0 && (
+                        {/* Mensaje de carga */}
+                        {loadingCatalogos && unidadesEstimacion.length === 0 && (
                             <div style={{
                                 textAlign: 'center',
                                 padding: '1rem',
@@ -633,17 +554,17 @@ const HistoriasUsuarioForm = ({
                             </div>
                         )}
 
-                        {/* Mensaje de error para unidades de estimación */}
-                        {errorUnidadesEstimacion && unidadesEstimacion.length === 0 && (
+                        {/* Mensaje de error */}
+                        {errorCatalogos && unidadesEstimacion.length === 0 && (
                             <Alert
                                 message="Error cargando unidades de estimación"
                                 description={
                                     <div>
-                                        <p>{errorUnidadesEstimacion}</p>
-                                        {retryFunctions.cargarUnidadesEstimacion && (
+                                        <p>{errorCatalogos}</p>
+                                        {cargarCatalogos && (
                                             <Button
                                                 size="small"
-                                                onClick={retryFunctions.cargarUnidadesEstimacion}
+                                                onClick={cargarCatalogos}
                                                 style={{ marginTop: '8px' }}
                                             >
                                                 Reintentar
@@ -658,7 +579,7 @@ const HistoriasUsuarioForm = ({
                         )}
 
                         {/* Estado vacío */}
-                        {estimaciones.length === 0 && !loadingUnidadesEstimacion && unidadesEstimacion.length > 0 && (
+                        {estimaciones.length === 0 && !loadingCatalogos && unidadesEstimacion.length > 0 && (
                             <div style={{
                                 textAlign: 'center',
                                 padding: '2rem',
@@ -678,7 +599,7 @@ const HistoriasUsuarioForm = ({
 
                     <Divider />
 
-                    {/* === ACCIONES === */}
+                    {/* ACCIONES */}
                     <div className="form-actions">
                         <Space size="middle">
                             <Button onClick={onCancel} className="btn btn-secondary" size="large" disabled={loading}>
