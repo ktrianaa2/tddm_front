@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Card, Button, Typography, Modal, Row, Col, Spin } from "antd";
+import { Card, Button, Typography, Modal, Row, Col, Spin, Empty } from "antd";
 import { PlusOutlined, ExclamationCircleOutlined, UserOutlined } from "@ant-design/icons";
 import { useCasosUso } from "../../../hooks/useCasosdeUso";
 import CasosUsoForm from "./CasosUsoForm";
@@ -128,20 +128,49 @@ const CasosDeUsoSection = ({ proyectoId }) => {
 
   if (!proyectoId) {
     return (
-      <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
-        <UserOutlined style={{ fontSize: "3rem", color: "var(--text-disabled)", marginBottom: "1rem" }} />
-        <Title level={4} type="secondary">Selecciona un proyecto</Title>
-        <Text type="secondary">Debes seleccionar un proyecto para gestionar sus casos de uso</Text>
+      <Card style={{
+        textAlign: "center",
+        padding: "3rem 1rem",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border-color)"
+      }}>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={
+            <div>
+              <p style={{
+                fontSize: '1.1rem',
+                marginBottom: '0.5rem',
+                color: 'var(--text-primary)'
+              }}>
+                Selecciona un proyecto
+              </p>
+              <p style={{
+                fontSize: '0.9rem',
+                color: 'var(--text-secondary)'
+              }}>
+                Debes seleccionar un proyecto para gestionar sus casos de uso
+              </p>
+            </div>
+          }
+        />
       </Card>
     );
   }
 
   if (loadingCatalogos && !catalogos) {
     return (
-      <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
+      <Card style={{
+        textAlign: "center",
+        padding: "3rem 1rem",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border-color)"
+      }}>
         <Spin size="large" />
         <div style={{ marginTop: "1rem" }}>
-          <Text type="secondary">Cargando catálogos necesarios...</Text>
+          <Text style={{ color: 'var(--text-secondary)' }}>
+            Cargando catálogos necesarios...
+          </Text>
         </div>
       </Card>
     );
@@ -149,10 +178,25 @@ const CasosDeUsoSection = ({ proyectoId }) => {
 
   if (errorCatalogos || (!catalogos && !loadingCatalogos)) {
     return (
-      <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
-        <ExclamationCircleOutlined style={{ fontSize: "3rem", color: "#ff4d4f", marginBottom: "1rem" }} />
-        <Title level={4} type="danger">Error al cargar catálogos</Title>
-        <Text type="secondary" style={{ display: 'block', marginBottom: '1rem' }}>
+      <Card style={{
+        textAlign: "center",
+        padding: "3rem 1rem",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border-color)"
+      }}>
+        <ExclamationCircleOutlined style={{
+          fontSize: "3rem",
+          color: "var(--error-color)",
+          marginBottom: "1rem"
+        }} />
+        <Title level={4} style={{ color: 'var(--error-color)' }}>
+          Error al cargar catálogos
+        </Title>
+        <Text style={{
+          display: 'block',
+          marginBottom: '1rem',
+          color: 'var(--text-secondary)'
+        }}>
           {errorCatalogos || 'Los catálogos necesarios no están disponibles'}
         </Text>
         <Button type="primary" onClick={recargarTodo}>
@@ -202,18 +246,10 @@ const CasosDeUsoSection = ({ proyectoId }) => {
             marginBottom: "1.5rem"
           }}>
             <div>
-              <Title level={3} style={{ margin: 0 }}>
+              <Title level={3} style={{ margin: 0, color: 'var(--text-primary)' }}>
                 <UserOutlined style={{ marginRight: "0.5rem", color: "#52c41a" }} />
                 Gestión de Casos de Uso
               </Title>
-              <Text type="secondary">
-                {contadores.total} caso{contadores.total !== 1 ? "s" : ""} de uso
-                {contadores.conRelaciones > 0 && (
-                  <span style={{ marginLeft: '0.5rem' }}>
-                    • {contadores.conRelaciones} con relaciones
-                  </span>
-                )}
-              </Text>
             </div>
 
             <Button
@@ -228,38 +264,49 @@ const CasosDeUsoSection = ({ proyectoId }) => {
 
           {/* Loading */}
           {loading ? (
-            <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
+            <Card style={{
+              textAlign: "center",
+              padding: "3rem 1rem",
+              background: "var(--bg-card)",
+              border: "1px solid var(--border-color)"
+            }}>
               <Spin size="large" />
               <div style={{ marginTop: "1rem" }}>
-                <Text type="secondary">Cargando casos de uso...</Text>
+                <Text style={{ color: 'var(--text-secondary)' }}>
+                  Cargando casos de uso...
+                </Text>
               </div>
             </Card>
           ) : (
             <>
               {/* Lista de casos de uso */}
               {casosUso.length === 0 ? (
-                <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
-                  <UserOutlined style={{
-                    fontSize: "3rem",
-                    color: "var(--text-disabled)",
-                    marginBottom: "1rem"
-                  }} />
-                  <Title level={4} type="secondary">
-                    No hay casos de uso definidos
-                  </Title>
-                  <Text type="secondary">
-                    Comienza agregando el primer caso de uso de este proyecto
-                  </Text>
-                  <div style={{ marginTop: '1.5rem' }}>
-                    <Button
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={handleAgregar}
-                      disabled={!catalogosDisponibles}
-                    >
-                      Crear Primer Caso de Uso
-                    </Button>
-                  </div>
+                <Card style={{
+                  textAlign: "center",
+                  padding: "3rem 1rem",
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border-color)"
+                }}>
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description={
+                      <div>
+                        <p style={{
+                          fontSize: '1.1rem',
+                          marginBottom: '0.5rem',
+                          color: 'var(--text-primary)'
+                        }}>
+                          No hay casos de uso definidos
+                        </p>
+                        <p style={{
+                          fontSize: '0.9rem',
+                          color: 'var(--text-secondary)'
+                        }}>
+                          Comienza agregando el primer caso de uso de este proyecto
+                        </p>
+                      </div>
+                    }
+                  />
                 </Card>
               ) : (
                 <Row gutter={[16, 16]}>

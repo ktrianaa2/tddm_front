@@ -100,7 +100,7 @@ const DashboardUsuario = ({ onLogout, userProfile }) => {
       <Navbar onLogout={onLogout} userProfile={userProfile} />
       <div className="dashboard-content">
         {view === "lista" && (
-          <>
+          <div className="dashboard-proyectos-container">
             <ListaProyectos
               proyectos={proyectos}
               estadosProyecto={estadosProyecto}
@@ -111,7 +111,7 @@ const DashboardUsuario = ({ onLogout, userProfile }) => {
               onEliminar={handleEliminar}
               onCrear={openCrear}
             />
-          </>
+          </div>
         )}
 
         {view === "crear" && (

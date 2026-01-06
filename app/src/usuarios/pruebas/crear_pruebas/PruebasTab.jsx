@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import VistaEspecificaciones from './VistaEspecificaciones';
-import VistaResumenPruebas from './VistaResumenPruebas';
+import VistaGenerarPruebas from './VistaGenerarPruebas';
 import ListaPruebas from './ListaPruebas';
 import EditorPrueba from './EditorPrueba';
 import ModalAdvertencia from '../../modales/ModalAdvertencia';
@@ -8,7 +7,9 @@ import { useRequisitos } from '../../../hooks/useRequisitos';
 import { useCasosUso } from '../../../hooks/useCasosdeUso';
 import { useHistoriasUsuario } from '../../../hooks/useHistoriasdeUsuario';
 import { usePruebas } from '../../../hooks/usePruebas';
-import { Spin, message } from 'antd';
+import { useEsquemaBD } from '../../../hooks/useEsquemaBD';
+import { Spin, message, Button, Empty, Card } from 'antd';
+import { BugOutlined, ReloadOutlined, DatabaseOutlined } from '@ant-design/icons';
 import '../../../styles/tabs.css';
 import '../../../styles/buttons.css';
 
@@ -55,9 +56,16 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     guardarPrueba
   } = usePruebas(proyectoId);
 
+  // Hook para esquema BD
+  const {
+    loading: loadingEsquemaBD,
+    tieneEsquema,
+    cargarEsquemas
+  } = useEsquemaBD(proyectoId);
+
   // Consolidar estados de carga
   const loadingEspecificaciones = loadingRequisitos || loadingCasosUso || loadingHistorias;
-  const loading = externalLoading || loadingEspecificaciones || loadingPruebas;
+  const loading = externalLoading || loadingEspecificaciones || loadingPruebas || loadingEsquemaBD;
 
   // Combinar especificaciones con mapeo correcto de campos
   const todasEspecificaciones = [
@@ -92,23 +100,28 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
       cargarCasosUso();
       cargarHistoriasUsuario();
       cargarPruebas();
+      cargarEsquemas();
     }
   }, [proyectoId]);
 
-  // ✅ FIX: Determinar vista basada en si hay pruebas
-  // Se ejecuta cada vez que cambia el estado de carga o la cantidad de pruebas
+  // ✅ Determinar vista basada en estado
   useEffect(() => {
     // Solo cambiar vista cuando ya no estemos cargando
-    if (!loading && !loadingPruebas && !generandoPruebas) {
-      if (pruebas.length > 0) {
-        // Si hay pruebas, mostrar vista de gestión
+    if (!loading && !generandoPruebas) {
+      // 1. Si no hay esquema BD, mostrar mensaje
+      if (!tieneEsquema) {
+        setVistaActual('sin-esquema');
+      }
+      // 2. Si hay pruebas, mostrar gestión
+      else if (pruebas.length > 0) {
         setVistaActual('gestion');
-      } else {
-        // Si no hay pruebas, mostrar vista inicial
+      }
+      // 3. Si hay esquema pero no hay pruebas, mostrar especificaciones
+      else {
         setVistaActual('inicial');
       }
     }
-  }, [loading, loadingPruebas, pruebas.length, generandoPruebas]);
+  }, [loading, generandoPruebas, pruebas.length, tieneEsquema]);
 
   // Handlers
   const handleRecargarTodo = () => {
@@ -116,6 +129,7 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     recargarCasosUso();
     recargarHistorias();
     recargarPruebas();
+    cargarEsquemas();
   };
 
   const handleIniciarGeneracionPruebas = () => {
@@ -155,16 +169,8 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     }
   };
 
-  const handleCrearPrueba = () => {
-    message.info('Funcionalidad de crear prueba manual - Por implementar');
-  };
-
   const handleSeleccionarPrueba = (prueba) => {
     setPruebaSeleccionada(prueba);
-  };
-
-  const handleVolverAResumen = () => {
-    setPruebaSeleccionada(null);
   };
 
   const handleEliminarPrueba = async (prueba) => {
@@ -241,7 +247,7 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
         <div className="tab-loading-state">
           <Spin size="large" />
           <div className="tab-loading-text">
-            Cargando especificaciones y pruebas...
+            Cargando datos del proyecto...
           </div>
         </div>
       </div>
@@ -254,22 +260,18 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
       <div className="tab-main-content">
         <div className="tab-loading-state">
           <Spin size="large" />
-          <div className="tab-loading-text">
+          <p className="tab-loading-text">
             🤖 Generando pruebas con IA...
-          </div>
-          <p style={{
-            marginTop: '0.5rem',
-            fontSize: '0.95rem',
-            color: 'var(--text-tertiary)',
-            textAlign: 'center',
-            maxWidth: '500px'
-          }}>
-            Analizando {todasEspecificaciones.length} especificación{todasEspecificaciones.length !== 1 ? 'es' : ''} del proyecto
-            <br />
-            <small style={{ color: 'var(--text-tertiary)', marginTop: '0.5rem', display: 'block' }}>
-              Este proceso puede tomar algunos segundos...
-            </small>
           </p>
+          <div>
+            <p className="tab-empty-description">
+              Analizando {todasEspecificaciones.length} especificación{todasEspecificaciones.length !== 1 ? 'es' : ''} del proyecto
+              <br />
+              <small className="tab-empty-description">
+                Este proceso puede tomar algunos segundos...
+              </small>
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -277,15 +279,73 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
 
   // === RENDERIZADO DE VISTAS ===
 
-  // Vista inicial (especificaciones) - Sin pruebas generadas
+  // Vista sin esquema BD
+  if (vistaActual === 'sin-esquema') {
+    return (
+      <>
+        {/* Header */}
+        <div className="tab-header">
+          <div className="tab-header-content">
+            <h3 className="tab-title">
+              <BugOutlined style={{ marginRight: 'var(--space-sm)' }} />
+              Gestión de Pruebas
+            </h3>
+            <p className="tab-subtitle">
+              Crea y gestiona los casos de prueba de tu proyecto
+            </p>
+          </div>
+          <div className="tab-header-actions">
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={handleRecargarTodo}
+              loading={loading}
+              className="btn btn-secondary"
+            >
+              Actualizar
+            </Button>
+          </div>
+        </div>
+
+        {/* Contenido principal */}
+        <div className="tab-main-content">
+          <Card style={{
+            textAlign: "center",
+            padding: "3rem 1rem",
+            background: "var(--bg-card)",
+            border: "1px solid var(--border-color)"
+          }}>
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={
+                <div>
+                  <p style={{
+                    fontSize: '1.1rem',
+                    marginBottom: '0.5rem',
+                    color: 'var(--text-primary)'
+                  }}>
+                    Esquema de Base de Datos Requerido
+                  </p>
+                  <p style={{
+                    fontSize: '0.9rem',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    Para generar pruebas automáticas, primero debes crear o cargar
+                    un esquema de base de datos en la pestaña <strong>Base de Datos</strong>.
+                  </p>
+                </div>
+              }
+            />
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  // Vista inicial - Con esquema pero sin pruebas
   if (vistaActual === 'inicial') {
     return (
       <>
-        <VistaEspecificaciones
-          especificaciones={todasEspecificaciones}
-          requisitos={requisitos}
-          casosUso={casosUso}
-          historiasUsuario={historiasUsuario}
+        <VistaGenerarPruebas
           loading={loading}
           onRecargar={handleRecargarTodo}
           onIniciarPruebas={handleIniciarGeneracionPruebas}
@@ -331,14 +391,39 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
               onRegenerar={handleRegenerarPrueba}
             />
           ) : (
-            // Vista de resumen cuando no hay selección
+            // Vista vacía cuando no hay selección
             <div className="panel-contenido">
-              <VistaResumenPruebas
-                contadores={contadores}
-                loading={loading}
-                onRecargar={recargarPruebas}
-                onCrearPrueba={handleCrearPrueba}
-              />
+              <Card style={{
+                textAlign: "center",
+                padding: "3rem 1rem",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-color)",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}>
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description={
+                    <div>
+                      <p style={{
+                        fontSize: '1.1rem',
+                        marginBottom: '0.5rem',
+                        color: 'var(--text-primary)'
+                      }}>
+                        Selecciona una prueba
+                      </p>
+                      <p style={{
+                        fontSize: '0.9rem',
+                        color: 'var(--text-secondary)'
+                      }}>
+                        Elige una prueba de la lista para ver su contenido
+                      </p>
+                    </div>
+                  }
+                />
+              </Card>
             </div>
           )}
         </div>

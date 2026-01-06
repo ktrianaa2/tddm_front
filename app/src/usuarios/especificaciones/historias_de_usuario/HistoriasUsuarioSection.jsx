@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Typography, message, Spin, Modal, Row, Col } from 'antd';
+import { Card, Button, Typography, message, Spin, Modal, Row, Col, Empty } from 'antd';
 import { PlusOutlined, BookOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import HistoriasUsuarioForm from './HistoriasUsuarioForm';
 import HistoriaUsuarioItem from './HistoriaUsuarioItem';
@@ -163,20 +163,49 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
 
   if (!proyectoId) {
     return (
-      <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
-        <BookOutlined style={{ fontSize: "3rem", color: "var(--text-disabled)", marginBottom: "1rem" }} />
-        <Title level={4} type="secondary">Selecciona un proyecto</Title>
-        <Text type="secondary">Debes seleccionar un proyecto para gestionar sus historias de usuario</Text>
+      <Card style={{
+        textAlign: "center",
+        padding: "3rem 1rem",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border-color)"
+      }}>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={
+            <div>
+              <p style={{
+                fontSize: '1.1rem',
+                marginBottom: '0.5rem',
+                color: 'var(--text-primary)'
+              }}>
+                Selecciona un proyecto
+              </p>
+              <p style={{
+                fontSize: '0.9rem',
+                color: 'var(--text-secondary)'
+              }}>
+                Debes seleccionar un proyecto para gestionar sus historias de usuario
+              </p>
+            </div>
+          }
+        />
       </Card>
     );
   }
 
   if (loadingCatalogos && !catalogos) {
     return (
-      <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
+      <Card style={{
+        textAlign: "center",
+        padding: "3rem 1rem",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border-color)"
+      }}>
         <Spin size="large" />
         <div style={{ marginTop: "1rem" }}>
-          <Text type="secondary">Cargando catálogos necesarios...</Text>
+          <Text style={{ color: 'var(--text-secondary)' }}>
+            Cargando catálogos necesarios...
+          </Text>
         </div>
       </Card>
     );
@@ -184,10 +213,25 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
 
   if (errorCatalogos && !catalogos) {
     return (
-      <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
-        <ExclamationCircleOutlined style={{ fontSize: "3rem", color: "#ff4d4f", marginBottom: "1rem" }} />
-        <Title level={4} type="danger">Error al cargar catálogos</Title>
-        <Text type="secondary" style={{ display: 'block', marginBottom: '1rem' }}>
+      <Card style={{
+        textAlign: "center",
+        padding: "3rem 1rem",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border-color)"
+      }}>
+        <ExclamationCircleOutlined style={{
+          fontSize: "3rem",
+          color: "var(--error-color)",
+          marginBottom: "1rem"
+        }} />
+        <Title level={4} style={{ color: 'var(--error-color)' }}>
+          Error al cargar catálogos
+        </Title>
+        <Text style={{
+          display: 'block',
+          marginBottom: '1rem',
+          color: 'var(--text-secondary)'
+        }}>
           {errorCatalogos}
         </Text>
         <Button onClick={cargarCatalogos} loading={loadingCatalogos}>
@@ -215,15 +259,17 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
         />
       ) : (
         <>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "1.5rem"
+          }}>
             <div>
-              <Title level={3} style={{ margin: 0 }}>
+              <Title level={3} style={{ margin: 0, color: 'var(--text-primary)' }}>
                 <BookOutlined style={{ marginRight: "0.5rem", color: "#722ed1" }} />
                 Gestión de Historias de Usuario
               </Title>
-              <Text type="secondary">
-                {historiasUsuario.length} historia{historiasUsuario.length !== 1 ? "s" : ""} de usuario
-              </Text>
             </div>
 
             <Button
@@ -243,19 +289,48 @@ const HistoriasUsuarioSection = ({ proyectoId }) => {
           </div>
 
           {loading ? (
-            <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
+            <Card style={{
+              textAlign: "center",
+              padding: "3rem 1rem",
+              background: "var(--bg-card)",
+              border: "1px solid var(--border-color)"
+            }}>
               <Spin size="large" />
               <div style={{ marginTop: "1rem" }}>
-                <Text type="secondary">Cargando historias de usuario...</Text>
+                <Text style={{ color: 'var(--text-secondary)' }}>
+                  Cargando historias de usuario...
+                </Text>
               </div>
             </Card>
           ) : (
             <>
               {historiasUsuario.length === 0 ? (
-                <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
-                  <BookOutlined style={{ fontSize: "3rem", color: "var(--text-disabled)", marginBottom: "1rem" }} />
-                  <Title level={4} type="secondary">No hay historias de usuario definidas</Title>
-                  <Text type="secondary">Comienza agregando la primera historia de usuario de tu proyecto</Text>
+                <Card style={{
+                  textAlign: "center",
+                  padding: "3rem 1rem",
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border-color)"
+                }}>
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description={
+                      <div>
+                        <p style={{
+                          fontSize: '1.1rem',
+                          marginBottom: '0.5rem',
+                          color: 'var(--text-primary)'
+                        }}>
+                          No hay historias de usuario definidas
+                        </p>
+                        <p style={{
+                          fontSize: '0.9rem',
+                          color: 'var(--text-secondary)'
+                        }}>
+                          Comienza agregando la primera historia de usuario de tu proyecto
+                        </p>
+                      </div>
+                    }
+                  />
                 </Card>
               ) : (
                 <Row gutter={[16, 16]}>

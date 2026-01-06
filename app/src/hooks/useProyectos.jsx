@@ -55,9 +55,16 @@ export const useProyectos = () => {
 
         try {
             const response = await getWithAuth(API_ENDPOINTS.PROYECTOS, token);
-            setProyectos(response?.proyectos || []);
+            const proyectosRecibidos = response?.proyectos || [];
 
-            console.log("📁 Proyectos recibidos:", response?.proyectos);
+            // Detectar IDs duplicados
+            const ids = proyectosRecibidos.map(p => p.proyecto_id);
+            const duplicados = ids.filter((id, index) => ids.indexOf(id) !== index);
+            if (duplicados.length > 0) {
+                console.warn("⚠️ IDs duplicados detectados:", duplicados);
+            }
+
+            setProyectos(proyectosRecibidos);
         } catch (error) {
             console.error(error);
             message.error("Error al cargar los proyectos");
@@ -66,7 +73,6 @@ export const useProyectos = () => {
             setLoading(false);
         }
     }, []);
-
     // Cargar proyectos y estados al montar o cuando cambie refreshFlag
     useEffect(() => {
         fetchProyectos();

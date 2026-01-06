@@ -1,34 +1,373 @@
 /* gestion-tabs.css - Estilos específicos para los tabs de gestión de proyectos */
 
-/* === TABS DE ANT DESIGN === */
-.gestion-tabs .ant-tabs-nav {
-  background: var(--bg-card);
-  padding: 0;
-  margin: 0;
-  border-bottom: 1px solid var(--border-color);
+/* === WRAPPER PRINCIPAL === */
+.tabs-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  position: relative;
 }
 
-.gestion-tabs .ant-tabs-nav::before {
+/* === HEADER STICKY === */
+.tab-header {
+  position: relative;
+  z-index: 100;
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
+  transition: background-color var(--transition-normal), 
+              border-color var(--transition-normal);
+}
+
+.tab-header-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.tab-title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color var(--transition-normal);
+}
+
+.tab-header-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* === NAVEGACIÓN DE TABS (FIJA) === */
+.gestion-tabs-nav {
+  position: relative;
+  z-index: 99;
+  background: var(--bg-card);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+  box-sizing: border-box;
+  transition: background-color var(--transition-normal);
+}
+
+.gestion-tabs-nav .ant-tabs {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-card);
+}
+
+.gestion-tabs-nav .ant-tabs-nav {
+  background: var(--bg-card);
+  padding: 0;
+  margin: 0 !important;
+  border-bottom: 2px solid var(--border-color);
+  width: 100%;
+  box-sizing: border-box;
+  transition: background-color var(--transition-normal), 
+              border-color var(--transition-normal);
+}
+
+.gestion-tabs-nav .ant-tabs-nav::before {
   border-bottom: none;
 }
 
-.gestion-tabs .ant-tabs-nav-list {
+.gestion-tabs-nav .ant-tabs-nav-list {
   width: 100%;
   display: flex;
+  justify-content: space-between;
 }
 
-.gestion-tabs .ant-tabs-tab {
+.gestion-tabs-nav .ant-tabs-tab {
   background: transparent;
-  border: 1px solid transparent;
+  border: none;
   border-radius: 0;
   color: var(--text-secondary);
   padding: 16px 24px;
   font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
   transition: all var(--transition-normal);
-  margin: 0;
+  margin: 0 !important;
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   border-bottom: 3px solid transparent;
+  position: relative;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.gestion-tabs-nav .ant-tabs-tab span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gestion-tabs-nav .ant-tabs-tab:hover {
+  color: var(--primary-color);
+  background: var(--primary-light);
+}
+
+.gestion-tabs-nav .ant-tabs-tab-active {
+  color: var(--primary-color) !important;
+  background: var(--primary-light) !important;
+  border-bottom-color: var(--primary-color) !important;
+  font-weight: var(--font-weight-semibold) !important;
+}
+
+.gestion-tabs-nav .ant-tabs-tab-active:hover {
+  color: var(--primary-hover) !important;
+  border-bottom-color: var(--primary-hover) !important;
+}
+
+/* Iconos dentro de los tabs */
+.gestion-tabs-nav .ant-tabs-tab .anticon {
+  font-size: 18px;
+  transition: transform var(--transition-fast);
+}
+
+.gestion-tabs-nav .ant-tabs-tab:hover .anticon {
+  transform: scale(1.1);
+}
+
+/* Ocultar el contenido del tabs de Ant Design */
+.gestion-tabs-nav .ant-tabs-content-holder {
+  display: none;
+}
+
+/* Línea de indicador del tab activo */
+.gestion-tabs-nav .ant-tabs-ink-bar {
+  display: none;
+}
+
+/* === CONTENEDOR DE CONTENIDO CON SCROLL === */
+.gestion-tabs-content-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  background: var(--bg-card);
+  padding: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 0;
+  position: relative;
+  transition: background-color var(--transition-normal);
+}
+
+/* Scrollbar personalizada */
+.gestion-tabs-content-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.gestion-tabs-content-scroll::-webkit-scrollbar-track {
+  background: var(--bg-container);
+  border-radius: 4px;
+}
+
+.gestion-tabs-content-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+  transition: background var(--transition-normal);
+}
+
+.gestion-tabs-content-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+/* === ESTADOS VACÍOS === */
+.tab-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  min-height: 400px;
+  animation: fadeIn var(--transition-normal);
+}
+
+.tab-empty-icon {
+  font-size: 48px;
+  color: var(--text-tertiary);
+  opacity: 0.6;
+  transition: color var(--transition-normal);
+}
+
+.tab-empty-title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  transition: color var(--transition-normal);
+}
+
+.tab-empty-description {
+  margin: 0;
+  color: var(--text-secondary);
+  max-width: 400px;
+  line-height: var(--line-height-normal);
+  transition: color var(--transition-normal);
+}
+
+/* === ANIMACIONES === */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === RESPONSIVE === */
+
+/* Tablets grandes y escritorios pequeños */
+@media (max-width: 1024px) {
+  .gestion-tabs-nav .ant-tabs-tab {
+    padding: 14px 16px;
+    font-size: var(--font-size-sm);
+  }
+
+  .gestion-tabs-nav .ant-tabs-tab span {
+    gap: 6px;
+  }
+
+  .gestion-tabs-nav .ant-tabs-tab .anticon {
+    font-size: 16px;
+  }
+}
+
+/* Tablets */
+@media (max-width: 768px) {
+  .tab-header {
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .tab-title {
+    font-size: var(--font-size-lg);
+  }
+
+  .gestion-tabs-nav .ant-tabs-tab {
+    padding: 12px 12px;
+    font-size: 13px;
+  }
+
+  .gestion-tabs-nav .ant-tabs-tab span {
+    gap: 4px;
+  }
+
+  .gestion-tabs-nav .ant-tabs-tab .anticon {
+    font-size: 14px;
+  }
+
+  .gestion-tabs-content-scroll {
+    padding: 16px;
+  }
+}
+
+/* Móviles */
+@media (max-width: 640px) {
+  .tab-header {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .tab-title {
+    font-size: var(--font-size-base);
+  }
+
+  /* En móviles, ocultar texto y solo mostrar iconos si es necesario */
+  .gestion-tabs-nav .ant-tabs-tab {
+    padding: 12px 8px;
+    font-size: 12px;
+    min-width: 60px;
+  }
+
+  .gestion-tabs-nav .ant-tabs-tab span {
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
+  }
+
+  .gestion-tabs-nav .ant-tabs-tab .anticon {
+    font-size: 16px;
+  }
+
+  .gestion-tabs-content-scroll {
+    padding: 12px;
+  }
+}
+
+/* Móviles muy pequeños */
+@media (max-width: 480px) {
+  .gestion-tabs-nav .ant-tabs-tab {
+    padding: 10px 4px;
+    min-width: 50px;
+  }
+
+  /* Ocultar el texto en pantallas muy pequeñas, solo mostrar iconos */
+  .gestion-tabs-nav .ant-tabs-tab span span:not(.anticon) {
+    display: none;
+  }
+
+  .gestion-tabs-nav .ant-tabs-tab span {
+    justify-content: center;
+  }
+
+  .gestion-tabs-nav .ant-tabs-tab .anticon {
+    font-size: 18px;
+    margin: 0;
+  }
+}
+
+/* === TEMA OSCURO - AJUSTES ESPECÍFICOS === */
+[data-theme="dark"] .tab-header {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .gestion-tabs-nav {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .gestion-tabs-nav .ant-tabs-tab:hover {
+  background: rgba(139, 92, 246, 0.15);
+}
+
+[data-theme="dark"] .gestion-tabs-nav .ant-tabs-tab-active {
+  background: rgba(139, 92, 246, 0.2) !important;
+}
+
+[data-theme="dark"] .gestion-tabs-content-scroll::-webkit-scrollbar-track {
+  background: var(--bg-container);
+}
+
+[data-theme="dark"] .gestion-tabs-content-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+}
+
+[data-theme="dark"] .gestion-tabs-content-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
 }

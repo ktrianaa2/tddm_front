@@ -1,60 +1,84 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Card, Button } from 'antd';
+import React, { useState, useMemo } from 'react';
+import { Spin } from 'antd';
 import {
     FileTextOutlined,
     UserOutlined,
     BookOutlined,
-    ArrowLeftOutlined
+    BarChartOutlined
 } from '@ant-design/icons';
 
-// Importar los hooks individuales refactorizados
+// Importar los hooks
 import { useCasosUso } from '../../hooks/useCasosdeUso';
 import { useRequisitos } from '../../hooks/useRequisitos';
 import { useHistoriasUsuario } from '../../hooks/useHistoriasdeUsuario';
 
-// Importar los componentes individuales
+// Importar los componentes de sección
 import RequisitosSection from './requisitos/RequisitosSection';
 import CasosDeUsoSection from './casos_de_uso/CasosDeUsoSection';
 import HistoriasDeUsuarioSection from './historias_de_usuario/HistoriasUsuarioSection';
+import DiagramasUMLSection from './DiagramasUMLSection';
 
 import '../../styles/tabs.css';
 
 const EspecificacionesTab = ({ proyecto }) => {
-    const [activeSection, setActiveSection] = useState(null);
+    const [activeSection, setActiveSection] = useState('diagramas');
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const proyectoId = proyecto?.proyecto_id;
 
-    // Usar autoLoad = true para cargar datos automáticamente
+    // Cargar datos de todos los hooks (con autoLoad basado en refreshKey)
     const {
         contadores: contadoresCasosUso,
         loading: loadingCasosUso,
-        casosUso
+        casosUso,
+        cargarCasosUso
     } = useCasosUso(proyectoId, true);
 
     const {
         contadores: contadoresRequisitos,
         loading: loadingRequisitos,
-        requisitos
+        requisitos,
+        cargarRequisitos
     } = useRequisitos(proyectoId, true);
 
     const {
         contadores: contadoresHistorias,
         loading: loadingHistorias,
-        historiasUsuario
+        historiasUsuario,
+        cargarHistoriasUsuario
     } = useHistoriasUsuario(proyectoId, true);
 
-    // 🔧 FIX: Usar useMemo para calcular contadores consolidados
-    // Esto evita recrear el objeto en cada render y previene el ciclo infinito
+    // Recargar datos cuando cambias de sección o agregas elementos
+    const recargarDatos = async () => {
+        try {
+            await Promise.all([
+                cargarCasosUso(),
+                cargarRequisitos(),
+                cargarHistoriasUsuario()
+            ]);
+        } catch (error) {
+            console.error('Error recargando datos:', error);
+        }
+    };
+
+    // Recargar cuando cambias de sección hacia diagramas
+    React.useEffect(() => {
+        if (activeSection === 'diagramas') {
+            recargarDatos();
+        }
+    }, [activeSection]);
+
+    // Calcular contadores consolidados
     const contadores = useMemo(() => {
-        const requisitos = contadoresRequisitos?.total || 0;
-        const casosUso = contadoresCasosUso?.total || 0;
-        const historiasUsuario = contadoresHistorias?.total || 0;
+        const requisitosTotal = contadoresRequisitos?.total || 0;
+        const casosUsoTotal = contadoresCasosUso?.total || 0;
+        const historiasUsuarioTotal = contadoresHistorias?.total || 0;
 
         return {
-            requisitos,
-            casosUso,
-            historiasUsuario,
-            total: requisitos + casosUso + historiasUsuario
+            requisitos: requisitosTotal,
+            casosUso: casosUsoTotal,
+            historiasUsuario: historiasUsuarioTotal,
+            total: requisitosTotal + casosUsoTotal + historiasUsuarioTotal
         };
     }, [
         contadoresRequisitos?.total,
@@ -62,175 +86,113 @@ const EspecificacionesTab = ({ proyecto }) => {
         contadoresHistorias?.total
     ]);
 
-    const especificacionesCards = [
+    const isLoading = loadingRequisitos || loadingCasosUso || loadingHistorias;
+
+    // Definir las tarjetas de navegación
+    const navigationCards = [
         {
-            key: 'requisitos',
-            title: 'Requisitos',
-            icon: <FileTextOutlined />,
-            count: contadores.requisitos,
-            description: 'Gestiona los requisitos funcionales y no funcionales del proyecto',
-            className: 'requisitos',
-            loading: loadingRequisitos
+            key: 'diagramas',
+            label: 'Diagramas UML',
+            icon: <BarChartOutlined />,
+            count: contadores.total,
+            classColor: 'arquitectura',
+            showCount: false
         },
         {
             key: 'casos-uso',
-            title: 'Casos de Uso',
+            label: 'Casos de Uso',
             icon: <UserOutlined />,
             count: contadores.casosUso,
-            description: 'Define los casos de uso y escenarios de interacción',
-            className: 'casos-uso',
-            loading: loadingCasosUso
+            classColor: 'casos-uso',
+            showCount: true
+        },
+        {
+            key: 'requisitos',
+            label: 'Requisitos',
+            icon: <FileTextOutlined />,
+            count: contadores.requisitos,
+            classColor: 'requisitos',
+            showCount: true
         },
         {
             key: 'historias-usuario',
-            title: 'Historias de Usuario',
+            label: 'Historias de Usuario',
             icon: <BookOutlined />,
             count: contadores.historiasUsuario,
-            description: 'Crea historias de usuario para metodologías ágiles',
-            className: 'historias-usuario',
-            loading: loadingHistorias
+            classColor: 'historias-usuario',
+            showCount: true
         }
     ];
 
-    const handleCardClick = (key) => {
-        setActiveSection(key);
-    };
-
-    const handleBackToOverview = () => {
-        setActiveSection(null);
-    };
-
-    // Si hay una sección activa, mostrar solo ese componente
-    if (activeSection) {
-        return (
-            <div className="tab-main-content">
-                <div className="tab-back-navigation">
-                    <Button
-                        onClick={handleBackToOverview}
-                        className="tab-back-btn"
-                        icon={<ArrowLeftOutlined />}
-                    >
-                        Volver a Especificaciones
-                    </Button>
-                </div>
-
-                {activeSection === 'requisitos' && (
-                    <RequisitosSection proyectoId={proyectoId} />
-                )}
-                {activeSection === 'casos-uso' && (
-                    <CasosDeUsoSection proyectoId={proyectoId} />
-                )}
-                {activeSection === 'historias-usuario' && (
-                    <HistoriasDeUsuarioSection proyectoId={proyectoId} />
-                )}
-            </div>
-        );
-    }
-
-    // Vista general con cards de navegación
     return (
         <div className="tab-main-content">
             {/* Header */}
-            <div style={{
-                marginBottom: '2rem',
-                paddingBottom: '1.5rem',
-                borderBottom: '2px solid var(--border-color)'
-            }}>
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    gap: '1.5rem'
-                }}>
-                    <div>
-                        <h3 className="tab-title" style={{ marginBottom: '0.5rem' }}>
-                            Gestión de Especificaciones
-                        </h3>
-                        <p className="tab-subtitle" style={{ margin: 0 }}>
-                            Organiza y gestiona todos los elementos de especificación de tu proyecto
-                        </p>
-                    </div>
-                </div>
+            <div className="tab-back-navigation">
+                <h3 className="tab-title">Gestión de Especificaciones</h3>
             </div>
 
-            {/* Cards de navegación */}
-            <div className="tab-navigation-grid">
-                {especificacionesCards.map((card) => (
-                    <div
-                        key={card.key}
-                        className={`tab-nav-card ${card.className}`}
-                        onClick={() => handleCardClick(card.key)}
-                    >
-                        <div className="tab-nav-card-body">
-                            <div className="tab-nav-card-icon-wrapper">
-                                <div className="tab-nav-card-icon">
+            {/* Layout: Sidebar izquierda + Content derecha */}
+            <div className="tab-sidebar-layout">
+                {/* Sidebar con cards verticales */}
+                <div className="tab-sidebar-cards">
+                    {navigationCards.map((card) => (
+                        <div
+                            key={card.key}
+                            className={`tab-sidebar-card ${card.classColor} ${activeSection === card.key ? 'active' : ''}`}
+                            onClick={() => setActiveSection(card.key)}
+                        >
+                            <div className="tab-sidebar-card-icon-wrapper">
+                                <span className="tab-sidebar-card-icon">
                                     {card.icon}
-                                </div>
-                                <div className="tab-nav-card-count">
-                                    {card.loading ? '...' : card.count}
-                                </div>
+                                </span>
+                                {card.showCount && card.count > 0 && (
+                                    <span className="tab-sidebar-card-count">
+                                        {card.count}
+                                    </span>
+                                )}
                             </div>
-
-                            <h4 className="tab-nav-card-title">
-                                {card.title}
-                            </h4>
-
-                            <p className="tab-nav-card-description">
-                                {card.description}
-                            </p>
-
-                            <div className="tab-nav-card-divider"></div>
-
-                            <div className="tab-nav-card-stats">
-                                <span className="tab-nav-card-stats-number">
-                                    {card.loading ? '...' : card.count}
-                                </span>
-                                <span className="tab-nav-card-stats-label">
-                                    elementos
-                                </span>
+                            <div className="tab-sidebar-card-content">
+                                <h4 className="tab-sidebar-card-title">
+                                    {card.label}
+                                </h4>
+                                <p className="tab-sidebar-card-description">
+                                    {isLoading ? (
+                                        <Spin size="small" />
+                                    ) : card.showCount ? (
+                                        <>
+                                            {card.count}{' '}
+                                            {card.count === 1 ? 'elemento' : 'elementos'}
+                                        </>
+                                    ) : (
+                                        'Ver diagrama'
+                                    )}
+                                </p>
                             </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
 
-            {/* Resumen General */}
-            <div className="tab-summary-card">
-                <Card
-                    title="Resumen de Especificaciones"
-                    className="tab-summary-card"
-                >
-                    <div className="tab-summary-row">
-                        <div className="tab-summary-total">
-                            <div className="tab-summary-total-number">
-                                {contadores.total}
-                            </div>
-                            <div className="tab-summary-total-label">
-                                Total de Especificaciones
-                            </div>
-                        </div>
-                        <div className="tab-summary-breakdown">
-                            <div className="tab-summary-item">
-                                <span className="tab-summary-item-label">Requisitos:</span>
-                                <span className="tab-summary-item-value">
-                                    {loadingRequisitos ? '...' : contadores.requisitos}
-                                </span>
-                            </div>
-                            <div className="tab-summary-item">
-                                <span className="tab-summary-item-label">Casos de Uso:</span>
-                                <span className="tab-summary-item-value">
-                                    {loadingCasosUso ? '...' : contadores.casosUso}
-                                </span>
-                            </div>
-                            <div className="tab-summary-item">
-                                <span className="tab-summary-item-label">Historias de Usuario:</span>
-                                <span className="tab-summary-item-value">
-                                    {loadingHistorias ? '...' : contadores.historiasUsuario}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </Card>
+                {/* Content Area a la derecha */}
+                <div className="tab-content-area">
+                    {activeSection === 'diagramas' && (
+                        <DiagramasUMLSection
+                            proyectoId={proyectoId}
+                            requisitos={requisitos}
+                            casosUso={casosUso}
+                            historiasUsuario={historiasUsuario}
+                            loading={isLoading}
+                        />
+                    )}
+                    {activeSection === 'casos-uso' && (
+                        <CasosDeUsoSection proyectoId={proyectoId} />
+                    )}
+                    {activeSection === 'requisitos' && (
+                        <RequisitosSection proyectoId={proyectoId} />
+                    )}
+                    {activeSection === 'historias-usuario' && (
+                        <HistoriasDeUsuarioSection proyectoId={proyectoId} />
+                    )}
+                </div>
             </div>
         </div>
     );

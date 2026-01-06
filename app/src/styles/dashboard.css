@@ -2,20 +2,58 @@
 
 /* === CONTENEDOR PRINCIPAL === */
 .dashboard-container {
-  min-height: 100vh;
+  height: 100%;
   background: var(--bg-container);
   transition: background-color var(--transition-normal);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* CAMBIO IMPORTANTE */
 }
 
+/* CAMBIO CRÍTICO: El scroll ahora depende de la vista */
 .dashboard-content {
-  padding: var(--space-xl) var(--space-2xl);
-  max-width: 1400px;
-  margin: 0 auto;
+  flex: 1;
+  /* Removemos overflow de aquí por defecto */
+  overflow: hidden;
+  padding: 0; /* Sin padding por defecto */
+  max-width: 100%;
+  margin: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === SCROLL PARA VISTA DE LISTA === */
+.dashboard-content > .dashboard-proyectos-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-md) var(--space-lg);
+  flex: 1;
+  height: 100%;
+}
+
+/* === VISTAS ESPECIALES (Proyecto, Editar, Crear) === */
+.edit-project-form,
+.create-project-form {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-md) var(--space-lg);
+}
+
+/* === VISTA DE GESTIÓN DE PROYECTO (sin padding, usa toda la altura) === */
+.dashboard-content > .tabs-content-wrapper {
+  height: 100%;
+  max-height: 100%;
+  padding: 0;
+  margin: 0;
 }
 
 /* === HEADER === */
 .dashboard-header {
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-lg);
 }
 
 .dashboard-header h2 {
@@ -36,11 +74,10 @@
 
 /* === ESTADÍSTICAS VERTICALES === */
 .dashboard-stats-vertical {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--space-lg);
-  position: sticky;
-  top: 20px;
+  margin-bottom: var(--space-lg);
 }
 
 /* === CARDS DE ESTADÍSTICAS === */
@@ -110,7 +147,7 @@
   display: flex;
   gap: var(--space-lg);
   align-items: center;
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-lg);
 }
 
 .dashboard-search-input {
@@ -164,7 +201,7 @@
   border-radius: var(--border-radius-lg);
   text-align: center;
   padding: var(--space-2xl);
-  margin-top: var(--space-lg);
+  margin-top: var(--space-md);
   transition: all var(--transition-normal);
 }
 
@@ -202,7 +239,7 @@
   justify-content: center;
   min-height: 300px;
   gap: var(--space-lg);
-  margin-top: var(--space-lg);
+  margin-top: var(--space-md);
   background: var(--bg-card) !important;
   border: 1px solid var(--border-color) !important;
   border-radius: var(--border-radius-lg);
@@ -237,24 +274,32 @@
 }
 
 /* === RESPONSIVE === */
+
+/* TABLETS Y PANTALLAS MEDIANAS (1200px - 993px) */
 @media (max-width: 1200px) {
-  .dashboard-content {
-    padding: var(--space-lg) var(--space-xl);
+  .dashboard-content > .dashboard-proyectos-container {
+    padding: var(--space-md) var(--space-lg);
+  }
+
+  .dashboard-stats-vertical {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   }
 }
 
+/* TABLETS (993px - 769px) */
 @media (max-width: 992px) {
   .dashboard-stats-vertical {
-    position: static;
-    flex-direction: row;
-    overflow-x: auto;
+    grid-template-columns: repeat(2, 1fr);
     gap: var(--space-md);
-    margin-bottom: var(--space-xl);
+    margin-bottom: var(--space-md);
   }
 
   .dashboard-stat-card {
-    min-width: 180px;
-    flex-shrink: 0;
+    padding: var(--space-lg);
+  }
+
+  .dashboard-stat-number {
+    font-size: var(--font-size-2xl);
   }
 
   .dashboard-search-section {
@@ -266,14 +311,16 @@
   }
 }
 
+/* MÓVILES GRANDES (769px - 481px) */
 @media (max-width: 768px) {
-  .dashboard-content {
-    padding: var(--space-md) var(--space-lg);
+  .dashboard-content > .dashboard-proyectos-container {
+    padding: var(--space-sm) var(--space-md);
   }
 
   .dashboard-header {
     text-align: center;
-    padding-bottom: var(--space-md);
+    padding-bottom: var(--space-sm);
+    margin-bottom: var(--space-md);
   }
 
   .dashboard-header h2 {
@@ -281,28 +328,96 @@
   }
 
   .dashboard-stats-vertical {
-    flex-direction: column;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
   }
 
   .dashboard-stat-card {
-    min-width: auto;
+    padding: var(--space-md);
   }
 
   .dashboard-stat-number {
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-xl);
+    margin-bottom: 4px;
+  }
+
+  .dashboard-stat-label {
+    font-size: var(--font-size-xs);
+  }
+
+  .dashboard-empty-state {
+    padding: var(--space-lg);
+  }
+
+  .dashboard-empty-icon {
+    font-size: 2.5rem;
+    margin-bottom: var(--space-md);
+  }
+
+  .dashboard-empty-title {
+    font-size: var(--font-size-lg);
+  }
+
+  .dashboard-empty-description {
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-lg);
   }
 }
 
+/* MÓVILES PEQUEÑOS (481px - 0px) */
 @media (max-width: 480px) {
-  .dashboard-content {
-    padding: var(--space-sm) var(--space-md);
+  .dashboard-content > .dashboard-proyectos-container {
+    padding: var(--space-sm) var(--space-sm);
+  }
+
+  .dashboard-header {
+    margin-bottom: var(--space-sm);
   }
 
   .dashboard-header h2 {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
+  }
+
+  .dashboard-stats-vertical {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
   }
 
   .dashboard-stat-card {
-    padding: var(--space-lg);
+    padding: var(--space-md);
+  }
+
+  .dashboard-stat-number {
+    font-size: var(--font-size-lg);
+    margin-bottom: 2px;
+  }
+
+  .dashboard-stat-label {
+    font-size: 11px;
+  }
+
+  .dashboard-search-section {
+    gap: var(--space-sm);
+  }
+
+  .dashboard-empty-state {
+    padding: var(--space-md);
+    margin-top: var(--space-sm);
+  }
+
+  .dashboard-empty-icon {
+    font-size: 2rem;
+    margin-bottom: var(--space-sm);
+  }
+
+  .dashboard-empty-title {
+    font-size: var(--font-size-base);
+  }
+
+  .dashboard-empty-description {
+    font-size: var(--font-size-xs);
+    margin-bottom: var(--space-md);
   }
 }

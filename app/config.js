@@ -1,4 +1,4 @@
-// config.js - Configuración actualizada con endpoint cambiar-estado
+// config.js - Configuración completa de endpoints
 
 // URL base de tu API
 export const API_BASE_URL = 'http://localhost:8000'; // URL de API
@@ -33,7 +33,7 @@ export const API_ENDPOINTS = {
   ACTUALIZAR_PRUEBA: '/app/pruebas/editar', // Se concatena /:prueba_id en el componente
   ELIMINAR_PRUEBA: '/app/pruebas/eliminar', // Se concatena /:prueba_id en el componente
 
-  // Generación de Pruebas con IA
+  // GENERACIÓN DE PRUEBAS CON IA
   GENERAR_PRUEBAS_IA: '/app/chat/generar-pruebas', // Se concatena /:proyecto_id en el componente
   PREVISUALIZAR_PRUEBAS_IA: '/app/chat/previsualizar-pruebas', // Se concatena /:proyecto_id en el componente
 
@@ -101,6 +101,21 @@ export const API_ENDPOINTS = {
   OBTENER_HISTORIA_USUARIO: '/app/historiasdeusuario/obtener', // Se concatena /:historia_id en el componente
   ACTUALIZAR_HISTORIA_USUARIO: '/app/historiasdeusuario/actualizar', // Se concatena /:historia_id en el componente
   ELIMINAR_HISTORIA_USUARIO: '/app/historiasdeusuario/eliminar', // Se concatena /:historia_id en el componente
+
+  // ESQUEMAS DE BASE DE DATOS - CRUD COMPLETO CON IA
+  LISTAR_MOTORES_BD: '/app/esquemas-bd/motores/',
+
+  // Generación con IA
+  GENERAR_ESQUEMA_BD_IA: '/app/chat/generar-esquema-bd', // Se concatena /:proyecto_id en el componente + body: {tipo_motor_id}
+  PREVISUALIZAR_ESQUEMA_BD_IA: '/app/chat/previsualizar-esquema-bd', // Se concatena /:proyecto_id en el componente + body: {tipo_motor_id}
+
+  // CRUD manual
+  CREAR_ESQUEMA: '/app/esquemas-bd/crear/',
+  OBTENER_ESQUEMA: '/app/esquemas-bd', // Se concatena /:esquema_id en el componente
+  ACTUALIZAR_ESQUEMA: '/app/esquemas-bd/actualizar', // Se concatena /:esquema_id en el componente
+  ELIMINAR_ESQUEMA: '/app/esquemas-bd/eliminar', // Se concatena /:esquema_id en el componente
+  DUPLICAR_ESQUEMA: '/app/esquemas-bd/duplicar', // Se concatena /:esquema_id en el componente
+  LISTAR_ESQUEMAS_PROYECTO: '/app/esquemas-bd/proyecto', // Se concatena /:proyecto_id en el componente
 };
 
 // Función helper para construir URLs completas

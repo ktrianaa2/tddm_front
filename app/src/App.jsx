@@ -82,33 +82,35 @@ function App() {
   }
 
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={
-          isAuthenticated
-            ? (userRole === "admin" 
+    <div style={{ height: "100vh", width: "100%", display: "flex", flexDirection: "column" }}>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            isAuthenticated
+              ? (userRole === "admin"
                 ? <DashboardAdmin userProfile={userProfile} onLogout={handleLogout} />
                 : <DashboardUsuario userProfile={userProfile} onLogout={handleLogout} />)
-            : <LoginForm onLoginSuccess={handleLoginSuccess} />
-        }
-      />
+              : <LoginForm onLoginSuccess={handleLoginSuccess} />
+          }
+        />
 
-      {/* Rutas para usuarios normales */}
-      <Route element={<PrivateRoute isAuthenticated={isAuthenticated} allowedRoles={["usuario"]} userRole={userRole} />}>
-        <Route path="/dashboard/*" element={<DashboardUsuario userProfile={userProfile} onLogout={handleLogout} />} />
-        <Route path="/usuario" element={<Usuario onLogout={handleLogout} />} />
-      </Route>
+        {/* Rutas para usuarios normales */}
+        <Route element={<PrivateRoute isAuthenticated={isAuthenticated} allowedRoles={["usuario"]} userRole={userRole} />}>
+          <Route path="/dashboard/*" element={<DashboardUsuario userProfile={userProfile} onLogout={handleLogout} />} />
+          <Route path="/usuario" element={<Usuario onLogout={handleLogout} />} />
+        </Route>
 
-      {/* Rutas para administradores */}
-      <Route element={<PrivateRoute isAuthenticated={isAuthenticated} allowedRoles={["admin"]} userRole={userRole} />}>
-        <Route path="/admin/dashboard" element={<DashboardAdmin userProfile={userProfile} onLogout={handleLogout} />} />
-        <Route path="/admin/perfil" element={<Admin onLogout={handleLogout} />} />
-        <Route path="/admin" element={<Admin onLogout={handleLogout} />} />
-      </Route>
+        {/* Rutas para administradores */}
+        <Route element={<PrivateRoute isAuthenticated={isAuthenticated} allowedRoles={["admin"]} userRole={userRole} />}>
+          <Route path="/admin/dashboard" element={<DashboardAdmin userProfile={userProfile} onLogout={handleLogout} />} />
+          <Route path="/admin/perfil" element={<Admin onLogout={handleLogout} />} />
+          <Route path="/admin" element={<Admin onLogout={handleLogout} />} />
+        </Route>
 
-      <Route path="*" element={<LoginForm onLoginSuccess={handleLoginSuccess} />} />
-    </Routes>
+        <Route path="*" element={<LoginForm onLoginSuccess={handleLoginSuccess} />} />
+      </Routes>
+    </div>
   );
 }
 

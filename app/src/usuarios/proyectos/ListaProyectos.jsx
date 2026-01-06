@@ -123,6 +123,7 @@ const ListaProyectos = ({ proyectos, estadosProyecto, loading, loadingEstados, o
                     <div className="dashboard-stats-vertical">
                         {/* Card de Total */}
                         <div
+                            key="stat-total"
                             className={`dashboard-stat-card ${estadoFiltro === "todos" ? "active" : ""}`}
                             onClick={() => setEstadoFiltro("todos")}
                         >
@@ -134,7 +135,7 @@ const ListaProyectos = ({ proyectos, estadosProyecto, loading, loadingEstados, o
                         {estadosProyecto && Array.isArray(estadosProyecto) && estadosProyecto.length > 0 ? (
                             estadosProyecto.map((estado) => (
                                 <div
-                                    key={estado.id}
+                                    key={`stat-${estado.estado_id}`}
                                     className={`dashboard-stat-card ${estadoFiltro === estado.nombre ? "active" : ""}`}
                                     onClick={() => setEstadoFiltro(estado.nombre)}
                                     style={{
@@ -149,7 +150,7 @@ const ListaProyectos = ({ proyectos, estadosProyecto, loading, loadingEstados, o
                             ))
                         ) : (
                             // Fallback si no hay estados del backend (no debería pasar)
-                            <div className="dashboard-stat-card">
+                            <div key="stat-empty" className="dashboard-stat-card">
                                 <div className="dashboard-stat-label">Sin estados disponibles</div>
                             </div>
                         )}

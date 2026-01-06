@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Button, Typography, Spin, Row, Col } from "antd";
+import { Card, Button, Typography, Spin, Row, Col, Empty } from "antd";
 import { PlusOutlined, FileTextOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import { useRequisitos } from '../../../hooks/useRequisitos';
 import RequisitosForm from "./RequisitosForm";
@@ -55,26 +55,49 @@ const RequisitosSection = ({ proyectoId }) => {
 
     if (!proyectoId) {
         return (
-            <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
-                <FileTextOutlined style={{
-                    fontSize: "3rem",
-                    color: "var(--text-disabled)",
-                    marginBottom: "1rem"
-                }} />
-                <Title level={4} type="secondary">Selecciona un proyecto</Title>
-                <Text type="secondary">
-                    Debes seleccionar un proyecto para gestionar sus requisitos
-                </Text>
+            <Card style={{ 
+                textAlign: "center", 
+                padding: "3rem 1rem",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-color)"
+            }}>
+                <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description={
+                        <div>
+                            <p style={{ 
+                                fontSize: '1.1rem', 
+                                marginBottom: '0.5rem',
+                                color: 'var(--text-primary)'
+                            }}>
+                                Selecciona un proyecto
+                            </p>
+                            <p style={{ 
+                                fontSize: '0.9rem', 
+                                color: 'var(--text-secondary)'
+                            }}>
+                                Debes seleccionar un proyecto para gestionar sus requisitos
+                            </p>
+                        </div>
+                    }
+                />
             </Card>
         );
     }
 
     if (loadingCatalogos) {
         return (
-            <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
+            <Card style={{ 
+                textAlign: "center", 
+                padding: "3rem 1rem",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-color)"
+            }}>
                 <Spin size="large" />
                 <div style={{ marginTop: "1rem" }}>
-                    <Text type="secondary">Cargando catálogos necesarios...</Text>
+                    <Text style={{ color: 'var(--text-secondary)' }}>
+                        Cargando catálogos necesarios...
+                    </Text>
                 </div>
             </Card>
         );
@@ -82,14 +105,25 @@ const RequisitosSection = ({ proyectoId }) => {
 
     if (errorCatalogos || !catalogosDisponibles) {
         return (
-            <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
+            <Card style={{ 
+                textAlign: "center", 
+                padding: "3rem 1rem",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-color)"
+            }}>
                 <ExclamationCircleOutlined style={{
                     fontSize: "3rem",
-                    color: "#ff4d4f",
+                    color: "var(--error-color)",
                     marginBottom: "1rem"
                 }} />
-                <Title level={4} type="danger">Error al cargar catálogos</Title>
-                <Text type="secondary" style={{ display: 'block', marginBottom: '1rem' }}>
+                <Title level={4} style={{ color: 'var(--error-color)' }}>
+                    Error al cargar catálogos
+                </Title>
+                <Text style={{ 
+                    display: 'block', 
+                    marginBottom: '1rem',
+                    color: 'var(--text-secondary)'
+                }}>
                     {errorCatalogos || 'Los catálogos necesarios no están disponibles'}
                 </Text>
                 <Button type="primary" onClick={recargarTodo}>
@@ -142,21 +176,13 @@ const RequisitosSection = ({ proyectoId }) => {
                         marginBottom: "1.5rem"
                     }}>
                         <div>
-                            <Title level={3} style={{ margin: 0 }}>
+                            <Title level={3} style={{ margin: 0, color: 'var(--text-primary)' }}>
                                 <FileTextOutlined style={{
                                     marginRight: "0.5rem",
                                     color: "#1890ff"
                                 }} />
                                 Gestión de Requisitos
                             </Title>
-                            <Text type="secondary">
-                                {contadores.total} requisito{contadores.total !== 1 ? "s" : ""}
-                                {contadores.conRelaciones > 0 && (
-                                    <span style={{ marginLeft: '0.5rem' }}>
-                                        • {contadores.conRelaciones} con relaciones
-                                    </span>
-                                )}
-                            </Text>
                         </div>
 
                         <Button
@@ -171,37 +197,49 @@ const RequisitosSection = ({ proyectoId }) => {
 
                     {/* Loading */}
                     {loading ? (
-                        <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
+                        <Card style={{ 
+                            textAlign: "center", 
+                            padding: "3rem 1rem",
+                            background: "var(--bg-card)",
+                            border: "1px solid var(--border-color)"
+                        }}>
                             <Spin size="large" />
                             <div style={{ marginTop: "1rem" }}>
-                                <Text type="secondary">Cargando requisitos...</Text>
+                                <Text style={{ color: 'var(--text-secondary)' }}>
+                                    Cargando requisitos...
+                                </Text>
                             </div>
                         </Card>
                     ) : (
                         <>
                             {/* Lista de requisitos */}
                             {requisitos.length === 0 ? (
-                                <Card style={{ textAlign: "center", padding: "3rem 1rem" }}>
-                                    <FileTextOutlined style={{
-                                        fontSize: "3rem",
-                                        color: "var(--text-disabled)",
-                                        marginBottom: "1rem"
-                                    }} />
-                                    <Title level={4} type="secondary">
-                                        No hay requisitos definidos
-                                    </Title>
-                                    <Text type="secondary">
-                                        Comienza agregando el primer requisito de este proyecto
-                                    </Text>
-                                    <div style={{ marginTop: '1.5rem' }}>
-                                        <Button
-                                            type="primary"
-                                            icon={<PlusOutlined />}
-                                            onClick={abrirFormularioCrear}
-                                        >
-                                            Crear Primer Requisito
-                                        </Button>
-                                    </div>
+                                <Card style={{ 
+                                    textAlign: "center", 
+                                    padding: "3rem 1rem",
+                                    background: "var(--bg-card)",
+                                    border: "1px solid var(--border-color)"
+                                }}>
+                                    <Empty
+                                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                        description={
+                                            <div>
+                                                <p style={{ 
+                                                    fontSize: '1.1rem', 
+                                                    marginBottom: '0.5rem',
+                                                    color: 'var(--text-primary)'
+                                                }}>
+                                                    No hay requisitos definidos
+                                                </p>
+                                                <p style={{ 
+                                                    fontSize: '0.9rem', 
+                                                    color: 'var(--text-secondary)'
+                                                }}>
+                                                    Comienza agregando el primer requisito de este proyecto
+                                                </p>
+                                            </div>
+                                        }
+                                    />
                                 </Card>
                             ) : (
                                 <Row gutter={[16, 16]}>

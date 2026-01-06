@@ -1,0 +1,111 @@
+/* esquema-tabbed.css - Sistema de pestañas mejorado */
+
+/* === CARD CON TABS === */
+.esquema-tabbed-card {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--border-radius-lg) !important;
+    box-shadow: var(--shadow-sm) !important;
+    overflow: hidden;
+    animation: slideInUp var(--transition-normal);
+}
+
+.esquema-tabbed-card .ant-card-body {
+    padding: 0 !important;
+}
+
+/* === TABS CUSTOMIZADO === */
+.esquema-tabs .ant-tabs-nav {
+    background: transparent !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    margin: 0 !important;
+    padding: 0 var(--space-lg) !important;
+}
+
+.esquema-tabs .ant-tabs-nav::before {
+    display: none !important;
+}
+
+.esquema-tabs .ant-tabs-tab {
+    padding: var(--space-md) var(--space-lg) !important;
+    margin: 0 !important;
+    color: var(--text-secondary) !important;
+    font-weight: var(--font-weight-medium) !important;
+    border-radius: 0 !important;
+    transition: all var(--transition-normal) !important;
+    font-size: var(--font-size-base) !important;
+}
+
+.esquema-tabs .ant-tabs-tab:hover {
+    color: var(--primary-color) !important;
+    background: rgba(139, 92, 246, 0.05) !important;
+}
+
+.esquema-tabs .ant-tabs-tab-active {
+    color: var(--primary-color) !important;
+    background: transparent !important;
+}
+
+.esquema-tabs .ant-tabs-ink-bar {
+    background: var(--primary-color) !important;
+    height: 3px !important;
+    border-radius: 2px 2px 0 0 !important;
+}
+
+.esquema-tabs .ant-tabs-content {
+    padding: var(--space-lg) !important;
+}
+
+/* === TAB ACTIONS HEADER === */
+.tab-actions-header {
+    display: flex;
+    gap: var(--space-md);
+    margin-left: var(--space-lg);
+    padding-top: var(--space-sm);
+}
+
+.tab-actions-header .btn {
+    font-size: var(--font-size-sm) !important;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .esquema-tabs .ant-tabs-nav {
+        padding: 0 var(--space-md) !important;
+    }
+
+    .esquema-tabs .ant-tabs-tab {
+        padding: var(--space-sm) var(--space-md) !important;
+        font-size: var(--font-size-sm) !important;
+    }
+
+    .esquema-tabs .ant-tabs-content {
+        padding: var(--space-md) !important;
+    }
+
+    .tab-actions-header {
+        margin-left: auto;
+        padding-top: 0;
+    }
+}
+
+/* === ANIMACIONES === */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* === DARK MODE === */
+[data-theme="dark"] .esquema-tabbed-card {
+    background: var(--bg-card) !important;
+}
+
+[data-theme="dark"] .esquema-tabs .ant-tabs-tab:hover {
+    background: rgba(139, 92, 246, 0.1) !important;
+}

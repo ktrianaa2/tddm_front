@@ -1,0 +1,461 @@
+/* diagrams.css - Estilos para el componente de diagramas UML */
+
+/* === CONTENEDOR PRINCIPAL === */
+.diagram-uml-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 300px);
+    min-height: 600px;
+}
+
+/* === SELECT Y ACCIONES === */
+.diagram-select {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+}
+
+.diagram-select .ant-select-selector {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.diagram-select:hover .ant-select-selector {
+    border-color: var(--primary-color) !important;
+}
+
+.diagram-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.diagram-btn {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+    transition: all var(--transition-normal);
+    border-radius: var(--border-radius);
+    padding: 4px 16px;
+    height: auto;
+    font-size: var(--font-size-sm);
+}
+
+.diagram-btn:hover:not(:disabled) {
+    background: var(--primary-light) !important;
+    border-color: var(--primary-color) !important;
+    color: var(--primary-color) !important;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-primary);
+}
+
+.diagram-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.diagram-btn-primary {
+    background: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: var(--text-white) !important;
+}
+
+.diagram-btn-primary:hover:not(:disabled) {
+    background: var(--primary-hover) !important;
+    border-color: var(--primary-hover) !important;
+    color: var(--text-white) !important;
+}
+
+/* === CARD DEL DIAGRAMA === */
+.diagram-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-normal);
+}
+
+.diagram-card .ant-card-body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    background: var(--bg-card);
+}
+
+/* === CONTENIDO DEL DIAGRAMA === */
+.diagram-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+/* === VISOR DEL DIAGRAMA === */
+.diagram-viewer {
+    flex: 1;
+    overflow: auto;
+    cursor: grab;
+    position: relative;
+    background: var(--bg-hover);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    transition: all var(--transition-normal);
+}
+
+.diagram-viewer:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 20px var(--primary-light);
+}
+
+.diagram-viewer.dragging {
+    cursor: grabbing;
+    user-select: none;
+}
+
+.diagram-canvas {
+    transform-origin: top center;
+    display: inline-block;
+    min-width: 100%;
+    padding: 2rem;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* === CONTROLES DE ZOOM FLOTANTES === */
+.diagram-zoom-controls {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    gap: 6px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 6px;
+    box-shadow: var(--shadow-lg);
+    z-index: 10;
+    backdrop-filter: blur(8px);
+    animation: slideInUp 0.3s ease-in-out;
+}
+
+[data-theme="dark"] .diagram-zoom-controls {
+    background: rgba(31, 41, 55, 0.95);
+}
+
+.zoom-btn {
+    background: var(--bg-hover) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+    width: 32px;
+    height: 32px;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--border-radius);
+    transition: all var(--transition-normal);
+}
+
+.zoom-btn:hover:not(:disabled) {
+    background: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: var(--text-white) !important;
+    transform: scale(1.1);
+    box-shadow: var(--shadow-primary);
+}
+
+.zoom-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.zoom-btn .anticon {
+    font-size: 14px;
+}
+
+/* === VALOR Y SLIDER DE ZOOM === */
+.zoom-value-container {
+    position: relative;
+}
+
+.zoom-value-btn {
+    background: var(--primary-light) !important;
+    border: 1px solid var(--primary-color) !important;
+    color: var(--primary-color) !important;
+    min-width: 56px;
+    height: 32px;
+    padding: 0 8px !important;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-sm);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.zoom-value-btn:hover {
+    background: var(--primary-color) !important;
+    color: var(--text-white) !important;
+    transform: scale(1.05);
+}
+
+.zoom-slider-popup {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 16px 12px;
+    box-shadow: var(--shadow-xl);
+    z-index: 20;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    animation: scaleIn 0.2s ease-in-out;
+}
+
+[data-theme="dark"] .zoom-slider-popup {
+    background: rgba(31, 41, 55, 0.98);
+    backdrop-filter: blur(12px);
+}
+
+.zoom-slider-popup::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid var(--border-color);
+}
+
+.zoom-slider-popup .ant-slider {
+    height: 100%;
+    margin: 0;
+}
+
+.zoom-slider-popup .ant-slider-rail {
+    background: var(--bg-hover);
+}
+
+.zoom-slider-popup .ant-slider-track {
+    background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+}
+
+.zoom-slider-popup .ant-slider-handle {
+    border: 2px solid var(--primary-color);
+    background: var(--bg-card);
+    width: 16px;
+    height: 16px;
+}
+
+.zoom-slider-popup .ant-slider-handle:hover,
+.zoom-slider-popup .ant-slider-handle:focus {
+    border-color: var(--primary-hover);
+    box-shadow: 0 0 0 4px var(--primary-light);
+}
+
+/* === INSTRUCCIONES FLOTANTES === */
+.diagram-instructions {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 8px 16px;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-md);
+    backdrop-filter: blur(8px);
+    z-index: 10;
+    animation: slideInUp 0.3s ease-in-out;
+}
+
+[data-theme="dark"] .diagram-instructions {
+    background: rgba(31, 41, 55, 0.95);
+}
+
+.diagram-instructions strong {
+    color: var(--primary-color);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* === ESTADO VACÍO === */
+.diagram-empty {
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.diagram-empty .ant-empty-description {
+    color: var(--text-secondary);
+    font-size: var(--font-size-base);
+}
+
+/* === ESTILOS PARA EL SVG DEL DIAGRAMA MERMAID === */
+.diagram-canvas .mermaid svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Tema claro para diagramas */
+[data-theme="light"] .diagram-canvas .mermaid svg {
+    filter: none;
+}
+
+/* Tema oscuro para diagramas */
+[data-theme="dark"] .diagram-canvas .mermaid svg {
+    filter: invert(0.9) hue-rotate(180deg);
+}
+
+[data-theme="dark"] .diagram-canvas .mermaid svg text {
+    fill: var(--text-primary) !important;
+}
+
+/* === SCROLLBAR PERSONALIZADO === */
+.diagram-viewer::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.diagram-viewer::-webkit-scrollbar-track {
+    background: var(--bg-hover);
+    border-radius: var(--border-radius);
+}
+
+.diagram-viewer::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: var(--border-radius);
+    border: 2px solid var(--bg-hover);
+}
+
+.diagram-viewer::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+
+/* === ANIMACIONES === */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+    }
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .diagram-uml-container {
+        height: calc(100vh - 250px);
+        min-height: 500px;
+    }
+
+    .diagram-actions {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .diagram-btn {
+        flex: 1;
+        min-width: 100px;
+    }
+
+    .diagram-zoom-controls {
+        bottom: 12px;
+        right: 12px;
+        padding: 4px;
+        gap: 4px;
+    }
+
+    .zoom-btn {
+        width: 28px;
+        height: 28px;
+    }
+
+    .zoom-value-btn {
+        min-width: 48px;
+        height: 28px;
+    }
+
+    .diagram-instructions {
+        bottom: 12px;
+        left: 12px;
+        font-size: 0.75rem;
+        padding: 6px 12px;
+    }
+
+    .zoom-slider-popup {
+        height: 160px;
+    }
+}
+
+@media (max-width: 480px) {
+    .diagram-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .diagram-btn {
+        width: 100%;
+    }
+
+    .diagram-instructions {
+        display: none;
+    }
+
+    .diagram-zoom-controls {
+        flex-wrap: wrap;
+        max-width: calc(100% - 24px);
+    }
+}
+
+/* === LOADING STATE === */
+.diagram-canvas .ant-spin {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+}
+
+.diagram-canvas .ant-spin-dot-item {
+    background-color: var(--primary-color);
+}

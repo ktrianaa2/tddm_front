@@ -1,0 +1,425 @@
+/* esquema-info.css - Información de BD consolidada y elegante */
+
+/* === WRAPPER PRINCIPAL === */
+.esquema-info-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+    animation: slideInUp var(--transition-normal);
+}
+
+@media (max-width: 1024px) {
+    .esquema-info-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* === CARD DE INFORMACIÓN === */
+.esquema-info-card {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--border-radius-lg) !important;
+    box-shadow: var(--shadow-sm) !important;
+    overflow: hidden;
+    transition: all var(--transition-normal) !important;
+}
+
+.esquema-info-card:hover {
+    border-color: var(--primary-color) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.esquema-info-card .ant-card-head {
+    background: linear-gradient(135deg, var(--primary-light) 0%, rgba(167, 139, 250, 0.05) 100%) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: var(--space-md) var(--space-lg) !important;
+    min-height: auto !important;
+}
+
+.esquema-info-card .ant-card-head .ant-card-head-title {
+    padding: 0 !important;
+    font-size: var(--font-size-base) !important;
+    font-weight: var(--font-weight-semibold) !important;
+    color: var(--text-primary) !important;
+}
+
+.esquema-info-card .ant-card-body {
+    padding: var(--space-lg) !important;
+}
+
+/* === CARD UNIFICADA === */
+.esquema-info-card-unified {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, var(--bg-card) 0%, rgba(139, 92, 246, 0.02) 100%) !important;
+}
+
+.esquema-info-card-unified .ant-card-body {
+    padding: var(--space-lg) !important;
+}
+
+.esquema-unified-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-lg);
+    align-items: start;
+}
+
+@media (max-width: 768px) {
+    .esquema-unified-content {
+        grid-template-columns: 1fr;
+        gap: var(--space-md);
+    }
+}
+
+/* === SECCIÓN PRINCIPAL: BD y Motor === */
+.esquema-unified-main {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-md) 0;
+}
+
+.esquema-unified-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.esquema-item-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.esquema-item-value-large {
+    font-size: 24px;
+    font-weight: var(--font-weight-bold);
+    color: var(--primary-color);
+    word-break: break-word;
+    line-height: 1.2;
+}
+
+.esquema-item-value-medium {
+    font-size: 20px;
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.esquema-item-value-small {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.3;
+}
+
+.esquema-unified-divider {
+    width: 1px;
+    height: 60px;
+    background: var(--border-color);
+    margin: 0 var(--space-sm);
+}
+
+/* === SECCIÓN SECUNDARIA: Tablas y Fechas === */
+.esquema-unified-secondary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--bg-hover);
+    border-radius: var(--border-radius);
+    border-left: 3px solid var(--primary-color);
+}
+
+.esquema-secondary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.esquema-secondary-divider {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .esquema-unified-secondary {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* === SECCIÓN PRINCIPAL === */
+.esquema-main-info {
+    grid-column: 1 / -1;
+}
+
+/* === INFORMACIÓN COMPRIMIDA === */
+.info-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+}
+
+/* === INFO ITEM COMPACTO === */
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs, 4px);
+}
+
+/* === DIVIDER COMPACTO === */
+.info-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: var(--space-md) 0;
+}
+
+/* === GRID DE DETALLES (DOS COLUMNAS) === */
+.esquema-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
+@media (max-width: 640px) {
+    .esquema-details-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* === TABLAS CARD === */
+.esquema-tables-card {
+    grid-column: 1 / -1;
+}
+
+.esquema-tables-card .ant-card-head {
+    background: linear-gradient(135deg, var(--primary-light) 0%, rgba(167, 139, 250, 0.05) 100%) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: var(--space-md) var(--space-lg) !important;
+}
+
+/* === BADGES COMPACTOS === */
+.tag-condensed {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--bg-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: var(--font-weight-medium);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.tag-condensed.primary {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* === COLLAPSE MEJORADO === */
+.ant-collapse {
+    background: transparent !important;
+    border: none !important;
+}
+
+.ant-collapse-item {
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--border-radius) !important;
+    margin-bottom: var(--space-sm) !important;
+    overflow: hidden;
+    transition: all var(--transition-fast);
+}
+
+.ant-collapse-item:hover {
+    border-color: var(--primary-color) !important;
+}
+
+.ant-collapse-header {
+    background: var(--bg-hover) !important;
+    padding: var(--space-md) var(--space-lg) !important;
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary) !important;
+    font-size: var(--font-size-sm) !important;
+}
+
+.ant-collapse-header:hover {
+    background: var(--bg-gray) !important;
+}
+
+.ant-collapse-content {
+    background: var(--bg-card) !important;
+}
+
+.ant-collapse-content-box {
+    padding: var(--space-lg) !important;
+}
+
+/* === TABLA DE COLUMNAS === */
+.ant-table {
+    background: transparent !important;
+    font-size: 12px;
+}
+
+.ant-table-thead>tr>th {
+    background: var(--primary-light) !important;
+    color: var(--text-primary) !important;
+    font-weight: var(--font-weight-semibold) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: var(--space-sm) var(--space-md) !important;
+    font-size: 12px;
+}
+
+.ant-table-tbody>tr:hover>td {
+    background: var(--bg-hover) !important;
+}
+
+.ant-table-tbody>tr>td {
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: var(--space-sm) var(--space-md) !important;
+    color: var(--text-primary);
+}
+
+/* === DESCRIPTION DE TABLA === */
+.esquema-table-description {
+    margin-top: var(--space-md);
+    padding: var(--space-md);
+    background: var(--bg-hover);
+    border-radius: var(--border-radius);
+    border-left: 2px solid var(--primary-color);
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.esquema-table-description strong {
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* === TITULO PRINCIPAL === */
+.esquema-main-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin: 0 0 var(--space-md) 0;
+}
+
+/* === ESTADO BADGE === */
+.esquema-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: var(--success-bg);
+    color: var(--success-color);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: var(--font-weight-medium);
+}
+
+.esquema-status::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--success-color);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* === DARK MODE === */
+[data-theme="dark"] .esquema-info-card {
+    background: var(--bg-card) !important;
+}
+
+[data-theme="dark"] .esquema-info-card-unified {
+    background: linear-gradient(135deg, var(--bg-card) 0%, rgba(139, 92, 246, 0.05) 100%) !important;
+}
+
+[data-theme="dark"] .tag-condensed {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .tag-condensed.primary {
+    background: rgba(139, 92, 246, 0.15);
+}
+
+[data-theme="dark"] .ant-collapse-header {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme="dark"] .esquema-unified-secondary {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* === TRANSICIONES === */
+* {
+    transition: background-color var(--transition-normal),
+        color var(--transition-normal),
+        border-color var(--transition-normal);
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .esquema-info-container {
+        grid-template-columns: 1fr;
+        gap: var(--space-md);
+    }
+
+    .esquema-unified-main {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .esquema-unified-divider {
+        width: 100%;
+        height: 1px;
+        margin: var(--space-sm) 0;
+    }
+
+    .esquema-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ant-collapse-header {
+        padding: var(--space-md) var(--space-md) !important;
+    }
+
+    .esquema-item-value-large {
+        font-size: 18px;
+    }
+
+    .esquema-item-value-medium {
+        font-size: 16px;
+    }
+}
+
+/* === UTILITIES === */
+.text-muted {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.font-mono {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+}
