@@ -1,74 +1,82 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button, Space, Badge, Tooltip, Tabs } from 'antd';
+import { Button, Tabs, Tooltip } from 'antd';
 import {
-  ClearOutlined,
   DownloadOutlined,
   FullscreenOutlined,
   FullscreenExitOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   InfoCircleOutlined,
-  WarningOutlined
+  WarningOutlined,
+  ClearOutlined,
+  ConsoleSqlOutlined,
 } from '@ant-design/icons';
+import '../../../styles/ejecutar-pruebas.css';
 
-const ConsolaResultados = ({ resultados = [], ejecutando = false }) => {
-  const [altura, setAltura] = useState(300);
+const TIPO_META = {
+  success: {
+    icon: <CheckCircleOutlined />,
+    rowClass: 'ep-console-row--success',
+    textClass: 'ep-type-success',
+    label: 'OK',
+  },
+  error: {
+    icon: <CloseCircleOutlined />,
+    rowClass: 'ep-console-row--error',
+    textClass: 'ep-type-error',
+    label: 'ERR',
+  },
+  warning: {
+    icon: <WarningOutlined />,
+    rowClass: 'ep-console-row--warning',
+    textClass: 'ep-type-warning',
+    label: 'WARN',
+  },
+  info: {
+    icon: <InfoCircleOutlined />,
+    rowClass: 'ep-console-row--info',
+    textClass: 'ep-type-info',
+    label: 'INFO',
+  },
+  log: {
+    icon: null,
+    rowClass: 'ep-console-row--log',
+    textClass: 'ep-type-log',
+    label: 'LOG',
+  },
+};
+
+const ConsolaResultados = ({ resultados = [], ejecutando = false, onLimpiar }) => {
+  const [altura, setAltura] = useState(260);
   const [expandido, setExpandido] = useState(false);
   const consolaRef = useRef(null);
   const [filtroActivo, setFiltroActivo] = useState('todos');
 
+  // Auto-scroll al fondo al recibir nuevos resultados
   useEffect(() => {
-    // Auto-scroll al final cuando hay nuevos resultados
     if (consolaRef.current) {
       consolaRef.current.scrollTop = consolaRef.current.scrollHeight;
     }
   }, [resultados]);
 
-  const handleClear = () => {
-    // Nota: La limpieza se maneja desde el componente padre
-    // Este botón podría deshabilitarse o implementarse con un callback
-  };
-
   const handleExportar = () => {
     if (resultados.length === 0) return;
-    
-    const contenido = resultados.map(r => 
-      `[${r.timestamp}] [${r.tipo.toUpperCase()}] ${r.mensaje}`
-    ).join('\n');
-    
+    const contenido = resultados
+      .map(r => `[${r.timestamp}] [${r.tipo.toUpperCase().padEnd(7)}] ${r.mensaje}`)
+      .join('\n');
     const blob = new Blob([contenido], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `resultados-pruebas-${Date.now()}.txt`;
+    link.download = `resultados-${Date.now()}.log`;
     link.click();
     URL.revokeObjectURL(url);
   };
 
   const toggleExpandir = () => {
-    setExpandido(!expandido);
-    setAltura(expandido ? 300 : window.innerHeight - 200);
-  };
-
-  const getTipoColor = (tipo) => {
-    const colores = {
-      success: '#52c41a',
-      error: '#ff4d4f',
-      warning: '#faad14',
-      info: '#1890ff',
-      log: '#8c8c8c'
-    };
-    return colores[tipo] || colores.log;
-  };
-
-  const getTipoIcon = (tipo) => {
-    const iconos = {
-      success: <CheckCircleOutlined />,
-      error: <CloseCircleOutlined />,
-      warning: <WarningOutlined />,
-      info: <InfoCircleOutlined />
-    };
-    return iconos[tipo] || null;
+    const nuevo = !expandido;
+    setExpandido(nuevo);
+    setAltura(nuevo ? Math.max(window.innerHeight - 220, 400) : 260);
   };
 
   const contadores = {
@@ -76,259 +84,151 @@ const ConsolaResultados = ({ resultados = [], ejecutando = false }) => {
     success: resultados.filter(r => r.tipo === 'success').length,
     error: resultados.filter(r => r.tipo === 'error').length,
     warning: resultados.filter(r => r.tipo === 'warning').length,
-    info: resultados.filter(r => r.tipo === 'info').length
+    info: resultados.filter(r => r.tipo === 'info').length,
   };
 
-  const resultadosFiltrados = filtroActivo === 'todos' 
-    ? resultados 
+  const resultadosFiltrados = filtroActivo === 'todos'
+    ? resultados
     : resultados.filter(r => r.tipo === filtroActivo);
 
   const tabs = [
-    {
-      key: 'todos',
-      label: (
-        <span style={{ fontSize: '0.85rem' }}>
-          Todos {contadores.todos > 0 && <Badge count={contadores.todos} style={{ backgroundColor: '#595959', marginLeft: '0.5rem' }} />}
-        </span>
-      )
-    },
-    {
-      key: 'success',
-      label: (
-        <span style={{ fontSize: '0.85rem' }}>
-          Éxito {contadores.success > 0 && <Badge count={contadores.success} style={{ backgroundColor: '#52c41a', marginLeft: '0.5rem' }} />}
-        </span>
-      )
-    },
-    {
-      key: 'error',
-      label: (
-        <span style={{ fontSize: '0.85rem' }}>
-          Errores {contadores.error > 0 && <Badge count={contadores.error} style={{ backgroundColor: '#ff4d4f', marginLeft: '0.5rem' }} />}
-        </span>
-      )
-    },
-    {
-      key: 'warning',
-      label: (
-        <span style={{ fontSize: '0.85rem' }}>
-          Advertencias {contadores.warning > 0 && <Badge count={contadores.warning} style={{ backgroundColor: '#faad14', marginLeft: '0.5rem' }} />}
-        </span>
-      )
-    },
-    {
-      key: 'info',
-      label: (
-        <span style={{ fontSize: '0.85rem' }}>
-          Info {contadores.info > 0 && <Badge count={contadores.info} style={{ backgroundColor: '#1890ff', marginLeft: '0.5rem' }} />}
-        </span>
-      )
-    }
+    { key: 'todos', label: `TODOS${contadores.todos > 0 ? ` (${contadores.todos})` : ''}` },
+    { key: 'success', label: `OK${contadores.success > 0 ? ` (${contadores.success})` : ''}` },
+    { key: 'error', label: `ERRORES${contadores.error > 0 ? ` (${contadores.error})` : ''}` },
+    { key: 'warning', label: `AVISOS${contadores.warning > 0 ? ` (${contadores.warning})` : ''}` },
+    { key: 'info', label: `INFO${contadores.info > 0 ? ` (${contadores.info})` : ''}` },
   ];
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: altura,
-      background: '#1e1e1e',
-      borderTop: '1px solid #333',
-      transition: 'height 0.3s ease'
-    }}>
-      {/* Header de la consola */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0.5rem 1rem',
-        background: '#2d2d2d',
-        borderBottom: '1px solid #333'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ 
-            color: '#cccccc',
-            fontWeight: 500,
-            fontSize: '0.9rem'
-          }}>
-            📊 Consola de Resultados
+    <div className="ep-console" style={{ height: altura }}>
+
+      {/* ── Header ── */}
+      <div className="ep-console-header">
+        <div className="ep-console-header-left">
+          <span className="ep-console-title">
+            <ConsoleSqlOutlined className="ep-console-title-icon" />
+            OUTPUT
           </span>
-          
+
           {ejecutando && (
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              color: '#52c41a',
-              fontSize: '0.85rem'
-            }}>
-              <span className="pulse-dot" style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#52c41a',
-                animation: 'pulse 1.5s infinite'
-              }} />
+            <span className="ep-console-running">
+              <span className="ep-console-pulse" />
               Ejecutando...
+            </span>
+          )}
+
+          {!ejecutando && contadores.todos > 0 && (
+            <span style={{
+              fontSize: '0.68rem',
+              color: '#484f58',
+              fontFamily: 'monospace',
+              letterSpacing: '0.03em',
+            }}>
+              {contadores.todos} línea{contadores.todos !== 1 ? 's' : ''}
             </span>
           )}
         </div>
 
-        <Space size="small">
-          <Tooltip title="Exportar resultados">
+        <div className="ep-console-actions">
+          {onLimpiar && (
+            <Tooltip title="Limpiar consola">
+              <Button
+                type="text"
+                size="small"
+                icon={<ClearOutlined />}
+                onClick={onLimpiar}
+                disabled={resultados.length === 0}
+                className="ep-console-action-btn"
+              />
+            </Tooltip>
+          )}
+          <Tooltip title="Exportar log">
             <Button
               type="text"
               size="small"
               icon={<DownloadOutlined />}
               onClick={handleExportar}
-              style={{ color: '#cccccc' }}
               disabled={resultados.length === 0}
+              className="ep-console-action-btn"
             />
           </Tooltip>
-          
-          <Tooltip title={expandido ? "Contraer" : "Expandir"}>
+          <Tooltip title={expandido ? 'Contraer' : 'Expandir'}>
             <Button
               type="text"
               size="small"
               icon={expandido ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
               onClick={toggleExpandir}
-              style={{ color: '#cccccc' }}
+              className="ep-console-action-btn"
             />
           </Tooltip>
-        </Space>
+        </div>
       </div>
 
-      {/* Tabs de filtrado */}
+      {/* ── Tabs de filtro ── */}
       <Tabs
         activeKey={filtroActivo}
         onChange={setFiltroActivo}
         items={tabs}
         size="small"
-        style={{
-          marginBottom: 0,
-          background: '#252526'
-        }}
-        tabBarStyle={{
-          margin: 0,
-          padding: '0 1rem',
-          color: '#cccccc'
-        }}
+        className="ep-console-tabs"
       />
 
-      {/* Área de resultados */}
-      <div
-        ref={consolaRef}
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '0.75rem 1rem',
-          fontFamily: "'Consolas', 'Monaco', 'Courier New', monospace",
-          fontSize: '0.85rem',
-          lineHeight: '1.6',
-          color: '#cccccc'
-        }}
-      >
+      {/* ── Área de resultados ── */}
+      <div ref={consolaRef} className="ep-console-body">
         {resultadosFiltrados.length === 0 ? (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            flexDirection: 'column',
-            color: '#666',
-            fontSize: '0.9rem'
-          }}>
+          <div className="ep-console-empty">
             {ejecutando ? (
               <>
-                <div className="pulse-dot" style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  background: '#52c41a',
-                  animation: 'pulse 1.5s infinite',
-                  marginBottom: '1rem'
-                }} />
-                <span>Esperando resultados...</span>
+                <span className="ep-console-pulse ep-console-pulse--lg" />
+                <span style={{ fontSize: '0.78rem', color: '#8b949e' }}>
+                  Esperando salida del proceso...
+                </span>
               </>
             ) : (
               <>
-                <InfoCircleOutlined style={{ fontSize: '2rem', marginBottom: '0.5rem', opacity: 0.5 }} />
-                <span>No hay resultados para mostrar</span>
-                <span style={{ fontSize: '0.8rem', marginTop: '0.5rem', opacity: 0.7 }}>
+                <ConsoleSqlOutlined className="ep-console-empty-icon" />
+                <span style={{ color: '#484f58', fontSize: '0.78rem' }}>
+                  Sin salida
+                  {filtroActivo !== 'todos' ? ` de tipo "${filtroActivo}"` : ''}
+                </span>
+                <span className="ep-console-empty-subtitle">
                   Ejecuta una prueba para ver los resultados aquí
                 </span>
               </>
             )}
           </div>
         ) : (
-          resultadosFiltrados.map((resultado, index) => (
-            <div
-              key={index}
-              style={{
-                padding: '0.4rem 0',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '0.75rem',
-                borderBottom: index < resultadosFiltrados.length - 1 ? '1px solid #333333' : 'none',
-                paddingBottom: '0.5rem',
-                marginBottom: '0.5rem'
-              }}
-            >
-              <span style={{
-                color: getTipoColor(resultado.tipo),
-                fontSize: '1rem',
-                marginTop: '0.2rem',
-                minWidth: '20px'
-              }}>
-                {getTipoIcon(resultado.tipo)}
-              </span>
-              
-              <span style={{
-                color: '#666',
-                fontSize: '0.75rem',
-                minWidth: '70px',
-                fontFamily: 'monospace'
-              }}>
-                {resultado.timestamp}
-              </span>
-              
-              <span style={{
-                color: getTipoColor(resultado.tipo),
-                fontWeight: 500,
-                minWidth: '70px',
-                fontSize: '0.75rem',
-                textTransform: 'uppercase'
-              }}>
-                [{resultado.tipo}]
-              </span>
-              
-              <span style={{ 
-                flex: 1,
-                wordBreak: 'break-word',
-                color: resultado.tipo === 'error' ? '#ff4d4f' : 
-                       resultado.tipo === 'success' ? '#52c41a' :
-                       resultado.tipo === 'warning' ? '#faad14' :
-                       resultado.tipo === 'info' ? '#1890ff' : '#cccccc',
-                whiteSpace: 'pre-wrap'
-              }}>
-                {resultado.mensaje}
-              </span>
-            </div>
-          ))
+          resultadosFiltrados.map((resultado, index) => {
+            const meta = TIPO_META[resultado.tipo] || TIPO_META.log;
+            return (
+              <div
+                key={index}
+                className={`ep-console-row ${meta.rowClass}`}
+              >
+                {/* Icono */}
+                <span className={`ep-console-row-icon ${meta.textClass}`}>
+                  {meta.icon}
+                </span>
+
+                {/* Timestamp */}
+                <span className="ep-console-row-ts">
+                  {resultado.timestamp}
+                </span>
+
+                {/* Tipo */}
+                <span className={`ep-console-row-type ${meta.textClass}`}>
+                  {meta.label}
+                </span>
+
+                {/* Mensaje */}
+                <span className={`ep-console-row-msg ${meta.textClass}`}>
+                  {resultado.mensaje}
+                </span>
+              </div>
+            );
+          })
         )}
       </div>
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.5;
-            transform: scale(1.3);
-          }
-        }
-      `}</style>
     </div>
   );
 };

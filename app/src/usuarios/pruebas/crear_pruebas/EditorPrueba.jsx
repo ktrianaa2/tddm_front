@@ -12,8 +12,6 @@ import "../../../styles/pruebas.css";
 import '../../../styles/buttons.css';
 
 // ── Helper: normalizar campo prueba a dict ────────────────────────────────────
-// Maneja: dict directo, string JSON simple, string doblemente escapado.
-// Siempre devuelve un objeto plano {}.
 const normalizarPruebaJson = (valor) => {
     if (valor === null || valor === undefined) return {};
     if (typeof valor === 'object' && !Array.isArray(valor)) return valor;
@@ -48,127 +46,52 @@ const EditorPrueba = ({
     const [aprobando, setAprobando] = useState(false);
     const [eliminando, setEliminando] = useState(false);
 
-    // ── Formatear prueba JSON → texto Python/Pytest ──────────────────────────
-    const formatearPrueba = useCallback((p) => {
+    // ── Obtener el código real de la prueba ──────────────────────────────────
+    // Prioridad:
+    //   1. codigo_editado  → el usuario ya editó y guardó manualmente
+    //   2. codigo_pytest   → el código generado por IA y guardado en BD ✅
+    //   3. Fallback mínimo → si la prueba no tiene ninguno de los dos
+    const obtenerCodigoPrueba = useCallback((p) => {
         if (!p) return '';
 
-        const detalle = p.prueba || p;
+        const detalle = normalizarPruebaJson(p.prueba);
 
-        const generarCodigoDesdePasos = () => {
-            const pasos = detalle.pasos || [];
+        // 1. Si el usuario ya guardó una edición manual, mostrarla
+        if (detalle.codigo_editado && typeof detalle.codigo_editado === 'string') {
+            return detalle.codigo_editado;
+        }
 
-            if (!pasos.length || pasos[0]?.accion === 'undefined') {
-                return `def test_flujo_principal():
-    """⚠️ Esta prueba necesita implementación"""
-    # TODO: Implementar la lógica de prueba
-    
-    entrada = ${detalle.datos_prueba?.entrada || '{}'}
-    resultado = funcion_bajo_prueba(entrada)
-    
-    assert resultado is not None`;
-            }
+        // 2. Código real generado por IA (campo codigo_pytest en el JSON de BD)
+        if (detalle.codigo_pytest && typeof detalle.codigo_pytest === 'string') {
+            return detalle.codigo_pytest;
+        }
 
-            let codigoTest = `def test_${(detalle.objetivo || 'flujo_principal').toLowerCase().replace(/\s+/g, '_')}():\n`;
-            codigoTest += `    """${detalle.objetivo || 'Verificar el flujo principal'}"""\n`;
-            codigoTest += `    # Arrange\n`;
-
-            const pasosArrange = pasos.filter(ps =>
-                ps.accion.includes('=') || ps.accion.includes('mock') ||
-                ps.accion.includes('Mock') || ps.paso <= 3
-            );
-            pasosArrange.forEach(ps => { codigoTest += `    ${ps.accion}\n`; });
-
-            codigoTest += `\n    # Act\n`;
-            const pasosAct = pasos.filter(ps =>
-                (ps.accion.includes('=') && !ps.accion.includes('assert')) ||
-                ps.accion.includes('llamar') || ps.accion.includes('ejecutar')
-            );
-            if (pasosAct.length > 0) {
-                pasosAct.forEach(ps => { codigoTest += `    ${ps.accion}\n`; });
-            } else {
-                codigoTest += `    resultado = funcion_bajo_prueba(entrada)\n`;
-            }
-
-            codigoTest += `\n    # Assert\n`;
-            const pasosAssert = pasos.filter(ps =>
-                ps.accion.includes('assert') || ps.accion.includes('verificar')
-            );
-            if (pasosAssert.length > 0) {
-                pasosAssert.forEach(ps => { codigoTest += `    ${ps.accion}\n`; });
-            } else {
-                (detalle.criterios_aceptacion || []).forEach(criterio => {
-                    codigoTest += `    # ${criterio}\n`;
-                });
-                codigoTest += `    assert resultado is not None\n`;
-            }
-            return codigoTest;
-        };
-
-        const imports = `import pytest\nfrom unittest.mock import Mock, patch, MagicMock`;
-        const precondicionesCode = (detalle.precondiciones || [])
-            .map(pc => `    # ${pc}`).join('\n') || '    # Configurar entorno de prueba';
-
-        const fixtureCode = detalle.precondiciones?.length ? `
-
-@pytest.fixture
-def setup_prueba():
-    """Configuración inicial de la prueba"""
-${precondicionesCode}
-    
-    mock_repositorio = Mock()
-    mock_repositorio.find_by_codigo = Mock()
-    mock_repositorio.save = Mock()
-    
-    service = ProductoService(mock_repositorio)
-    
-    yield {
-        'service': service,
-        'repositorio': mock_repositorio
-    }
-    
-    # Limpieza (teardown)
-    pass
-` : '';
-
-        return `# ${detalle.nombre || p.nombre}
-# Código: ${p.codigo}
-# Tipo: ${detalle.tipo_prueba || p.tipo}
+        // 3. Fallback: encabezado mínimo para que el editor no quede vacío
+        return `# ${p.nombre || 'Prueba sin nombre'}
+# Código: ${p.codigo || 'N/A'}
+# Tipo: ${p.tipo || p.tipo_prueba || 'N/A'}
 # Estado: ${p.estado || 'Pendiente'}
 
-${imports}
-
-"""
-ESPECIFICACIÓN: ${p.especificacion_relacionada || 'N/A'}
-
-OBJETIVO: ${detalle.objetivo || 'N/A'}
-
-DATOS DE PRUEBA:
-- Entrada: ${detalle.datos_prueba?.entrada || 'N/A'}
-- Salida: ${detalle.datos_prueba?.salida_esperada || 'N/A'}
-"""
-${fixtureCode}
-
-class Test${(detalle.nombre || p.nombre).replace(/\s+/g, '')}:
-    """Suite de pruebas para ${detalle.nombre || p.nombre}"""
-    
-    ${generarCodigoDesdePasos().split('\n').map(line => '    ' + line).join('\n')}`;
+# ⚠️ Esta prueba no tiene código generado todavía.
+# Usa el botón "Regenerar" o escribe el código manualmente.
+`;
     }, []);
 
     // ── Cargar código al cambiar de prueba ───────────────────────────────────
-    // Normaliza el campo prueba (dict, string JSON, o doble-escape),
-    // luego busca codigo_editado. Si existe lo muestra tal cual.
-    // Si no, genera el código formateado desde los pasos del JSON.
     useEffect(() => {
         if (!prueba) return;
 
-        const pruebaJson = normalizarPruebaJson(prueba.prueba);
-        const codigoEditadoPrevio = pruebaJson?.codigo_editado;
+        // DEBUG - quitar después
+        console.log('=== DEBUG prueba ===');
+        console.log('prueba.prueba tipo:', typeof prueba.prueba);
+        console.log('prueba.prueba valor:', prueba.prueba);
+        const detalle = normalizarPruebaJson(prueba.prueba);
+        console.log('detalle normalizado:', detalle);
+        console.log('codigo_pytest existe:', !!detalle.codigo_pytest);
+        console.log('codigo_editado existe:', !!detalle.codigo_editado);
+        // FIN DEBUG
 
-        const codigoAMostrar =
-            codigoEditadoPrevio && typeof codigoEditadoPrevio === 'string'
-                ? codigoEditadoPrevio
-                : formatearPrueba(prueba);
-
+        const codigoAMostrar = obtenerCodigoPrueba(prueba);
         setCodigo(codigoAMostrar);
         setCodigoGuardado(codigoAMostrar);
         setHasChanges(false);
@@ -182,10 +105,6 @@ class Test${(detalle.nombre || p.nombre).replace(/\s+/g, '')}:
     };
 
     // ── Guardar ──────────────────────────────────────────────────────────────
-    // Solo envía { prueba: { codigo_editado, fecha_ultima_edicion } } al backend.
-    // El backend hace .update() sobre el JSON original en BD, preservando todos
-    // los campos (pasos, objetivo, criterios, etc.) y siempre guarda como
-    // string JSON (evitando el bug de JSONField + psycopg2).
     const handleGuardar = useCallback(async () => {
         if (!hasChanges || guardando) return;
         setGuardando(true);
@@ -290,13 +209,24 @@ class Test${(detalle.nombre || p.nombre).replace(/\s+/g, '')}:
     const estadoTag = getEstadoTag(prueba.estado);
     const esAprobada = prueba.estado?.toLowerCase() === 'aprobada';
 
+    // Indicar en el header si está mostrando una edición manual o el original de IA
+    const detalle = normalizarPruebaJson(prueba.prueba);
+    const tieneEdicionManual = !!(detalle.codigo_editado);
+
     return (
         <div className="editor-prueba">
             {/* ── Header ── */}
             <div className="editor-prueba__header">
                 <div className="editor-prueba__header-top">
                     <h3 className="editor-prueba__titulo">{prueba.nombre}</h3>
-                    <Tag color={estadoTag.color}>{estadoTag.text}</Tag>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <Tag color={estadoTag.color}>{estadoTag.text}</Tag>
+                        {tieneEdicionManual && (
+                            <Tag color="purple" title="Este código ha sido editado manualmente">
+                                Editado
+                            </Tag>
+                        )}
+                    </div>
                 </div>
                 <div className="editor-prueba__meta">
                     <span><strong>Código:</strong> {prueba.codigo}</span>

@@ -6,11 +6,10 @@ import {
     Tooltip,
     Tag,
     Spin,
-    Space,
     Badge,
     Dropdown,
     Empty,
-    Input
+    Input,
 } from 'antd';
 import {
     FolderOutlined,
@@ -28,63 +27,60 @@ import {
     FileMarkdownOutlined,
     FileImageOutlined,
     EditOutlined,
-    CheckOutlined
+    CheckOutlined,
+    SwapOutlined,
+    BranchesOutlined,
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
+import '../../../styles/ejecutar-pruebas.css';
 
-// ── Helpers de iconos por tipo de archivo ─────────────────────────────────────
+/* ── Iconos por extensión ─────────────────────────────────────────── */
+// Nota: los colores de los iconos de lenguajes son colores de marca
+// (JS amarillo, TS azul, etc.) y se mantienen fijos intencionalmente.
 const getFileIcon = (nombre) => {
     const ext = nombre?.split('.').pop()?.toLowerCase();
-    const estiloBase = { fontSize: '0.9rem' };
-
-    if (['js', 'jsx', 'ts', 'tsx'].includes(ext))
-        return <FileTextOutlined style={{ ...estiloBase, color: '#f0db4f' }} />;
-    if (['py'].includes(ext))
-        return <FileTextOutlined style={{ ...estiloBase, color: '#3776ab' }} />;
-    if (['java', 'kt'].includes(ext))
-        return <FileTextOutlined style={{ ...estiloBase, color: '#f89820' }} />;
-    if (['html', 'vue'].includes(ext))
-        return <FileTextOutlined style={{ ...estiloBase, color: '#e34c26' }} />;
-    if (['css', 'scss', 'less'].includes(ext))
-        return <FileTextOutlined style={{ ...estiloBase, color: '#264de4' }} />;
-    if (['json', 'yaml', 'yml'].includes(ext))
-        return <FileTextOutlined style={{ ...estiloBase, color: '#cb9820' }} />;
-    if (['md', 'mdx'].includes(ext))
-        return <FileMarkdownOutlined style={{ ...estiloBase, color: '#8c8c8c' }} />;
+    const s = { fontSize: '0.82rem' };
+    if (['js', 'jsx'].includes(ext)) return <FileTextOutlined style={{ ...s, color: '#f0db4f' }} />;
+    if (['ts', 'tsx'].includes(ext)) return <FileTextOutlined style={{ ...s, color: '#3178c6' }} />;
+    if (['py'].includes(ext)) return <FileTextOutlined style={{ ...s, color: '#4b8bbe' }} />;
+    if (['java', 'kt'].includes(ext)) return <FileTextOutlined style={{ ...s, color: '#f89820' }} />;
+    if (['html', 'vue'].includes(ext)) return <FileTextOutlined style={{ ...s, color: '#e34c26' }} />;
+    if (['css', 'scss', 'less'].includes(ext)) return <FileTextOutlined style={{ ...s, color: '#264de4' }} />;
+    if (['json', 'yaml', 'yml'].includes(ext)) return <FileTextOutlined style={{ ...s, color: '#cb9820' }} />;
+    if (['md', 'mdx'].includes(ext)) return <FileMarkdownOutlined style={{ ...s, color: 'var(--text-secondary)' }} />;
     if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'ico'].includes(ext))
-        return <FileImageOutlined style={{ ...estiloBase, color: '#52c41a' }} />;
-    return <FileOutlined style={{ ...estiloBase, color: '#8c8c8c' }} />;
+        return <FileImageOutlined style={{ ...s, color: 'var(--success-color)' }} />;
+    return <FileOutlined style={{ ...s, color: 'var(--text-tertiary)' }} />;
 };
 
-const getFolderIcon = (expandido) =>
-    expandido
-        ? <FolderOpenOutlined style={{ color: '#faad14', fontSize: '0.9rem' }} />
-        : <FolderOutlined style={{ color: '#faad14', fontSize: '0.9rem' }} />;
+const getFolderIcon = (expanded) =>
+    expanded
+        ? <FolderOpenOutlined style={{ fontSize: '0.82rem', color: 'var(--warning-color)' }} />
+        : <FolderOutlined style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }} />;
 
-// ── Procesar nodos del árbol para inyectar iconos ─────────────────────────────
+/* ── Procesar nodos: inyectar iconos y marcas de modificado ────────── */
 const procesarNodos = (nodos, modificados = {}) =>
     nodos.map(nodo => ({
         ...nodo,
         icon: nodo.isLeaf ? getFileIcon(nodo.title) : undefined,
         title: (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{
-                    color: modificados[nodo.path] !== undefined ? '#faad14' : 'inherit',
-                    fontStyle: modificados[nodo.path] !== undefined ? 'italic' : 'normal',
-                }}>
+            <span className="ep-tree-node-label">
+                <span className={
+                    modificados[nodo.path] !== undefined
+                        ? 'ep-tree-node-name ep-tree-node-name--modified'
+                        : 'ep-tree-node-name'
+                }>
                     {nodo.title}
                 </span>
                 {modificados[nodo.path] !== undefined && (
-                    <span style={{ color: '#faad14', fontSize: '0.7rem' }}>●</span>
+                    <span className="ep-tree-node-dot">●</span>
                 )}
             </span>
         ),
         children: nodo.children ? procesarNodos(nodo.children, modificados) : undefined,
     }));
 
-// ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTE PRINCIPAL
-// ─────────────────────────────────────────────────────────────────────────────
+/* ════════════════════════════════════════════════════════════════════ */
 
 const ExplorarGitHub = ({
     githubConfig,
@@ -103,84 +99,81 @@ const ExplorarGitHub = ({
     onDescartarCambios,
     onCerrarTab,
     onDesconectar,
+    onCambiarProyecto,
     onRecargarArbol,
 }) => {
     const [busqueda, setBusqueda] = useState('');
-    const [llaveExpandidas, setLlavesExpandidas] = useState([]);
+    const [llavesExpandidas, setLlavesExpandidas] = useState([]);
     const editorRef = useRef(null);
 
-    // ── Filtrado del árbol por búsqueda ───────────────────────────────────────
+    /* ── Filtrado ─────────────────────────────────────────────────── */
     const filtrarNodos = useCallback((nodos, texto) => {
         if (!texto) return nodos;
-        const textoLower = texto.toLowerCase();
-
+        const t = texto.toLowerCase();
         return nodos.reduce((acc, nodo) => {
             if (nodo.isLeaf) {
-                if (nodo.path.toLowerCase().includes(textoLower)) acc.push(nodo);
+                if (nodo.path.toLowerCase().includes(t)) acc.push(nodo);
             } else {
-                const hijosFiltr = filtrarNodos(nodo.children || [], texto);
-                if (hijosFiltr.length > 0) {
-                    acc.push({ ...nodo, children: hijosFiltr });
-                }
+                const hijos = filtrarNodos(nodo.children || [], t);
+                if (hijos.length > 0) acc.push({ ...nodo, children: hijos });
             }
             return acc;
         }, []);
     }, []);
 
-    const nodosFiltrados = busqueda
-        ? filtrarNodos(arbolArchivos, busqueda)
-        : arbolArchivos;
-
+    const nodosFiltrados = busqueda ? filtrarNodos(arbolArchivos, busqueda) : arbolArchivos;
     const nodosProcesados = procesarNodos(nodosFiltrados, archivosModificados);
 
-    // ── Expandir todos al buscar ──────────────────────────────────────────────
     const handleBusqueda = (e) => {
         const val = e.target.value;
         setBusqueda(val);
         if (val) {
-            // Expandir todos los nodos carpeta para ver resultados
-            const todasLasLlaves = [];
-            const recolectarLlaves = (nodos) => {
+            const llaves = [];
+            const recolectar = (nodos) => {
                 nodos.forEach(n => {
-                    if (!n.isLeaf) {
-                        todasLasLlaves.push(n.key);
-                        if (n.children) recolectarLlaves(n.children);
-                    }
+                    if (!n.isLeaf) { llaves.push(n.key); if (n.children) recolectar(n.children); }
                 });
             };
-            recolectarLlaves(arbolArchivos);
-            setLlavesExpandidas(todasLasLlaves);
+            recolectar(arbolArchivos);
+            setLlavesExpandidas(llaves);
         } else {
             setLlavesExpandidas([]);
         }
     };
 
-    // ── Tabs del editor ───────────────────────────────────────────────────────
+    /* ── Selección de nodo ────────────────────────────────────────── */
+    const handleSelectNode = (_, info) => {
+        const nodo = info.node;
+        if (nodo.isLeaf) {
+            onSeleccionarArchivo({
+                path: nodo.path || nodo.key,
+                title: typeof nodo.title === 'string' ? nodo.title : nodo.key.split('/').pop(),
+                sha: nodo.sha,
+                isLeaf: true,
+            });
+        } else {
+            const key = nodo.key;
+            setLlavesExpandidas(prev =>
+                prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+            );
+        }
+    };
+
+    /* ── Tabs del editor ──────────────────────────────────────────── */
     const itemsTabs = tabsAbiertos.map(tab => ({
         key: tab.path,
         label: (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <span className="ep-tab-file-label">
                 {getFileIcon(tab.title)}
-                <span style={{
-                    color: archivosModificados[tab.path] !== undefined ? '#faad14' : 'inherit',
-                    fontStyle: archivosModificados[tab.path] !== undefined ? 'italic' : 'normal',
-                    maxWidth: '120px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    display: 'inline-block'
-                }}>
+                <span className={`ep-tab-file-name${archivosModificados[tab.path] !== undefined ? ' ep-tab-file-name--modified' : ''}`}>
                     {tab.title}
                 </span>
                 {archivosModificados[tab.path] !== undefined && (
-                    <span style={{ color: '#faad14', fontSize: '0.65rem' }}>●</span>
+                    <span className="ep-tab-modified-dot">●</span>
                 )}
                 <CloseOutlined
-                    style={{ fontSize: '0.65rem', color: '#8c8c8c', marginLeft: '2px' }}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onCerrarTab(tab.path);
-                    }}
+                    className="ep-tab-close-icon"
+                    onClick={(e) => { e.stopPropagation(); onCerrarTab(tab.path); }}
                 />
             </span>
         ),
@@ -206,125 +199,96 @@ const ExplorarGitHub = ({
         ],
     };
 
-    // ── Render vacío ──────────────────────────────────────────────────────────
+    /* ── Loading: cargando repositorio ───────────────────────────── */
     if (loadingArbol) {
         return (
-            <div style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: '#1e1e1e',
-                flexDirection: 'column',
-                gap: '1rem'
-            }}>
+            <div className="ep-tree-loading">
                 <Spin size="large" />
-                <span style={{ color: '#8c8c8c' }}>Cargando repositorio...</span>
+                <span className="ep-tree-loading-text">Cargando repositorio...</span>
             </div>
         );
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // RENDER PRINCIPAL
-    // ─────────────────────────────────────────────────────────────────────────
+    const repoShort = githubConfig?.repositorio?.split('/')[1] || 'Repositorio';
+
     return (
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        <div className="ep-explorer">
 
-            {/* ── PANEL IZQUIERDO: Árbol de archivos ─────────────────────────── */}
-            <div style={{
-                width: '280px',
-                flexShrink: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                background: '#252526',
-                borderRight: '1px solid #3e3e42',
-                overflow: 'hidden',
-            }}>
+            {/* ══════════════════════════════════════════
+                Panel izquierdo — árbol de archivos
+                ══════════════════════════════════════════ */}
+            <div className="ep-tree-panel">
 
-                {/* Cabecera del explorador */}
-                <div style={{
-                    padding: '0.6rem 0.75rem',
-                    background: '#2d2d30',
-                    borderBottom: '1px solid #3e3e42',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '0.5rem',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
-                        <GithubOutlined style={{ color: '#cccccc', fontSize: '1rem', flexShrink: 0 }} />
+                {/* Cabecera */}
+                <div className="ep-tree-header">
+                    <div className="ep-tree-header-info">
+                        <GithubOutlined className="ep-tree-header-icon" />
                         <div style={{ minWidth: 0 }}>
-                            <div style={{
-                                color: '#cccccc',
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '140px',
-                            }}>
-                                {githubConfig?.repositorio?.split('/')[1] || 'Repositorio'}
+                            <div className="ep-tree-repo-name" title={githubConfig?.repositorio}>
+                                {repoShort}
                             </div>
-                            <div style={{ color: '#8c8c8c', fontSize: '0.65rem' }}>
-                                {githubConfig?.rama}
+                            <div className="ep-tree-branch">
+                                <BranchesOutlined />
+                                {githubConfig?.rama || 'main'}
                                 {totalArchivosModificados > 0 && (
                                     <Badge
                                         count={totalArchivosModificados}
                                         size="small"
-                                        style={{ marginLeft: '6px', backgroundColor: '#faad14' }}
+                                        className="ep-branch-badge"
                                     />
                                 )}
                             </div>
                         </div>
                     </div>
 
-                    <Space size={4}>
+                    <div className="ep-tree-actions">
+                        {onCambiarProyecto && (
+                            <Tooltip title="Cambiar repositorio / rama">
+                                <Button
+                                    type="text" size="small"
+                                    icon={<SwapOutlined />}
+                                    onClick={onCambiarProyecto}
+                                    className="ep-tree-action-btn"
+                                />
+                            </Tooltip>
+                        )}
                         <Tooltip title="Recargar árbol">
                             <Button
-                                type="text"
-                                size="small"
+                                type="text" size="small"
                                 icon={<ReloadOutlined />}
                                 onClick={onRecargarArbol}
-                                style={{ color: '#8c8c8c' }}
+                                className="ep-tree-action-btn"
                             />
                         </Tooltip>
                         <Tooltip title="Desconectar de GitHub">
                             <Button
-                                type="text"
-                                size="small"
+                                type="text" size="small" danger
                                 icon={<DisconnectOutlined />}
                                 onClick={onDesconectar}
-                                style={{ color: '#8c8c8c' }}
-                                danger
+                                className="ep-tree-action-btn ep-tree-action-btn--danger"
                             />
                         </Tooltip>
-                    </Space>
+                    </div>
                 </div>
 
                 {/* Búsqueda */}
-                <div style={{ padding: '0.5rem 0.6rem', borderBottom: '1px solid #3e3e42' }}>
+                <div className="ep-tree-search">
                     <Input
                         size="small"
                         placeholder="Buscar archivo..."
-                        prefix={<SearchOutlined style={{ color: '#8c8c8c' }} />}
+                        prefix={<SearchOutlined />}
                         value={busqueda}
                         onChange={handleBusqueda}
-                        style={{
-                            background: '#3c3c3c',
-                            borderColor: '#555',
-                            color: '#cccccc',
-                            fontSize: '0.8rem',
-                        }}
                         allowClear
                     />
                 </div>
 
-                {/* Árbol de archivos */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '0.25rem 0' }}>
+                {/* Árbol */}
+                <div className="ep-tree-body">
                     {nodosProcesados.length === 0 ? (
                         <Empty
                             description={
-                                <span style={{ color: '#8c8c8c', fontSize: '0.8rem' }}>
+                                <span className="ep-tree-empty-desc">
                                     {busqueda ? 'Sin resultados' : 'Repositorio vacío'}
                                 </span>
                             }
@@ -337,47 +301,26 @@ const ExplorarGitHub = ({
                             showIcon
                             blockNode
                             selectedKeys={archivoActivo ? [archivoActivo.path] : []}
-                            expandedKeys={llaveExpandidas}
+                            expandedKeys={llavesExpandidas}
                             onExpand={setLlavesExpandidas}
                             switcherIcon={({ expanded, isLeaf }) =>
-                                isLeaf ? null : (getFolderIcon(expanded))
+                                isLeaf ? null : getFolderIcon(expanded)
                             }
-                            onSelect={(_, info) => {
-                                const nodo = info.node;
-                                if (nodo.isLeaf) {
-                                    onSeleccionarArchivo({
-                                        path: nodo.path || nodo.key,
-                                        title: typeof nodo.title === 'string' ? nodo.title : nodo.key.split('/').pop(),
-                                        sha: nodo.sha,
-                                        isLeaf: true,
-                                    });
-                                }
-                            }}
-                            style={{
-                                background: 'transparent',
-                                color: '#cccccc',
-                                fontSize: '0.82rem',
-                            }}
-                            className="github-tree"
+                            onSelect={handleSelectNode}
+                            className="ep-github-tree"
                         />
                     )}
                 </div>
             </div>
 
-            {/* ── PANEL DERECHO: Editor ──────────────────────────────────────── */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* ══════════════════════════════════════════
+                Panel derecho — editor Monaco
+                ══════════════════════════════════════════ */}
+            <div className="ep-editor-panel">
 
-                {/* Barra de tabs + acciones */}
-                <div style={{
-                    background: '#2d2d30',
-                    borderBottom: '1px solid #3e3e42',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    minHeight: '40px',
-                }}>
-                    {/* Tabs de archivos abiertos */}
-                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                {/* Barra de pestañas */}
+                <div className="ep-tabs-bar">
+                    <div className="ep-tabs-bar-inner">
                         {tabsAbiertos.length > 0 ? (
                             <Tabs
                                 type="card"
@@ -386,42 +329,27 @@ const ExplorarGitHub = ({
                                 items={itemsTabs}
                                 onChange={(path) => {
                                     const tab = tabsAbiertos.find(t => t.path === path);
-                                    if (tab) {
-                                        onSeleccionarArchivo({
-                                            path: tab.path,
-                                            title: tab.title,
-                                            isLeaf: true,
-                                        });
-                                    }
+                                    if (tab) onSeleccionarArchivo({ path: tab.path, title: tab.title, isLeaf: true });
                                 }}
                                 style={{ marginBottom: 0 }}
-                                tabBarStyle={{
-                                    margin: 0,
-                                    background: '#2d2d30',
-                                    border: 'none',
-                                    padding: '0 0.5rem',
-                                }}
+                                tabBarStyle={{ margin: 0, border: 'none', padding: 0 }}
                             />
                         ) : (
-                            <span style={{ color: '#8c8c8c', fontSize: '0.8rem', padding: '0 1rem' }}>
-                                <CodeOutlined style={{ marginRight: '0.4rem' }} />
+                            <span className="ep-editor-no-selection">
+                                <CodeOutlined />
                                 Selecciona un archivo del explorador
                             </span>
                         )}
                     </div>
 
-                    {/* Acciones del editor */}
                     {archivoActivo && (
-                        <div style={{ padding: '0 0.75rem', display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
+                        <div className="ep-tabs-bar-actions">
                             <Dropdown menu={menuGuardar} trigger={['click']}>
                                 <Button
                                     type="text"
                                     size="small"
                                     icon={tieneModificaciones ? <EditOutlined /> : <CheckOutlined />}
-                                    style={{
-                                        color: tieneModificaciones ? '#faad14' : '#52c41a',
-                                        fontSize: '0.75rem',
-                                    }}
+                                    className={tieneModificaciones ? 'ep-save-btn--modified' : 'ep-save-btn--saved'}
                                 >
                                     {tieneModificaciones ? 'Sin guardar' : 'Guardado'}
                                 </Button>
@@ -431,35 +359,20 @@ const ExplorarGitHub = ({
                 </div>
 
                 {/* Editor Monaco */}
-                <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+                <div className="ep-editor-wrapper">
                     {loadingArchivo && (
-                        <div style={{
-                            position: 'absolute',
-                            inset: 0,
-                            background: 'rgba(30,30,30,0.85)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            zIndex: 10,
-                        }}>
+                        <div className="ep-editor-loading-overlay">
                             <Spin size="large" tip="Cargando archivo..." />
                         </div>
                     )}
 
                     {!archivoActivo && !loadingArchivo ? (
-                        <div style={{
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: '#1e1e1e',
-                            color: '#555',
-                            gap: '0.75rem',
-                        }}>
-                            <CodeOutlined style={{ fontSize: '3rem', opacity: 0.3 }} />
-                            <span style={{ fontSize: '0.9rem' }}>Selecciona un archivo para editarlo</span>
-                            <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>
+                        <div className="ep-editor-empty">
+                            <CodeOutlined className="ep-editor-empty-icon" />
+                            <span className="ep-editor-empty-title">
+                                Selecciona un archivo para editarlo
+                            </span>
+                            <span className="ep-editor-empty-subtitle">
                                 Los cambios se guardan localmente y no se suben a GitHub
                             </span>
                         </div>
@@ -484,83 +397,30 @@ const ExplorarGitHub = ({
                                 cursorBlinking: 'smooth',
                                 folding: true,
                                 bracketPairColorization: { enabled: true },
+                                fontLigatures: true,
                             }}
-                            path={archivoActivo?.path} // key para Monaco, evita confusión entre archivos
+                            path={archivoActivo?.path}
                         />
                     )}
                 </div>
 
-                {/* Barra de estado del archivo */}
+                {/* Barra de estado inferior — estilo VS Code */}
                 {archivoActivo && (
-                    <div style={{
-                        padding: '0.2rem 1rem',
-                        background: '#007acc',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontSize: '0.75rem',
-                        color: 'white',
-                    }}>
-                        <span style={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: '60%',
-                        }}>
-                            📄 {archivoActivo.path}
+                    <div className="ep-file-statusbar">
+                        <span className="ep-file-statusbar-path">
+                            {archivoActivo.path}
                         </span>
-                        <Space size="small">
+                        <div className="ep-file-statusbar-right">
                             {tieneModificaciones && (
-                                <Tag color="orange" style={{ fontSize: '0.65rem', lineHeight: '1.2' }}>
-                                    Modificado localmente
-                                </Tag>
+                                <span style={{ opacity: 0.8, fontSize: '0.65rem' }}>● Modificado</span>
                             )}
-                            <span style={{ opacity: 0.85 }}>
-                                {archivoActivo.lenguaje?.toUpperCase() || 'TEXTO'}
+                            <span style={{ opacity: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                {archivoActivo.lenguaje || 'TEXT'}
                             </span>
-                        </Space>
+                        </div>
                     </div>
                 )}
             </div>
-
-            {/* Estilos globales para el árbol */}
-            <style>{`
-        .github-tree .ant-tree-node-content-wrapper {
-          display: inline-flex !important;
-          align-items: center !important;
-          padding: 2px 4px !important;
-          border-radius: 3px !important;
-          color: #cccccc !important;
-          min-height: 24px !important;
-        }
-        .github-tree .ant-tree-node-content-wrapper:hover {
-          background: #2a2d2e !important;
-          color: #ffffff !important;
-        }
-        .github-tree .ant-tree-node-content-wrapper.ant-tree-node-selected {
-          background: #094771 !important;
-          color: #ffffff !important;
-        }
-        .github-tree .ant-tree-switcher {
-          color: #8c8c8c !important;
-          line-height: 24px !important;
-        }
-        .github-tree .ant-tree-treenode {
-          padding: 0 !important;
-          line-height: 24px !important;
-        }
-        .github-tree .ant-tree-indent-unit {
-          width: 16px !important;
-        }
-        .github-tree .ant-tree-iconEle {
-          display: inline-flex !important;
-          align-items: center !important;
-        }
-        /* Scrollbar oscuro */
-        .github-tree ::-webkit-scrollbar { width: 6px; }
-        .github-tree ::-webkit-scrollbar-track { background: transparent; }
-        .github-tree ::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
-      `}</style>
         </div>
     );
 };

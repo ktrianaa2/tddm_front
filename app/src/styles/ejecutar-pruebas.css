@@ -1,0 +1,1496 @@
+/* ===================================================================
+   ejecutar-pruebas.css
+   Estilos para EjecutarPruebasTab, ListaPruebas (modo ejecución),
+   ExplorarGitHub, ConsolaResultados y ModalGitHub.
+   Compatible con tema claro y oscuro mediante variables CSS.
+   =================================================================== */
+
+/* ── 1. LAYOUT PRINCIPAL ─────────────────────────────────────────── */
+.ep-root {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-container);
+    color: var(--text-primary);
+}
+
+/* ── 2. HEADER: estadísticas ─────────────────────────────────────── */
+.ep-header {
+    padding: var(--space-md) var(--space-lg);
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.ep-header-left h3 {
+    margin: 0 0 var(--space-sm) 0;
+    color: var(--text-primary);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.ep-header-left h3 .ep-header-icon {
+    color: var(--success-color);
+}
+
+.ep-header-tags {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.ep-stats {
+    display: flex;
+    gap: var(--space-lg);
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.ep-stat-item {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.ep-stat-icon {
+    font-size: 1.4rem;
+}
+
+.ep-stat-icon--pass {
+    color: var(--success-color);
+}
+
+.ep-stat-icon--fail {
+    color: var(--error-color);
+}
+
+.ep-stat-icon--pend {
+    color: var(--warning-color);
+}
+
+.ep-stat-value {
+    font-size: 1.2rem;
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+}
+
+.ep-stat-value--pass {
+    color: var(--success-color);
+}
+
+.ep-stat-value--fail {
+    color: var(--error-color);
+}
+
+.ep-stat-value--pend {
+    color: var(--warning-color);
+}
+
+.ep-stat-label {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+/* ── 3. BARRA DE ACCIONES ─────────────────────────────────────────── */
+.ep-toolbar {
+    padding: 0.6rem var(--space-lg);
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.ep-toolbar-left,
+.ep-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.ep-btn-github-saved {
+    border-color: var(--success-color) !important;
+    color: var(--success-color) !important;
+    background: var(--success-light) !important;
+}
+
+.ep-btn-github-saved:hover {
+    border-color: var(--success-hover) !important;
+    color: var(--success-hover) !important;
+    background: var(--success-bg) !important;
+}
+
+/* ── 4. CONTENIDO PRINCIPAL ──────────────────────────────────────── */
+.ep-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* ── 5. PANEL LISTA DE PRUEBAS ───────────────────────────────────── */
+.ep-list-panel {
+    width: 300px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.ep-list-header {
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-hover);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.ep-list-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ep-list-title {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.ep-list-select-all {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--border-radius);
+    transition: all var(--transition-fast);
+    background: transparent;
+    border: none;
+    user-select: none;
+}
+
+.ep-list-select-all:hover {
+    background: var(--primary-light);
+    color: var(--primary-color);
+}
+
+.ep-selected-count {
+    font-size: 0.75rem;
+    color: var(--primary-color);
+    font-weight: var(--font-weight-medium);
+    padding: 2px 8px;
+    background: var(--primary-light);
+    border-radius: 12px;
+    border: 1px solid var(--primary-color);
+}
+
+.ep-list-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-sm);
+}
+
+.ep-list-items::-webkit-scrollbar {
+    width: 4px;
+}
+
+.ep-list-items::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ep-list-items::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 2px;
+}
+
+.ep-list-items::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+
+.ep-prueba-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+    margin-bottom: 6px;
+    border-radius: var(--border-radius);
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-hover);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.ep-prueba-item:hover {
+    border-color: var(--primary-color);
+    background: var(--primary-light);
+    transform: translateX(2px);
+}
+
+.ep-prueba-item.ep-prueba-item--selected {
+    border-color: var(--primary-color);
+    background: var(--primary-light);
+}
+
+.ep-prueba-item.ep-prueba-item--active {
+    border-color: var(--primary-hover);
+    background: var(--primary-light);
+    box-shadow: 0 2px 8px var(--primary-light);
+}
+
+.ep-prueba-item.ep-prueba-item--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ep-prueba-checkbox {
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
+.ep-prueba-icon {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.ep-prueba-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.ep-prueba-name {
+    font-size: 0.82rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    margin: 0 0 3px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ep-prueba-meta {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.ep-prueba-code {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+/* ── 6. ZONA DE CÓDIGO ──────────────────────────────────────────── */
+.ep-editor-zone {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ── 7. EDITOR MANUAL ────────────────────────────────────────────── */
+.ep-manual-bar {
+    padding: 0.5rem var(--space-md);
+    background: var(--bg-hover);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ep-manual-bar-label {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ── 8. EXPLORADOR GITHUB ────────────────────────────────────────
+   ════════════════════════════════════════════════════════════════════ */
+.ep-explorer {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    background: var(--bg-container);
+}
+
+/* ── Panel árbol ── */
+.ep-tree-panel {
+    width: 260px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+/* Cabecera del panel árbol */
+.ep-tree-header {
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    min-height: 44px;
+}
+
+.ep-tree-header-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+}
+
+.ep-tree-header-icon {
+    color: var(--text-tertiary);
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.ep-tree-repo-name {
+    color: var(--text-primary);
+    font-size: 0.78rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 110px;
+    letter-spacing: 0.01em;
+}
+
+.ep-tree-branch {
+    color: var(--text-tertiary);
+    font-size: 0.68rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--primary-light);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 20px;
+    padding: 1px 7px;
+    margin-top: 2px;
+}
+
+.ep-tree-branch .anticon {
+    color: var(--primary-color);
+}
+
+.ep-tree-actions {
+    display: flex;
+    gap: 1px;
+    flex-shrink: 0;
+}
+
+.ep-tree-action-btn {
+    color: var(--text-tertiary) !important;
+    transition: all var(--transition-fast) !important;
+    border-radius: 6px !important;
+    width: 26px !important;
+    height: 26px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.ep-tree-action-btn:hover {
+    color: var(--text-primary) !important;
+    background: var(--bg-hover) !important;
+}
+
+.ep-tree-action-btn--danger:hover {
+    color: var(--error-color) !important;
+    background: var(--error-light) !important;
+}
+
+/* Botón cambiar proyecto */
+.ep-change-project-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.68rem;
+    color: var(--primary-color) !important;
+    padding: 0 7px;
+    background: var(--primary-light) !important;
+    border: 1px solid rgba(139, 92, 246, 0.35) !important;
+    border-radius: 6px;
+    height: 22px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.ep-change-project-btn:hover {
+    background: rgba(139, 92, 246, 0.25) !important;
+    border-color: var(--primary-color) !important;
+}
+
+/* Búsqueda en árbol */
+.ep-tree-search {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-card);
+}
+
+.ep-tree-search .ant-input-affix-wrapper {
+    background: var(--bg-container) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 6px !important;
+    height: 28px !important;
+    font-size: 0.78rem !important;
+    transition: border-color var(--transition-fast) !important;
+}
+
+.ep-tree-search .ant-input-affix-wrapper:hover,
+.ep-tree-search .ant-input-affix-wrapper-focused {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 2px var(--primary-light) !important;
+}
+
+.ep-tree-search .ant-input {
+    background: transparent !important;
+    color: var(--text-primary) !important;
+    font-size: 0.78rem !important;
+}
+
+.ep-tree-search .ant-input::placeholder {
+    color: var(--text-tertiary) !important;
+}
+
+.ep-tree-search .ant-input-prefix .anticon {
+    color: var(--text-tertiary) !important;
+    font-size: 0.78rem;
+}
+
+.ep-tree-search .ant-input-clear-icon {
+    color: var(--text-tertiary) !important;
+}
+
+/* Cuerpo del árbol */
+.ep-tree-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 0;
+}
+
+.ep-tree-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.ep-tree-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ep-tree-body::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 2px;
+}
+
+.ep-tree-body::-webkit-scrollbar-thumb:hover {
+    background: var(--border-hover);
+}
+
+/* ── Árbol de archivos ── */
+.ep-github-tree {
+    padding: 0 4px;
+}
+
+.ep-github-tree .ant-tree-node-content-wrapper {
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 2px 6px !important;
+    border-radius: 6px !important;
+    color: var(--text-primary) !important;
+    min-height: 26px !important;
+    cursor: pointer !important;
+    transition: background var(--transition-fast) !important;
+    font-size: 0.8rem !important;
+}
+
+.ep-github-tree .ant-tree-node-content-wrapper:hover {
+    background: var(--bg-hover) !important;
+    color: var(--text-primary) !important;
+}
+
+.ep-github-tree .ant-tree-node-content-wrapper.ant-tree-node-selected {
+    background: var(--primary-light) !important;
+    color: var(--primary-color) !important;
+    border-left: 2px solid var(--primary-color);
+    border-radius: 0 6px 6px 0 !important;
+}
+
+.ep-github-tree .ant-tree-switcher {
+    color: var(--text-tertiary) !important;
+    line-height: 26px !important;
+    cursor: pointer !important;
+    width: 18px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.ep-github-tree .ant-tree-treenode {
+    padding: 0 !important;
+    line-height: 26px !important;
+    width: 100% !important;
+    align-items: center !important;
+}
+
+.ep-github-tree .ant-tree-treenode:hover {
+    background: transparent !important;
+}
+
+.ep-github-tree .ant-tree-indent-unit {
+    width: 14px !important;
+}
+
+.ep-github-tree .ant-tree-iconEle {
+    display: inline-flex !important;
+    align-items: center !important;
+    margin-right: 4px;
+}
+
+/* Nombre del archivo en árbol */
+.ep-tree-file-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    line-height: 1;
+}
+
+/* Nodo del árbol — label y estado modificado */
+.ep-tree-node-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+}
+
+.ep-tree-node-name {
+    color: var(--text-primary);
+    font-style: normal;
+}
+
+.ep-tree-node-name--modified {
+    color: var(--warning-color);
+    font-style: italic;
+}
+
+.ep-tree-node-dot {
+    color: var(--warning-color);
+    font-size: 0.55rem;
+    line-height: 1;
+}
+
+/* Empty text en árbol */
+.ep-tree-empty-desc {
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+}
+
+/* Badge de archivos modificados en la rama */
+.ep-branch-badge .ant-badge-count {
+    background-color: var(--warning-color) !important;
+    font-size: 0.6rem !important;
+    min-width: 16px !important;
+    height: 16px !important;
+    line-height: 16px !important;
+}
+
+/* ── Panel derecho: editor ── */
+.ep-editor-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-container);
+}
+
+/* Barra de tabs */
+.ep-tabs-bar {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 38px;
+}
+
+.ep-tabs-bar-inner {
+    flex: 1;
+    overflow: hidden;
+}
+
+.ep-tabs-bar-actions {
+    padding: 0 8px;
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+/* Ant Tabs dentro de la barra */
+.ep-tabs-bar .ant-tabs-card>.ant-tabs-nav {
+    margin: 0 !important;
+}
+
+.ep-tabs-bar .ant-tabs-card>.ant-tabs-nav .ant-tabs-tab {
+    background: var(--bg-container) !important;
+    border: 1px solid var(--border-color) !important;
+    border-bottom: none !important;
+    border-radius: 6px 6px 0 0 !important;
+    color: var(--text-secondary) !important;
+    font-size: 0.78rem !important;
+    padding: 4px 10px !important;
+    height: 32px !important;
+    margin: 6px 2px 0 4px !important;
+    transition: all var(--transition-fast) !important;
+}
+
+.ep-tabs-bar .ant-tabs-card>.ant-tabs-nav .ant-tabs-tab:hover {
+    color: var(--text-primary) !important;
+    background: var(--bg-hover) !important;
+}
+
+.ep-tabs-bar .ant-tabs-card>.ant-tabs-nav .ant-tabs-tab-active {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    border-bottom-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+
+.ep-tabs-bar .ant-tabs-nav::before {
+    border-bottom: none !important;
+}
+
+.ep-tab-file-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 140px;
+    line-height: 1;
+}
+
+.ep-tab-file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    max-width: 100px;
+    font-size: 0.78rem;
+}
+
+.ep-tab-file-name--modified {
+    color: var(--warning-color);
+    font-style: italic;
+}
+
+.ep-tab-modified-dot {
+    color: var(--warning-color);
+    font-size: 0.55rem;
+    margin-left: 1px;
+}
+
+.ep-tab-close-icon {
+    font-size: 0.6rem;
+    color: var(--text-tertiary);
+    margin-left: 3px;
+    transition: color var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.ep-tab-close-icon:hover {
+    color: var(--error-color) !important;
+}
+
+/* Editor Monaco wrapper */
+.ep-editor-wrapper {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    background: var(--bg-container);
+}
+
+.ep-editor-loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--bg-container) 85%, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.ep-editor-empty {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-container);
+    color: var(--text-tertiary);
+    gap: 12px;
+}
+
+.ep-editor-empty-icon {
+    font-size: 2.4rem;
+    opacity: 0.3;
+}
+
+.ep-editor-empty-title {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+}
+
+.ep-editor-empty-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    text-align: center;
+    max-width: 260px;
+    line-height: 1.5;
+}
+
+.ep-editor-no-selection {
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+}
+
+/* Barra de estado del archivo — estilo VS Code */
+.ep-file-statusbar {
+    padding: 0 var(--space-md);
+    height: 22px;
+    background: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.01em;
+    flex-shrink: 0;
+}
+
+.ep-file-statusbar-path {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 65%;
+    opacity: 0.85;
+}
+
+.ep-file-statusbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.ep-file-statusbar .ant-tag {
+    font-size: 0.62rem !important;
+    padding: 0 5px !important;
+    line-height: 16px !important;
+    height: 16px !important;
+    border-radius: 3px !important;
+    margin: 0 !important;
+}
+
+/* Botón guardar */
+.ep-save-btn--modified {
+    color: var(--warning-color) !important;
+    font-size: 0.72rem !important;
+    height: auto !important;
+}
+
+.ep-save-btn--saved {
+    color: var(--success-color) !important;
+    font-size: 0.72rem !important;
+    height: auto !important;
+}
+
+/* Cargando árbol */
+.ep-tree-loading {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card);
+    gap: var(--space-md);
+    color: var(--text-secondary);
+}
+
+.ep-tree-loading-text {
+    font-size: 0.82rem;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ── 9. CONSOLA DE RESULTADOS ─────────────────────────────────────
+   ════════════════════════════════════════════════════════════════════ */
+.ep-console {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-container);
+    border-top: 1px solid var(--border-color);
+    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+/* Header de la consola */
+.ep-console-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    height: 38px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.ep-console-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ep-console-title {
+    color: var(--text-primary);
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.ep-console-title-icon {
+    color: var(--primary-color);
+    font-size: 0.85rem;
+}
+
+.ep-console-running {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--success-color);
+    font-size: 0.72rem;
+    font-weight: 500;
+    background: var(--success-light);
+    border: 1px solid var(--success-light);
+    border-radius: 20px;
+    padding: 1px 8px;
+}
+
+.ep-console-pulse {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--success-color);
+    animation: ep-pulse 1.4s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+.ep-console-pulse--lg {
+    width: 10px;
+    height: 10px;
+}
+
+.ep-console-actions {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+}
+
+.ep-console-action-btn {
+    color: var(--text-tertiary) !important;
+    width: 26px !important;
+    height: 26px !important;
+    border-radius: 5px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.8rem !important;
+}
+
+.ep-console-action-btn:hover {
+    color: var(--text-primary) !important;
+    background: var(--bg-hover) !important;
+}
+
+/* Tabs de filtro de la consola */
+.ep-console-tabs {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.ep-console-tabs .ant-tabs-nav {
+    margin: 0 !important;
+    padding: 0 8px !important;
+    background: transparent !important;
+    min-height: 32px !important;
+}
+
+.ep-console-tabs .ant-tabs-nav::before {
+    border-bottom: none !important;
+}
+
+.ep-console-tabs .ant-tabs-tab {
+    color: var(--text-secondary) !important;
+    font-size: 0.72rem !important;
+    padding: 6px 8px !important;
+    margin: 0 1px !important;
+    transition: color var(--transition-fast) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 500;
+}
+
+.ep-console-tabs .ant-tabs-tab:hover {
+    color: var(--text-primary) !important;
+}
+
+.ep-console-tabs .ant-tabs-tab-active {
+    color: var(--text-primary) !important;
+}
+
+.ep-console-tabs .ant-tabs-ink-bar {
+    background: var(--primary-color) !important;
+    height: 2px !important;
+}
+
+/* Cuerpo scrollable de la consola */
+.ep-console-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    color: var(--text-primary);
+    background: var(--bg-container);
+}
+
+.ep-console-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.ep-console-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ep-console-body::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 2px;
+}
+
+.ep-console-body::-webkit-scrollbar-thumb:hover {
+    background: var(--border-hover);
+}
+
+/* Estado vacío de la consola */
+.ep-console-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    flex-direction: column;
+    color: var(--text-tertiary);
+    font-size: 0.82rem;
+    gap: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.ep-console-empty-icon {
+    font-size: 1.6rem;
+    opacity: 0.35;
+    margin-bottom: 2px;
+}
+
+.ep-console-empty-subtitle {
+    font-size: 0.72rem;
+    opacity: 0.6;
+    color: var(--text-tertiary);
+}
+
+/* Filas de resultado */
+.ep-console-row {
+    display: grid;
+    grid-template-columns: 18px 64px 70px 1fr;
+    align-items: baseline;
+    gap: 0;
+    padding: 2px 12px;
+    border-left: 2px solid transparent;
+    transition: background var(--transition-fast);
+}
+
+.ep-console-row:hover {
+    background: var(--bg-hover);
+}
+
+/* Líneas con color izquierdo según tipo */
+.ep-console-row--success {
+    border-left-color: var(--success-color);
+}
+
+.ep-console-row--error {
+    border-left-color: var(--error-color);
+}
+
+.ep-console-row--warning {
+    border-left-color: var(--warning-color);
+}
+
+.ep-console-row--info {
+    border-left-color: var(--info-color);
+}
+
+.ep-console-row--log {
+    border-left-color: transparent;
+}
+
+.ep-console-row-icon {
+    font-size: 0.78rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.9;
+    padding-top: 1px;
+}
+
+.ep-console-row-ts {
+    color: var(--text-tertiary);
+    font-size: 0.68rem;
+    padding-left: 4px;
+    user-select: none;
+}
+
+.ep-console-row-type {
+    font-weight: 600;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.8;
+    padding-left: 4px;
+}
+
+.ep-console-row-msg {
+    flex: 1;
+    word-break: break-word;
+    white-space: pre-wrap;
+    padding-left: 8px;
+    border-left: 1px solid var(--border-color);
+}
+
+/* Colores por tipo */
+.ep-type-success {
+    color: var(--success-color);
+}
+
+.ep-type-error {
+    color: var(--error-color);
+}
+
+.ep-type-warning {
+    color: var(--warning-color);
+}
+
+.ep-type-info {
+    color: var(--info-color);
+}
+
+.ep-type-log {
+    color: var(--text-secondary);
+}
+
+/* ── 10. MODAL GITHUB ─────────────────────────────────────────────── */
+.ep-modal-saved-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.7rem var(--space-md);
+    background: var(--success-light);
+    border: 1px solid var(--success-color);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--space-md);
+}
+
+.ep-modal-saved-banner-info {
+    flex: 1;
+}
+
+.ep-modal-saved-name {
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+    font-size: var(--font-size-sm);
+}
+
+.ep-modal-saved-name-icon {
+    color: var(--success-color);
+}
+
+.ep-modal-saved-subtitle {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.ep-modal-user-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.7rem var(--space-md);
+    background: var(--success-light);
+    border: 1px solid var(--success-color);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--space-md);
+}
+
+.ep-modal-user-info {
+    flex: 1;
+}
+
+.ep-modal-user-name {
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: var(--font-size-sm);
+}
+
+.ep-modal-user-name-check {
+    color: var(--success-color);
+}
+
+.ep-modal-user-handle {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.ep-modal-repos-badge {
+    flex-shrink: 0;
+}
+
+.ep-modal-change-token-link {
+    text-align: right;
+    margin-top: -0.4rem;
+    margin-bottom: var(--space-sm);
+}
+
+.ep-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-lg);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-color);
+}
+
+.ep-modal-footer-left,
+.ep-modal-footer-right {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.ep-modal-repo-summary {
+    padding: 0.7rem var(--space-md);
+    background: var(--info-bg);
+    border: 1px solid var(--info-color);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ep-modal-repo-summary-title {
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: 4px;
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ep-modal-repo-summary-title-icon {
+    color: var(--success-color);
+}
+
+.ep-modal-repo-summary-row {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ep-modal-repo-summary-row .anticon {
+    color: var(--text-tertiary);
+}
+
+/* ── 11. ANIMACIONES ─────────────────────────────────────────────── */
+@keyframes ep-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.4;
+        transform: scale(1.25);
+    }
+}
+
+/* ── 12. ESTADOS VACÍOS / CARGA ──────────────────────────────────── */
+.ep-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    padding: var(--space-2xl) var(--space-lg);
+    text-align: center;
+    background: var(--bg-card);
+}
+
+.ep-loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    gap: var(--space-md);
+    background: var(--bg-card);
+}
+
+.ep-loading-text {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+/* ── 13. RESPONSIVE ──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .ep-list-panel {
+        width: 240px;
+    }
+
+    .ep-tree-panel {
+        width: 220px;
+    }
+}
+
+@media (max-width: 680px) {
+    .ep-list-panel {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        max-height: 220px;
+    }
+
+    .ep-body {
+        flex-direction: column;
+    }
+
+    .ep-stats {
+        gap: var(--space-md);
+    }
+
+    .ep-tree-panel {
+        width: 200px;
+    }
+}
+
+/* ── 14. OVERRIDES DE ANT DESIGN ─────────────────────────────────── */
+
+/* Empty dentro del árbol */
+.ep-tree-body .ant-empty-description {
+    color: var(--text-tertiary) !important;
+}
+
+.ep-tree-body .ant-empty-image {
+    opacity: 0.3;
+}
+
+/* Spin dentro del árbol */
+.ep-tree-loading .ant-spin-dot-item {
+    background: var(--primary-color) !important;
+}
+
+/* Dropdown de guardar */
+.ep-tabs-bar-actions .ant-dropdown-menu {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+}
+
+.ep-tabs-bar-actions .ant-dropdown-menu-item {
+    color: var(--text-primary) !important;
+    font-size: 0.8rem !important;
+}
+
+.ep-tabs-bar-actions .ant-dropdown-menu-item:hover {
+    background: var(--bg-hover) !important;
+}
+
+.ep-tabs-bar-actions .ant-dropdown-menu-item-danger {
+    color: var(--error-color) !important;
+}
+
+/* ── 15. OVERRIDES ÁRBOL ANT DESIGN — fondo y colores por tema ───── */
+
+/* Fondo del árbol completo */
+.ep-github-tree,
+.ep-github-tree .ant-tree-list,
+.ep-github-tree .ant-tree-list-holder,
+.ep-github-tree .ant-tree-list-holder-inner {
+    background: var(--bg-card) !important;
+}
+
+/* Nodos del árbol */
+.ep-github-tree .ant-tree-treenode {
+    background: transparent !important;
+}
+
+/* Texto del nodo */
+.ep-github-tree .ant-tree-title {
+    color: var(--text-primary) !important;
+}
+
+/* Switcher (flecha expand/collapse) */
+.ep-github-tree .ant-tree-switcher {
+    background: transparent !important;
+    color: var(--text-tertiary) !important;
+}
+
+/* Líneas de indentación */
+.ep-github-tree .ant-tree-indent-unit::before {
+    border-color: var(--border-color) !important;
+}
+
+/* Panel árbol: fuerza fondo en todos sus hijos directos */
+.ep-tree-panel {
+    background: var(--bg-card) !important;
+}
+
+.ep-tree-header {
+    background: var(--bg-card) !important;
+}
+
+.ep-tree-search {
+    background: var(--bg-card) !important;
+}
+
+.ep-tree-body {
+    background: var(--bg-card) !important;
+}
+
+/* Explorer y editor */
+.ep-explorer {
+    background: var(--bg-container) !important;
+}
+
+.ep-editor-panel {
+    background: var(--bg-container) !important;
+}
+
+.ep-editor-wrapper {
+    background: var(--bg-container) !important;
+}
+
+/* Tabs bar */
+.ep-tabs-bar {
+    background: var(--bg-card) !important;
+}
+
+/* Ant Tabs card — fondo de tabs activos/inactivos */
+.ep-tabs-bar .ant-tabs-card>.ant-tabs-nav .ant-tabs-tab {
+    background: var(--bg-container) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-secondary) !important;
+}
+
+.ep-tabs-bar .ant-tabs-card>.ant-tabs-nav .ant-tabs-tab-active {
+    background: var(--bg-card) !important;
+    border-bottom-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Consola */
+.ep-console {
+    background: var(--bg-card) !important;
+}
+
+.ep-console-header {
+    background: var(--bg-card) !important;
+}
+
+.ep-console-tabs {
+    background: var(--bg-card) !important;
+}
+
+.ep-console-tabs .ant-tabs-tab {
+    background: transparent !important;
+}
+
+.ep-console-body {
+    background: var(--bg-container) !important;
+}
+
+/* Input de búsqueda — fuerza colores en tema oscuro */
+.ep-tree-search .ant-input-affix-wrapper {
+    background: var(--bg-container) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.ep-tree-search .ant-input {
+    background: transparent !important;
+    color: var(--text-primary) !important;
+}
