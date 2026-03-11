@@ -33,9 +33,21 @@ export const API_ENDPOINTS = {
   ACTUALIZAR_PRUEBA: '/app/pruebas/editar', // Se concatena /:prueba_id en el componente
   ELIMINAR_PRUEBA: '/app/pruebas/eliminar', // Se concatena /:prueba_id en el componente
 
-  // GENERACIÓN DE PRUEBAS CON IA
-  GENERAR_PRUEBAS_IA: '/app/chat/generar-pruebas', // Se concatena /:proyecto_id en el componente
-  PREVISUALIZAR_PRUEBAS_IA: '/app/chat/previsualizar-pruebas', // Se concatena /:proyecto_id en el componente
+  // GENERACIÓN DE PRUEBAS CON IA - por tipo específico
+  GENERAR_PRUEBAS_UNITARIAS_IA: '/app/chat/generar-pruebas/unitaria', // Se concatena /:proyecto_id en el componente
+  PREVISUALIZAR_PRUEBAS_UNITARIAS_IA: '/app/chat/previsualizar-pruebas/unitaria', // Se concatena /:proyecto_id en el componente
+
+  GENERAR_PRUEBAS_COMPONENTE_IA: '/app/chat/generar-pruebas/componente', // Se concatena /:proyecto_id en el componente
+  PREVISUALIZAR_PRUEBAS_COMPONENTE_IA: '/app/chat/previsualizar-pruebas/componente', // Se concatena /:proyecto_id en el componente
+
+  GENERAR_PRUEBAS_SISTEMA_IA: '/app/chat/generar-pruebas/sistema', // Se concatena /:proyecto_id en el componente
+  PREVISUALIZAR_PRUEBAS_SISTEMA_IA: '/app/chat/previsualizar-pruebas/sistema', // Se concatena /:proyecto_id en el componente
+
+  GENERAR_PRUEBAS_MULTIPLE_IA: '/app/chat/generar-pruebas/multiple', // Se concatena /:proyecto_id en el componente + body: {tipos: [...]}
+
+  // Aliases de compatibilidad (apuntan a unitaria para no romper código existente)
+  GENERAR_PRUEBAS_IA: '/app/chat/generar-pruebas/unitaria', // Se concatena /:proyecto_id en el componente
+  PREVISUALIZAR_PRUEBAS_IA: '/app/chat/previsualizar-pruebas/unitaria', // Se concatena /:proyecto_id en el componente
 
   // Tipos de Requisito
   TIPOS_REQUISITO: '/app/catalogos/listar/',

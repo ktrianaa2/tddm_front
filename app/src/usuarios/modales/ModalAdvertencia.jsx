@@ -1,69 +1,108 @@
 import React from 'react';
-import { Modal, Button } from 'antd';
-import { WarningOutlined } from '@ant-design/icons';
-import '../../styles/buttons.css';
-import '../../styles/modal.css';
+import { Modal, Tag } from 'antd';
+import {
+  ExclamationCircleOutlined,
+  ExperimentOutlined,
+  AppstoreOutlined,
+  ApiOutlined,
+} from '@ant-design/icons';
+
+const TIPO_CONFIG = {
+  unitaria: {
+    label: 'Unitarias',
+    color: 'success',
+    icon: <ExperimentOutlined />,
+  },
+  componente: {
+    label: 'Componente',
+    color: 'purple',
+    icon: <AppstoreOutlined />,
+  },
+  sistema: {
+    label: 'Sistema',
+    color: 'blue',
+    icon: <ApiOutlined />,
+  },
+};
 
 const ModalAdvertencia = ({
   visible,
   onCancel,
   onConfirm,
-  loading = false,
-  especificacionesCount = 0
+  loading,
+  especificacionesCount,
+  tiposSeleccionados = ['unitaria'],
 }) => {
   return (
     <Modal
-      title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <WarningOutlined style={{ fontSize: '20px' }} />
-          <span>Advertencia: Generación de Pruebas</span>
-        </div>
-      }
       open={visible}
+      title={
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ExclamationCircleOutlined style={{ color: '#fa8c16' }} />
+          Confirmar Generación de Pruebas
+        </span>
+      }
       onCancel={onCancel}
-      width={600}
-      footer={[
-        <Button
-          key="cancel"
-          onClick={onCancel}
-          className="btn btn-secondary"
-          disabled={loading}
-        >
-          Cancelar
-        </Button>,
-        <Button
-          key="confirm"
-          onClick={onConfirm}
-          loading={loading}
-          className="btn btn-warning"
-        >
-          Sí, Generar Pruebas
-        </Button>
-      ]}
-      className="modal-warning"
-      destroyOnHidden
-      maskClosable={!loading}
-      keyboard={!loading}
+      onOk={onConfirm}
+      okText="Sí, generar pruebas"
+      cancelText="Cancelar"
+      confirmLoading={loading}
+      okButtonProps={{ type: 'primary' }}
     >
-      <p className="modal-text-primary">
-        Estás a punto de generar las pruebas basadas en las {especificacionesCount} especificación{especificacionesCount !== 1 ? 'es' : ''} actuales del proyecto.
-      </p>
-
-      <div className="warning-box">
-        <p className="warning-box-title">
-          <WarningOutlined />
-          Una vez generadas las pruebas:
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <p style={{ margin: 0, color: 'var(--text-primary)' }}>
+          Se generarán pruebas automáticamente con IA usando{' '}
+          <strong>{especificacionesCount}</strong> especificación
+          {especificacionesCount !== 1 ? 'es' : ''} del proyecto.
         </p>
-        <ul>
-          <li>No podrás modificar los requisitos</li>
-          <li>No podrás modificar las historias de usuario</li>
-          <li>No podrás modificar los casos de uso</li>
-        </ul>
-      </div>
 
-      <p className="modal-text-secondary">
-        ¿Estás seguro de que deseas continuar?
-      </p>
+        {/* Tipos seleccionados */}
+        <div>
+          <p style={{
+            margin: '0 0 8px 0',
+            fontSize: '0.85rem',
+            color: 'var(--text-secondary)',
+            fontWeight: 500
+          }}>
+            Tipos de prueba a generar:
+          </p>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {tiposSeleccionados.map(tipo => {
+              const cfg = TIPO_CONFIG[tipo];
+              if (!cfg) return null;
+              return (
+                <Tag
+                  key={tipo}
+                  color={cfg.color}
+                  icon={cfg.icon}
+                  style={{ fontSize: '0.85rem', padding: '2px 10px' }}
+                >
+                  {cfg.label}
+                </Tag>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{
+          background: '#fff7e6',
+          border: '1px solid #ffd591',
+          borderRadius: '6px',
+          padding: '10px 14px',
+          fontSize: '0.85rem',
+          color: '#874d00'
+        }}>
+          <strong>⚠️ Ten en cuenta:</strong>
+          <ul style={{ margin: '6px 0 0 0', paddingLeft: '18px' }}>
+            <li>Las pruebas se guardarán automáticamente en el proyecto.</li>
+            {tiposSeleccionados.length > 1 && (
+              <li>Se generarán <strong>{tiposSeleccionados.length} lotes</strong> de pruebas (uno por tipo).</li>
+            )}
+            <li>El estado del proyecto cambiará a <strong>"Generación"</strong>.</li>
+            <li>Este proceso puede tomar algunos segundos.</li>
+          </ul>
+        </div>
+      </div>
     </Modal>
   );
 };

@@ -330,41 +330,6 @@ const EsquemaTab = ({ proyecto }) => {
                   )}
                 />
               </Card>
-
-              {/* Información de especificaciones */}
-              {tieneEspecificaciones && (
-                <Card className="esquema-specs-card">
-                  <h4 className="esquema-specs-title">
-                    📊 Especificaciones
-                  </h4>
-                  <div className="esquema-specs-content">
-                    {requisitos.length > 0 && (
-                      <div className="esquema-specs-item">
-                        <strong className="esquema-specs-count requisitos-color">
-                          {requisitos.length}
-                        </strong>
-                        <span className="esquema-specs-label"> requisito(s)</span>
-                      </div>
-                    )}
-                    {historiasUsuario.length > 0 && (
-                      <div className="esquema-specs-item">
-                        <strong className="esquema-specs-count historias-color">
-                          {historiasUsuario.length}
-                        </strong>
-                        <span className="esquema-specs-label"> historia(s)</span>
-                      </div>
-                    )}
-                    {casosUso.length > 0 && (
-                      <div className="esquema-specs-item">
-                        <strong className="esquema-specs-count casos-color">
-                          {casosUso.length}
-                        </strong>
-                        <span className="esquema-specs-label"> caso(s)</span>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              )}
             </div>
 
             {/* Panel Derecho: Detalles o Mensaje */}

@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, Button, Row, Col, Empty, Spin, message, Slider } from 'antd';
+import { Card, Button, Row, Col, Empty, Spin, message, Select } from 'antd';
 import {
   DownloadOutlined,
   ReloadOutlined,
   ZoomInOutlined,
-  ZoomOutOutlined
+  ZoomOutOutlined,
+  DatabaseOutlined
 } from '@ant-design/icons';
 import mermaid from 'mermaid';
-import '../../styles/diagrams.css';
 
-
-const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
+const VistaDiagramaDB = ({ tablas = [], esquemaPrincipal = {} }) => {
+  const [tipoDiagrama, setTipoDiagrama] = useState('clases');
   const [zoom, setZoom] = useState(100);
   const [showZoomSlider, setShowZoomSlider] = useState(false);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -23,13 +23,10 @@ const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
 
   const nombreBD = esquemaPrincipal?.nombre_bd || 'Base de Datos';
 
-  /**
-   * Extrae tipo de dato básico (VARCHAR -> VARCHAR, DECIMAL(10,2) -> DECIMAL, etc)
-   */
   const extraerTipoBasico = (tipo) => {
     if (!tipo) return 'string';
     const tipoLimpio = tipo.split('(')[0].toUpperCase();
-    
+
     const mapaTipos = {
       'VARCHAR': 'string',
       'CHAR': 'string',
@@ -56,92 +53,162 @@ const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
     return mapaTipos[tipoLimpio] || 'string';
   };
 
-  /**
-   * Genera diagrama ER con el nuevo formato JSON
-   * Maneja: columnas con estructura, índices, y relaciones FK
-   */
-  const generarDiagramaER = () => {
+  // Generar diagrama de clases (como tablas con atributos y métodos)
+  const generarDiagramaClases = () => {
     if (!tablas || tablas.length === 0) return '';
 
-    let diagrama = 'erDiagram\n';
+    let diagrama = 'classDiagram\n';
+    diagrama += '    class BaseEntity {\n';
+    diagrama += '        +int id PK\n';
+    diagrama += '        +datetime created_at\n';
+    diagrama += '        +datetime updated_at\n';
+    diagrama += '    }\n\n';
 
-    // Procesar cada tabla
+    // Mapeo de relaciones para evitar duplicados
+    const relacionesProcesadas = new Set();
+
     tablas.forEach((tabla) => {
       const nombreTabla = tabla.name || tabla.nombre;
-
       if (!nombreTabla) return;
 
-      diagrama += `    ${nombreTabla} {\n`;
+      diagrama += `    class ${nombreTabla} {\n`;
 
-      // Procesar columnas
-      if (tabla.columns && Array.isArray(tabla.columns) && tabla.columns.length > 0) {
+      // Procesar columnas como atributos
+      if (tabla.columns && Array.isArray(tabla.columns)) {
         tabla.columns.forEach((columna) => {
           const nombreCol = columna.name || columna.nombre;
           if (!nombreCol) return;
 
-          // Extraer tipo básico
-          const tipoBasico = extraerTipoBasico(columna.type);
-
-          // Marcar Primary Key
+          const tipo = extraerTipoBasico(columna.type);
           const esPK = columna.primaryKey ? ' PK' : '';
-          // Marcar Foreign Key
           const esFK = columna.foreignKey || columna.reference ? ' FK' : '';
+          const esNullable = columna.nullable ? '?' : '';
 
-          diagrama += `        ${tipoBasico} ${nombreCol}${esPK}${esFK}\n`;
+          diagrama += `        ${esNullable}${tipo} ${nombreCol}${esPK}${esFK}\n`;
         });
-      } else {
-        // Fallback si no hay columnas
-        diagrama += `        int id PK\n`;
       }
 
-      diagrama += '    }\n';
+      diagrama += '    }\n\n';
     });
 
-    // Procesar relaciones desde las columnas FK
-    diagrama += '\n';
-    const relacionesAgregadas = new Set();
-
+    // Procesar relaciones
     tablas.forEach((tabla) => {
       const nombreTabla = tabla.name || tabla.nombre;
-
       if (!nombreTabla) return;
 
-      // Buscar columnas con referencias
       if (tabla.columns && Array.isArray(tabla.columns)) {
         tabla.columns.forEach((columna) => {
           if (columna.reference) {
-            // Formato de referencia: "tabla_referenciada(columna)"
             const match = columna.reference.match(/^(\w+)\((\w+)\)$/);
-            
             if (match) {
               const tablaReferenciada = match[1];
-              const columnaPK = match[2];
-              const nombreCol = columna.name || columna.nombre;
+              const relacionKey = `${nombreTabla}||--o{${tablaReferenciada}`;
 
-              // Evitar duplicados
-              const relacionKey = `${nombreTabla}-${tablaReferenciada}`;
-              
-              if (!relacionesAgregadas.has(relacionKey)) {
-                relacionesAgregadas.add(relacionKey);
-                
-                // Cardinalidad: muchos-a-uno (la tabla actual tiene FK, referencia a una fila)
-                const notacion = '||--o{';
-                diagrama += `    ${tablaReferenciada} ${notacion} ${nombreTabla} : "tiene"\n`;
+              if (!relacionesProcesadas.has(relacionKey)) {
+                relacionesProcesadas.add(relacionKey);
+                diagrama += `    ${tablaReferenciada} "1" <-- "N" ${nombreTabla}\n`;
               }
             }
           }
         });
       }
 
-      // También procesar relaciones desde el objeto "relaciones" si existe
       if (tabla.relaciones && typeof tabla.relaciones === 'object') {
         Object.entries(tabla.relaciones).forEach(([nombreRel, relacion]) => {
           if (typeof relacion === 'object' && relacion.tabla_referenciada) {
             const tablaReferenciada = relacion.tabla_referenciada;
             const tipo = relacion.tipo || 'N:1';
-            
+            const relacionKey = `${nombreTabla}--${tablaReferenciada}--${tipo}`;
+
+            if (!relacionesProcesadas.has(relacionKey)) {
+              relacionesProcesadas.add(relacionKey);
+
+              if (tipo === '1:1' || tipo === 'uno-a-uno') {
+                diagrama += `    ${tablaReferenciada} "1" <-- "1" ${nombreTabla}\n`;
+              } else if (tipo === 'N:N' || tipo === 'muchos-a-muchos') {
+                diagrama += `    ${tablaReferenciada} "N" <-- "M" ${nombreTabla}\n`;
+              } else {
+                diagrama += `    ${tablaReferenciada} "1" <-- "N" ${nombreTabla}\n`;
+              }
+            }
+          }
+        });
+      }
+    });
+
+    // Herencia de BaseEntity
+    tablas.forEach((tabla) => {
+      const nombreTabla = tabla.name || tabla.nombre;
+      if (nombreTabla) {
+        diagrama += `    ${nombreTabla} --|> BaseEntity\n`;
+      }
+    });
+
+    return diagrama;
+  };
+
+  // Generar diagrama ER mejorado
+  const generarDiagramaER = () => {
+    if (!tablas || tablas.length === 0) return '';
+
+    let diagrama = 'erDiagram\n';
+
+    tablas.forEach((tabla) => {
+      const nombreTabla = tabla.name || tabla.nombre;
+      if (!nombreTabla) return;
+
+      diagrama += `    ${nombreTabla} {\n`;
+
+      if (tabla.columns && Array.isArray(tabla.columns) && tabla.columns.length > 0) {
+        tabla.columns.forEach((columna) => {
+          const nombreCol = columna.name || columna.nombre;
+          if (!nombreCol) return;
+
+          const tipoBasico = extraerTipoBasico(columna.type);
+          const esPK = columna.primaryKey ? ' PK' : '';
+          const esFK = columna.foreignKey || columna.reference ? ' FK' : '';
+
+          diagrama += `        ${tipoBasico} ${nombreCol}${esPK}${esFK}\n`;
+        });
+      } else {
+        diagrama += `        int id PK\n`;
+      }
+
+      diagrama += '    }\n';
+    });
+
+    diagrama += '\n';
+    const relacionesAgregadas = new Set();
+
+    tablas.forEach((tabla) => {
+      const nombreTabla = tabla.name || tabla.nombre;
+      if (!nombreTabla) return;
+
+      if (tabla.columns && Array.isArray(tabla.columns)) {
+        tabla.columns.forEach((columna) => {
+          if (columna.reference) {
+            const match = columna.reference.match(/^(\w+)\((\w+)\)$/);
+            if (match) {
+              const tablaReferenciada = match[1];
+              const relacionKey = `${nombreTabla}-${tablaReferenciada}`;
+
+              if (!relacionesAgregadas.has(relacionKey)) {
+                relacionesAgregadas.add(relacionKey);
+                const notacion = '||--o{';
+                diagrama += `    ${tablaReferenciada} ${notacion} ${nombreTabla} : "contiene"\n`;
+              }
+            }
+          }
+        });
+      }
+
+      if (tabla.relaciones && typeof tabla.relaciones === 'object') {
+        Object.entries(tabla.relaciones).forEach(([nombreRel, relacion]) => {
+          if (typeof relacion === 'object' && relacion.tabla_referenciada) {
+            const tablaReferenciada = relacion.tabla_referenciada;
+            const tipo = relacion.tipo || 'N:1';
             const relacionKey = `${nombreTabla}-${tablaReferenciada}-${nombreRel}`;
-            
+
             if (!relacionesAgregadas.has(relacionKey)) {
               relacionesAgregadas.add(relacionKey);
 
@@ -164,18 +231,22 @@ const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
     return diagrama;
   };
 
-  // Generar el diagrama cuando cambien los datos
+  // Generar el diagrama según el tipo seleccionado
   useEffect(() => {
     setDiagramLoading(true);
     const timer = setTimeout(() => {
-      const codigo = generarDiagramaER();
-      console.log('🔍 Código Mermaid generado:', codigo);
+      let codigo = '';
+      if (tipoDiagrama === 'clases') {
+        codigo = generarDiagramaClases();
+      } else {
+        codigo = generarDiagramaER();
+      }
       setCodigoMermaid(codigo);
       setDiagramLoading(false);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [tablas, esquemaPrincipal]);
+  }, [tipoDiagrama, tablas, esquemaPrincipal]);
 
   // Renderizar el diagrama con Mermaid
   useEffect(() => {
@@ -186,8 +257,8 @@ const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
         containerRef.current.innerHTML = `<div class="mermaid">${codigoMermaid}</div>`;
         await mermaid.contentLoaded();
       } catch (error) {
-        console.error('Error renderizando diagrama ER:', error);
-        message.error('Error al renderizar el diagrama ER');
+        console.error('Error renderizando diagrama:', error);
+        message.error('Error al renderizar el diagrama');
       }
     };
 
@@ -231,7 +302,7 @@ const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
     setPan({ x: 0, y: 0 });
   };
 
-  // Descargar como PNG
+  // Descargar PNG
   const descargarPNG = async () => {
     try {
       message.loading('Generando imagen...');
@@ -261,7 +332,6 @@ const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
       canvas.height = height * scale;
 
       const ctx = canvas.getContext('2d');
-
       ctx.fillStyle = 'white';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -274,18 +344,12 @@ const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
 
       img.onload = () => {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
         const link = document.createElement('a');
         link.href = canvas.toDataURL('image/png', 1);
-        link.download = `diagrama-er-${new Date().getTime()}.png`;
+        link.download = `diagrama-${tipoDiagrama}-${new Date().getTime()}.png`;
         link.click();
         message.destroy();
         message.success('Diagrama descargado en alta calidad');
-      };
-
-      img.onerror = () => {
-        message.destroy();
-        message.error('Error al procesar la imagen');
       };
 
       const encodedSvg = encodeURIComponent(svgData);
@@ -297,7 +361,7 @@ const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
     }
   };
 
-  // Descargar como SVG
+  // Descargar SVG
   const descargarSVG = () => {
     try {
       const svg = containerRef.current?.querySelector('svg');
@@ -311,7 +375,7 @@ const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `diagrama-er-${new Date().getTime()}.svg`;
+      link.download = `diagrama-${tipoDiagrama}-${new Date().getTime()}.svg`;
       link.click();
       URL.revokeObjectURL(url);
       message.success('Diagrama descargado');
@@ -325,7 +389,12 @@ const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
   const recargar = () => {
     setDiagramLoading(true);
     const timer = setTimeout(() => {
-      const codigo = generarDiagramaER();
+      let codigo = '';
+      if (tipoDiagrama === 'clases') {
+        codigo = generarDiagramaClases();
+      } else {
+        codigo = generarDiagramaER();
+      }
       setCodigoMermaid(codigo);
       setDiagramLoading(false);
       resetView();
@@ -337,6 +406,27 @@ const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
 
   const zoomValue = zoom / 100;
   const tieneDatos = tablas && tablas.length > 0;
+
+  const opcionesDiagrama = [
+    {
+      label: (
+        <span>
+          <DatabaseOutlined style={{ marginRight: '0.5rem' }} />
+          Diagrama de Clases {tablas.length > 0 && `(${tablas.length})`}
+        </span>
+      ),
+      value: 'clases'
+    },
+    {
+      label: (
+        <span>
+          <DatabaseOutlined style={{ marginRight: '0.5rem' }} />
+          Entidad-Relación {tablas.length > 0 && `(${tablas.length})`}
+        </span>
+      ),
+      value: 'entidad-relacion'
+    }
+  ];
 
   if (!tieneDatos) {
     return (
@@ -361,7 +451,7 @@ const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
                 fontSize: '0.9rem',
                 color: 'var(--text-secondary)'
               }}>
-                Crea al menos una tabla con columnas para ver el diagrama ER
+                Crea al menos una tabla con columnas para ver el diagrama
               </p>
             </div>
           }
@@ -371,54 +461,70 @@ const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
   }
 
   return (
-    <div className="diagram-uml-container">
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 300px)', minHeight: '600px', gap: '1rem' }}>
       {/* Controles superiores */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '1rem' }}>
-        <Col xs={24} sm={24} md={24}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <div>
-              <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>
-                Diagrama ER: {nombreBD} ({tablas.length} tabla{tablas.length !== 1 ? 's' : ''})
-              </h3>
-            </div>
-            <div className="diagram-actions">
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={recargar}
-                loading={diagramLoading}
-                className="diagram-btn"
-              >
-                Recargar
-              </Button>
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={descargarSVG}
-                disabled={!codigoMermaid}
-                className="diagram-btn"
-              >
-                Descargar SVG
-              </Button>
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={descargarPNG}
-                disabled={!codigoMermaid}
-                className="diagram-btn diagram-btn-primary"
-              >
-                Descargar PNG HD
-              </Button>
-            </div>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} md={8}>
+          <Select
+            value={tipoDiagrama}
+            onChange={(value) => {
+              setTipoDiagrama(value);
+              resetView();
+            }}
+            options={opcionesDiagrama}
+            style={{ width: '100%' }}
+          />
+        </Col>
+        <Col xs={24} sm={12} md={16}>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={recargar}
+              loading={diagramLoading}
+            >
+              Recargar
+            </Button>
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={descargarSVG}
+              disabled={!codigoMermaid}
+            >
+              Descargar SVG
+            </Button>
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={descargarPNG}
+              disabled={!codigoMermaid}
+              type="primary"
+            >
+              Descargar PNG HD
+            </Button>
           </div>
         </Col>
       </Row>
 
       {/* Diagrama Container */}
-      <Card className="diagram-card">
+      <Card style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h3 style={{ margin: 0 }}>
+            {tipoDiagrama === 'clases' ? 'Diagrama de Clases' : 'Diagrama Entidad-Relación'}: {nombreBD} ({tablas.length} tabla{tablas.length !== 1 ? 's' : ''})
+          </h3>
+        </div>
+
         {codigoMermaid ? (
-          <div className="diagram-content">
+          <div style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' }}>
             {/* Área del diagrama */}
             <div
               ref={wrapperRef}
-              className={`diagram-viewer ${isDragging ? 'dragging' : ''}`}
+              style={{
+                flex: 1,
+                overflow: 'auto',
+                cursor: 'grab',
+                position: 'relative',
+                background: '#fafafa',
+                border: '2px solid #d9d9d9',
+                borderRadius: '8px'
+              }}
               onWheel={handleWheel}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
@@ -427,94 +533,107 @@ const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
             >
               <div
                 ref={containerRef}
-                className="diagram-canvas"
                 style={{
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoomValue})`,
-                  transition: isDragging ? 'none' : 'transform 0.1s'
+                  transformOrigin: 'top center',
+                  display: 'inline-block',
+                  minWidth: '100%',
+                  padding: '2rem',
+                  cursor: isDragging ? 'grabbing' : 'grab'
                 }}
               >
                 {diagramLoading && <Spin size="large" />}
               </div>
-            </div>
 
-            {/* Controles de zoom flotantes */}
-            <div className="diagram-zoom-controls">
-              <Button
-                icon={<ZoomOutOutlined />}
-                onClick={() => setZoom(prev => Math.max(25, prev - 10))}
-                disabled={zoom <= 25}
-                size="small"
-                className="zoom-btn"
-              />
-
-              <div className="zoom-value-container">
+              {/* Controles de zoom flotantes */}
+              <div style={{
+                position: 'absolute',
+                bottom: '16px',
+                right: '16px',
+                display: 'flex',
+                gap: '6px',
+                background: 'white',
+                border: '1px solid #d9d9d9',
+                borderRadius: '8px',
+                padding: '6px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                zIndex: 10
+              }}>
                 <Button
+                  icon={<ZoomOutOutlined />}
+                  onClick={() => setZoom(prev => Math.max(25, prev - 10))}
+                  disabled={zoom <= 25}
                   size="small"
-                  className="zoom-value-btn"
-                  onClick={() => setShowZoomSlider(!showZoomSlider)}
-                >
-                  {zoom}%
-                </Button>
+                />
 
-                {showZoomSlider && (
-                  <div className="zoom-slider-popup">
-                    <Slider
-                      vertical
-                      min={25}
-                      max={400}
-                      value={zoom}
-                      onChange={setZoom}
-                      tooltip={{
-                        formatter: (val) => `${val}%`
-                      }}
-                    />
-                  </div>
-                )}
+                <div style={{ position: 'relative' }}>
+                  <Button
+                    size="small"
+                    onClick={() => setShowZoomSlider(!showZoomSlider)}
+                    style={{ minWidth: '56px' }}
+                  >
+                    {zoom}%
+                  </Button>
+
+                  {showZoomSlider && (
+                    <div style={{
+                      position: 'absolute',
+                      bottom: 'calc(100% + 8px)',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      background: 'white',
+                      border: '1px solid #d9d9d9',
+                      borderRadius: '8px',
+                      padding: '16px 12px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      zIndex: 20,
+                      height: '200px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      {/* Slider vertical - requiere que Slider esté importado de antd */}
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  icon={<ZoomInOutlined />}
+                  onClick={() => setZoom(prev => Math.min(400, prev + 10))}
+                  disabled={zoom >= 400}
+                  size="small"
+                />
+
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={resetView}
+                  disabled={zoom === 100 && pan.x === 0 && pan.y === 0}
+                  size="small"
+                  title="Restablecer vista"
+                />
               </div>
 
-              <Button
-                icon={<ZoomInOutlined />}
-                onClick={() => setZoom(prev => Math.min(400, prev + 10))}
-                disabled={zoom >= 400}
-                size="small"
-                className="zoom-btn"
-              />
-
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={resetView}
-                disabled={zoom === 100 && pan.x === 0 && pan.y === 0}
-                size="small"
-                className="zoom-btn"
-                title="Restablecer vista"
-              />
-            </div>
-
-            {/* Instrucciones flotantes */}
-            <div className="diagram-instructions">
-              <strong>Controles:</strong> Rueda del ratón para zoom • Arrastra para desplazarte
+              {/* Instrucciones flotantes */}
+              <div style={{
+                position: 'absolute',
+                bottom: '16px',
+                left: '16px',
+                background: 'white',
+                border: '1px solid #d9d9d9',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                fontSize: '0.9rem',
+                color: '#666',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                zIndex: 10
+              }}>
+                <strong>Controles:</strong> Rueda del ratón para zoom • Arrastra para desplazarte
+              </div>
             </div>
           </div>
         ) : (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <div>
-                <p style={{
-                  fontSize: '1.1rem',
-                  marginBottom: '0.5rem',
-                  color: 'var(--text-primary)'
-                }}>
-                  Generando diagrama ER...
-                </p>
-                <p style={{
-                  fontSize: '0.9rem',
-                  color: 'var(--text-secondary)'
-                }}>
-                  Por favor espera mientras se procesa la información
-                </p>
-              </div>
-            }
+            description="Generando diagrama..."
           />
         )}
       </Card>
@@ -522,4 +641,4 @@ const VistaDiagrama = ({ tablas = [], esquemaPrincipal = {} }) => {
   );
 };
 
-export default VistaDiagrama;
+export default VistaDiagramaDB;
