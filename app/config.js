@@ -33,6 +33,11 @@ export const API_ENDPOINTS = {
   ACTUALIZAR_PRUEBA: '/app/pruebas/editar', // Se concatena /:prueba_id en el componente
   ELIMINAR_PRUEBA: '/app/pruebas/eliminar', // Se concatena /:prueba_id en el componente
   APROBAR_PRUEBA: '/app/pruebas/aprobar', // Se concatena /:prueba_id en el componente
+
+  // GitHub Integration
+  GITHUB_GUARDAR_CONEXION:  '/app/github/conexion/guardar/',
+  GITHUB_OBTENER_CONEXION:  '/app/github/conexion/obtener/',
+  GITHUB_ELIMINAR_CONEXION: '/app/github/conexion/eliminar/',
  
   // GENERACIÓN DE PRUEBAS CON IA - por tipo específico
   GENERAR_PRUEBAS_UNITARIAS_IA: '/app/chat/generar-pruebas/unitaria', // Se concatena /:proyecto_id en el componente
