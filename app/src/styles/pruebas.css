@@ -1,0 +1,716 @@
+/* =====================================================================
+   pruebas.css — Estilos para el módulo de Pruebas
+   Importar en PruebasTab, ProgresoGeneracion y VistaGenerarPruebas
+   ===================================================================== */
+
+/* ── Animaciones ──────────────────────────────────────────────────── */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+}
+
+/* ── Layout general ───────────────────────────────────────────────── */
+.pruebas-progreso-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.pruebas-grid-gestion {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: var(--space-xl);
+    height: calc(100vh - 260px);
+    min-height: 500px;
+}
+
+/* ── Lista de pruebas — truncado de texto ─────────────────────────── */
+.prueba-nombre {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
+}
+
+/* ── Panel vacío (sin prueba seleccionada) ────────────────────────── */
+.panel-vacio-card {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.panel-vacio-titulo {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.panel-vacio-subtitulo {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* ── Header — inline badge de tipos ──────────────────────────────── */
+.pruebas-tipos-badge {
+    margin-left: 8px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* ── Vista sin esquema ────────────────────────────────────────────── */
+.sin-esquema-card {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+}
+
+/* ── ProgresoGeneracion ───────────────────────────────────────────── */
+.progreso-container {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Encabezado */
+.progreso-header {
+    text-align: center;
+}
+
+.progreso-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.progreso-titulo {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 16px;
+    margin: 0;
+}
+
+.progreso-subtitulo {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.progreso-subtitulo-nombre {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Barra global */
+.progreso-barra-global-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.progreso-barra-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.progreso-barra-valor {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.progreso-barra-track {
+    height: 10px;
+    background: var(--bg-hover, #f3f4f6);
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.progreso-barra-fill-global {
+    height: 100%;
+    border-radius: 9999px;
+    background: linear-gradient(to right, #6366f1, #8b5cf6, #ec4899);
+    transition: width 0.7s ease-out;
+}
+
+.progreso-barra-total {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    text-align: right;
+}
+
+/* Lista de tarjetas */
+.progreso-tarjetas {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Advertencia errores */
+.progreso-alerta-error {
+    border-radius: 8px;
+    background: var(--color-warn-bg, #fffbeb);
+    border: 1px solid var(--color-warn-border, #fcd34d);
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--color-warn-text, #92400e);
+}
+
+.progreso-mensaje-global {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* ── TarjetaTipo ──────────────────────────────────────────────────── */
+.tarjeta-tipo {
+    border-radius: 12px;
+    border: 2px solid;
+    padding: 16px;
+    transition: all 0.4s ease;
+}
+
+.tarjeta-tipo--pendiente {
+    border-color: var(--border-color, #e5e7eb);
+    background: var(--bg-hover, #f9fafb);
+    opacity: 0.55;
+}
+
+.tarjeta-tipo--error {
+    border-color: #fca5a5;
+    background: var(--color-error-bg, #fef2f2);
+}
+
+/* Encabezado de tarjeta */
+.tarjeta-tipo__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.tarjeta-tipo__header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tarjeta-tipo__icono {
+    padding: 6px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.tarjeta-tipo__nombre {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.tarjeta-tipo__badge-ok {
+    font-size: 11px;
+    font-weight: 700;
+    color: #059669;
+    background: #d1fae5;
+    padding: 2px 8px;
+    border-radius: 99px;
+}
+
+.tarjeta-tipo__estado-cola {
+    font-size: 12px;
+    color: var(--text-secondary, #9ca3af);
+    font-weight: 500;
+}
+
+.tarjeta-tipo__spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Barra de progreso de tarjeta */
+.tarjeta-tipo__barra-track {
+    height: 6px;
+    border-radius: 9999px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.tarjeta-tipo__barra-fill {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.6s ease-out;
+}
+
+/* Mensaje de tarjeta */
+.tarjeta-tipo__mensaje {
+    min-height: 18px;
+}
+
+.tarjeta-tipo__mensaje-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tarjeta-tipo__dot-pulsante {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.tarjeta-tipo__texto-mensaje {
+    font-size: 12px;
+    font-weight: 500;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.tarjeta-tipo__texto-ok {
+    font-size: 12px;
+    color: #059669;
+    font-weight: 500;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tarjeta-tipo__texto-error {
+    font-size: 12px;
+    color: #ef4444;
+    font-weight: 500;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tarjeta-tipo__texto-pendiente {
+    font-size: 12px;
+    color: var(--text-secondary, #9ca3af);
+    margin: 0;
+}
+
+/* ── VistaGenerarPruebas ──────────────────────────────────────────── */
+.vista-generar-centrado {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 600px;
+    padding: var(--space-xl);
+}
+
+.vista-generar-inner {
+    max-width: 600px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    align-items: center;
+}
+
+.vista-generar-emoji {
+    font-size: 3rem;
+}
+
+.vista-generar-titulo {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    margin: 0;
+    text-align: center;
+}
+
+.vista-generar-descripcion {
+    font-size: var(--font-size-base);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: var(--line-height-normal);
+    text-align: center;
+}
+
+/* Info de tipos ya generados */
+.vista-generar-ya-generados {
+    width: 100%;
+    background: var(--color-success-bg, #f6ffed);
+    border: 1px solid var(--color-success-border, #b7eb8f);
+    border-radius: var(--border-radius-lg);
+    padding: 10px 16px;
+    font-size: var(--font-size-sm);
+    color: var(--color-success-text, #389e0d);
+}
+
+/* Sección de selección de tipos */
+.vista-generar-tipos-section {
+    width: 100%;
+}
+
+.vista-generar-tipos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+}
+
+.vista-generar-tipos-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.vista-generar-tipos-count {
+    margin-left: 8px;
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    font-weight: normal;
+}
+
+.vista-generar-tipos-lista {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+/* Card de tipo individual */
+.tipo-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: 14px 16px;
+    border-radius: var(--border-radius-lg);
+    border: 2px solid var(--border-color);
+    background: var(--bg-card);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.tipo-card:hover {
+    border-color: var(--border-hover-color, #d1d5db);
+}
+
+.tipo-card__icono {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.tipo-card__texto {
+    flex: 1;
+}
+
+.tipo-card__nombre-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.tipo-card__nombre {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.tipo-card__descripcion {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: var(--line-height-normal);
+}
+
+.tipo-card__check {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+/* Info card "¿Cómo funciona?" */
+.vista-generar-info-card {
+    width: 100%;
+}
+
+.vista-generar-info-inner {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+}
+
+.vista-generar-info-emoji {
+    font-size: 1.5rem;
+}
+
+.vista-generar-info-titulo {
+    margin: 0 0 var(--space-sm) 0;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+}
+
+.vista-generar-info-texto {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
+}
+
+/* Botón de acción principal */
+.vista-generar-btn-accion {
+    margin-top: var(--space-sm);
+    min-width: 280px;
+}
+
+/* Vista "todos generados" */
+.vista-todos-generados {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+}
+
+.vista-todos-generados__inner {
+    text-align: center;
+}
+
+.vista-todos-generados__emoji {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.vista-todos-generados__titulo {
+    color: var(--text-primary);
+}
+
+.vista-todos-generados__subtitulo {
+    color: var(--text-secondary);
+}
+
+.vista-todos-generados__btn {
+    margin-top: 1rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ItemPrueba
+   ════════════════════════════════════════════════════════════════════ */
+.item-prueba {
+    padding: 0.75rem;
+    border-radius: 8px;
+    cursor: pointer;
+    background: transparent;
+    border: 2px solid transparent;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.item-prueba:hover {
+    background: var(--bg-gray, var(--bg-hover));
+}
+
+.item-prueba.active {
+    background: var(--primary-bg-light);
+    border-color: var(--primary-color);
+}
+
+.item-prueba__inner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.item-prueba__icono {
+    font-size: 1.2rem;
+    margin-top: 0.2rem;
+    flex-shrink: 0;
+}
+
+.item-prueba__body {
+    flex: 1;
+    min-width: 0;
+    /* clave para que el ellipsis funcione en flex */
+}
+
+.item-prueba__nombre {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+}
+
+.item-prueba__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.item-prueba__codigo {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   EditorPrueba
+   ════════════════════════════════════════════════════════════════════ */
+.editor-prueba {
+    background: var(--bg-card, white);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Header */
+.editor-prueba__header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color, #f0f0f0);
+    background: var(--bg-secondary, #fafafa);
+}
+
+.editor-prueba__header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.editor-prueba__titulo {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.editor-prueba__meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+}
+
+.editor-prueba__cambios-pendientes {
+    color: #ff9800;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Monaco */
+.editor-prueba__monaco {
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Footer info */
+.editor-prueba__footer-info {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color, #f0f0f0);
+    background: var(--bg-secondary, #fafafa);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.editor-prueba__footer-info-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Barra de acciones */
+.editor-prueba__acciones {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color, #f0f0f0);
+    background: var(--bg-card, white);
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Estado vacío */
+.editor-prueba__vacio {
+    background: var(--bg-card, white);
+    border-radius: 8px;
+    padding: 3rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.editor-prueba__vacio-titulo {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.editor-prueba__vacio-subtitulo {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* Botón Aprobar — verde coherente con el sistema */
+.btn-aprobar {
+    background: #52c41a !important;
+    border-color: #52c41a !important;
+    color: #fff !important;
+}
+
+.btn-aprobar:hover:not(:disabled) {
+    background: #389e0d !important;
+    border-color: #389e0d !important;
+}
+
+.btn-aprobar:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

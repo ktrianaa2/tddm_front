@@ -8,12 +8,14 @@ import {
   ApiOutlined,
   AppstoreOutlined,
   CheckCircleOutlined,
+  ArrowLeftOutlined,
 } from '@ant-design/icons';
 import '../../../styles/tabs.css';
 import '../../../styles/buttons.css';
+import '../../../styles/pruebas.css';
 
 // Configuración de los tipos de prueba disponibles
-const TIPOS_PRUEBA = [
+const TODOS_LOS_TIPOS = [
   {
     key: 'unitaria',
     label: 'Pruebas Unitarias',
@@ -46,13 +48,22 @@ const TIPOS_PRUEBA = [
   },
 ];
 
-const VistaGenerarPruebas = ({ loading, onRecargar, onIniciarPruebas }) => {
-  const [tiposSeleccionados, setTiposSeleccionados] = useState(['unitaria']);
+const VistaGenerarPruebas = ({
+  loading,
+  onRecargar,
+  onIniciarPruebas,
+  tiposExcluidos = [],
+  onVolver = null,
+}) => {
+  const tiposDisponibles = TODOS_LOS_TIPOS.filter(t => !tiposExcluidos.includes(t.key));
+
+  const [tiposSeleccionados, setTiposSeleccionados] = useState(() => {
+    return tiposDisponibles.length > 0 ? [tiposDisponibles[0].key] : [];
+  });
 
   const toggleTipo = (key) => {
     setTiposSeleccionados(prev => {
       if (prev.includes(key)) {
-        // No permitir deseleccionar si es el único seleccionado
         if (prev.length === 1) return prev;
         return prev.filter(k => k !== key);
       }
@@ -61,14 +72,54 @@ const VistaGenerarPruebas = ({ loading, onRecargar, onIniciarPruebas }) => {
   };
 
   const seleccionarTodos = () => {
-    setTiposSeleccionados(TIPOS_PRUEBA.map(t => t.key));
+    setTiposSeleccionados(tiposDisponibles.map(t => t.key));
   };
 
   const handleIniciar = () => {
     onIniciarPruebas(tiposSeleccionados);
   };
 
-  const todosSeleccionados = tiposSeleccionados.length === TIPOS_PRUEBA.length;
+  const todosSeleccionados = tiposSeleccionados.length === tiposDisponibles.length;
+  const esModoGenerarMas = tiposExcluidos.length > 0;
+
+  // Si no hay tipos disponibles
+  if (tiposDisponibles.length === 0) {
+    return (
+      <>
+        <div className="tab-header">
+          <div className="tab-header-content">
+            <h3 className="tab-title">
+              <BugOutlined style={{ marginRight: 'var(--space-sm)' }} />
+              Gestión de Pruebas
+            </h3>
+            <p className="tab-subtitle">Ya tienes pruebas de todos los tipos generadas</p>
+          </div>
+          <div className="tab-header-actions">
+            {onVolver && (
+              <Button icon={<ArrowLeftOutlined />} onClick={onVolver} className="btn btn-secondary">
+                Volver a pruebas
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="tab-main-content vista-todos-generados">
+          <div className="vista-todos-generados__inner">
+            <div className="vista-todos-generados__emoji">✅</div>
+            <h3 className="vista-todos-generados__titulo">Todos los tipos generados</h3>
+            <p className="vista-todos-generados__subtitulo">
+              Ya tienes pruebas unitarias, de componente y de sistema.
+            </p>
+            {onVolver && (
+              <Button type="primary" onClick={onVolver} className="btn btn-primary vista-todos-generados__btn">
+                Ver mis pruebas
+              </Button>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -77,19 +128,22 @@ const VistaGenerarPruebas = ({ loading, onRecargar, onIniciarPruebas }) => {
         <div className="tab-header-content">
           <h3 className="tab-title">
             <BugOutlined style={{ marginRight: 'var(--space-sm)' }} />
-            Gestión de Pruebas
+            {esModoGenerarMas ? 'Generar Más Pruebas' : 'Gestión de Pruebas'}
           </h3>
           <p className="tab-subtitle">
-            Genera casos de prueba automáticamente con IA
+            {esModoGenerarMas
+              ? `Genera pruebas de los tipos que aún no tienes (${tiposExcluidos.join(', ')} ya generados)`
+              : 'Genera casos de prueba automáticamente con IA'
+            }
           </p>
         </div>
         <div className="tab-header-actions">
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={onRecargar}
-            loading={loading}
-            className="btn btn-secondary"
-          >
+          {onVolver && (
+            <Button icon={<ArrowLeftOutlined />} onClick={onVolver} className="btn btn-secondary">
+              Volver a pruebas
+            </Button>
+          )}
+          <Button icon={<ReloadOutlined />} onClick={onRecargar} loading={loading} className="btn btn-secondary">
             Actualizar
           </Button>
         </div>
@@ -97,102 +151,61 @@ const VistaGenerarPruebas = ({ loading, onRecargar, onIniciarPruebas }) => {
 
       {/* Contenido principal */}
       <div className="tab-main-content">
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '600px',
-          padding: 'var(--space-xl)'
-        }}>
-          <div style={{
-            maxWidth: '600px',
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--space-lg)',
-            alignItems: 'center'
-          }}>
-            {/* Título */}
-            <div style={{ fontSize: '3rem' }}>🚀</div>
-            <h2 style={{
-              fontSize: 'var(--font-size-2xl)',
-              fontWeight: 'var(--font-weight-bold)',
-              color: 'var(--text-primary)',
-              margin: 0,
-              textAlign: 'center'
-            }}>
-              Genera Pruebas Automáticas
+        <div className="vista-generar-centrado">
+          <div className="vista-generar-inner">
+            <div className="vista-generar-emoji">🚀</div>
+
+            <h2 className="vista-generar-titulo">
+              {esModoGenerarMas ? 'Genera Más Pruebas' : 'Genera Pruebas Automáticas'}
             </h2>
-            <p style={{
-              fontSize: 'var(--font-size-base)',
-              color: 'var(--text-secondary)',
-              margin: 0,
-              lineHeight: 'var(--line-height-normal)',
-              textAlign: 'center'
-            }}>
-              Selecciona los tipos de prueba que deseas generar.
-              La IA los creará basándose en las especificaciones del proyecto.
+
+            <p className="vista-generar-descripcion">
+              {esModoGenerarMas
+                ? 'Selecciona los tipos adicionales que deseas generar. La IA los creará basándose en las especificaciones del proyecto.'
+                : 'Selecciona los tipos de prueba que deseas generar. La IA los creará basándose en las especificaciones del proyecto.'
+              }
             </p>
 
+            {/* Tipos ya generados (info) */}
+            {esModoGenerarMas && tiposExcluidos.length > 0 && (
+              <div className="vista-generar-ya-generados">
+                ✅ Ya tienes pruebas de: <strong>{tiposExcluidos.join(', ')}</strong>
+              </div>
+            )}
+
             {/* Selección de tipos */}
-            <div style={{ width: '100%' }}>
-              {/* Encabezado de selección */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 'var(--space-md)'
-              }}>
-                <span style={{
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 'var(--font-weight-semibold)',
-                  color: 'var(--text-primary)'
-                }}>
-                  Tipos de prueba
-                  <span style={{
-                    marginLeft: '8px',
-                    fontSize: 'var(--font-size-xs)',
-                    color: 'var(--text-secondary)',
-                    fontWeight: 'normal'
-                  }}>
-                    ({tiposSeleccionados.length} de {TIPOS_PRUEBA.length} seleccionados)
+            <div className="vista-generar-tipos-section">
+              <div className="vista-generar-tipos-header">
+                <span className="vista-generar-tipos-label">
+                  Tipos disponibles
+                  <span className="vista-generar-tipos-count">
+                    ({tiposSeleccionados.length} de {tiposDisponibles.length} seleccionados)
                   </span>
                 </span>
-                <Button
-                  type="link"
-                  size="small"
-                  onClick={seleccionarTodos}
-                  disabled={todosSeleccionados}
-                  style={{ padding: 0, height: 'auto', fontSize: 'var(--font-size-sm)' }}
-                >
-                  Seleccionar todos
-                </Button>
+                {tiposDisponibles.length > 1 && (
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={seleccionarTodos}
+                    disabled={todosSeleccionados}
+                    className="btn-link"
+                  >
+                    Seleccionar todos
+                  </Button>
+                )}
               </div>
 
-              {/* Cards de tipos */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--space-sm)'
-              }}>
-                {TIPOS_PRUEBA.map((tipo) => {
+              <div className="vista-generar-tipos-lista">
+                {tiposDisponibles.map((tipo) => {
                   const seleccionado = tiposSeleccionados.includes(tipo.key);
                   return (
                     <div
                       key={tipo.key}
                       onClick={() => toggleTipo(tipo.key)}
+                      className="tipo-card"
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'var(--space-md)',
-                        padding: '14px 16px',
-                        borderRadius: 'var(--border-radius-lg)',
-                        border: `2px solid ${seleccionado ? tipo.color : 'var(--border-color)'}`,
-                        background: seleccionado ? tipo.colorBg : 'var(--bg-card)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        userSelect: 'none',
-                        position: 'relative',
+                        borderColor: seleccionado ? tipo.color : undefined,
+                        background: seleccionado ? tipo.colorBg : undefined,
                       }}
                       onMouseEnter={(e) => {
                         if (!seleccionado) {
@@ -202,66 +215,42 @@ const VistaGenerarPruebas = ({ loading, onRecargar, onIniciarPruebas }) => {
                       }}
                       onMouseLeave={(e) => {
                         if (!seleccionado) {
-                          e.currentTarget.style.borderColor = 'var(--border-color)';
-                          e.currentTarget.style.background = 'var(--bg-card)';
+                          e.currentTarget.style.borderColor = '';
+                          e.currentTarget.style.background = '';
                         }
                       }}
                     >
                       {/* Icono tipo */}
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '8px',
-                        background: seleccionado ? tipo.color : tipo.colorBg,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '1.2rem',
-                        color: seleccionado ? '#fff' : tipo.color,
-                        flexShrink: 0,
-                        transition: 'all 0.2s ease',
-                      }}>
+                      <div
+                        className="tipo-card__icono"
+                        style={{
+                          background: seleccionado ? tipo.color : tipo.colorBg,
+                          color: seleccionado ? '#fff' : tipo.color,
+                        }}
+                      >
                         {tipo.icon}
                       </div>
 
                       {/* Texto */}
-                      <div style={{ flex: 1 }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          marginBottom: '2px'
-                        }}>
-                          <span style={{
-                            fontSize: 'var(--font-size-base)',
-                            fontWeight: 'var(--font-weight-semibold)',
-                            color: 'var(--text-primary)'
-                          }}>
+                      <div className="tipo-card__texto">
+                        <div className="tipo-card__nombre-row">
+                          <span className="tipo-card__nombre">
                             {tipo.emoji} {tipo.label}
                           </span>
                         </div>
-                        <span style={{
-                          fontSize: 'var(--font-size-sm)',
-                          color: 'var(--text-secondary)',
-                          lineHeight: 'var(--line-height-normal)'
-                        }}>
+                        <span className="tipo-card__descripcion">
                           {tipo.descripcion}
                         </span>
                       </div>
 
                       {/* Indicador de selección */}
-                      <div style={{
-                        width: '22px',
-                        height: '22px',
-                        borderRadius: '50%',
-                        border: `2px solid ${seleccionado ? tipo.color : 'var(--border-color)'}`,
-                        background: seleccionado ? tipo.color : 'transparent',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        transition: 'all 0.2s ease',
-                      }}>
+                      <div
+                        className="tipo-card__check"
+                        style={{
+                          borderColor: seleccionado ? tipo.color : undefined,
+                          background: seleccionado ? tipo.color : undefined,
+                        }}
+                      >
                         {seleccionado && (
                           <CheckCircleOutlined style={{ color: '#fff', fontSize: '12px' }} />
                         )}
@@ -274,32 +263,14 @@ const VistaGenerarPruebas = ({ loading, onRecargar, onIniciarPruebas }) => {
 
             {/* Info card */}
             <Card
-              style={{
-                background: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
-                border: 'none',
-                borderRadius: 'var(--border-radius-lg)',
-                width: '100%',
-              }}
+              className="vista-generar-info-card"
+              style={{ background: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', border: 'none', borderRadius: 'var(--border-radius-lg)' }}
             >
-              <div style={{
-                display: 'flex',
-                alignItems: 'start',
-                gap: 'var(--space-md)'
-              }}>
-                <div style={{ fontSize: '1.5rem' }}>💡</div>
+              <div className="vista-generar-info-inner">
+                <div className="vista-generar-info-emoji">💡</div>
                 <div>
-                  <h4 style={{
-                    margin: '0 0 var(--space-sm) 0',
-                    fontSize: 'var(--font-size-base)',
-                    fontWeight: 'var(--font-weight-semibold)'
-                  }}>
-                    ¿Cómo funciona?
-                  </h4>
-                  <p style={{
-                    margin: 0,
-                    fontSize: 'var(--font-size-sm)',
-                    lineHeight: 'var(--line-height-normal)'
-                  }}>
+                  <h4 className="vista-generar-info-titulo">¿Cómo funciona?</h4>
+                  <p className="vista-generar-info-texto">
                     La IA generará pruebas específicas para cada tipo seleccionado,
                     usando prompts especializados. Puedes generar todos los tipos a la vez
                     o solo los que necesites.
@@ -316,12 +287,11 @@ const VistaGenerarPruebas = ({ loading, onRecargar, onIniciarPruebas }) => {
               onClick={handleIniciar}
               disabled={tiposSeleccionados.length === 0 || loading}
               loading={loading}
-              className="btn btn-primary"
-              style={{ marginTop: 'var(--space-sm)', minWidth: '280px' }}
+              className="btn btn-primary vista-generar-btn-accion"
             >
               {tiposSeleccionados.length > 1
                 ? `Generar ${tiposSeleccionados.length} tipos con IA`
-                : `Generar Pruebas ${TIPOS_PRUEBA.find(t => t.key === tiposSeleccionados[0])?.label || ''}`
+                : `Generar Pruebas ${TODOS_LOS_TIPOS.find(t => t.key === tiposSeleccionados[0])?.label || ''}`
               }
             </Button>
           </div>

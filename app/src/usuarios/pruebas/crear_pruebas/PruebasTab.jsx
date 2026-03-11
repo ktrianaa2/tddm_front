@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import VistaGenerarPruebas from './VistaGenerarPruebas';
 import ListaPruebas from './ListaPruebas';
 import EditorPrueba from './EditorPrueba';
@@ -10,9 +10,10 @@ import { useHistoriasUsuario } from '../../../hooks/useHistoriasdeUsuario';
 import { usePruebas } from '../../../hooks/usePruebas';
 import { useEsquemaBD } from '../../../hooks/useEsquemaBD';
 import { Spin, message, Button, Empty, Card } from 'antd';
-import { BugOutlined, ReloadOutlined } from '@ant-design/icons';
+import { BugOutlined, ReloadOutlined, PlusOutlined } from '@ant-design/icons';
 import '../../../styles/tabs.css';
 import '../../../styles/buttons.css';
+import '../../../styles/pruebas.css';
 
 const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
   const proyectoId = proyecto?.proyecto_id;
@@ -26,47 +27,32 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
 
   // Hooks para especificaciones
   const {
-    requisitos,
-    loading: loadingRequisitos,
-    cargarRequisitos,
-    recargarTodo: recargarRequisitos,
+    requisitos, loading: loadingRequisitos,
+    cargarRequisitos, recargarTodo: recargarRequisitos,
   } = useRequisitos(proyectoId);
 
   const {
-    casosUso,
-    loading: loadingCasosUso,
-    cargarCasosUso,
-    recargarTodo: recargarCasosUso,
+    casosUso, loading: loadingCasosUso,
+    cargarCasosUso, recargarTodo: recargarCasosUso,
   } = useCasosUso(proyectoId);
 
   const {
-    historiasUsuario,
-    loading: loadingHistorias,
-    cargarHistoriasUsuario,
-    recargarTodo: recargarHistorias,
+    historiasUsuario, loading: loadingHistorias,
+    cargarHistoriasUsuario, recargarTodo: recargarHistorias,
   } = useHistoriasUsuario(proyectoId);
 
   // Hook para pruebas
   const {
-    loading: loadingPruebas,
-    pruebas,
-    contadores,
-    estadosProgreso,
-    progresoInfo,
-    resetProgreso,
-    generarPrueba,
-    generarPruebasMultiple,
-    cargarPruebas,
-    recargarPruebas,
-    eliminarPrueba,
-    guardarPrueba,
+    loading: loadingPruebas, pruebas, contadores,
+    estadosProgreso, mensajesPorTipo, pruebasPorTipo, progresoInfo,
+    resetProgreso, generarPrueba, generarPruebasMultiple,
+    cargarPruebas, recargarPruebas, eliminarPrueba, guardarPrueba,
+    aprobarPrueba, setPruebas,
   } = usePruebas(proyectoId);
 
   // Hook para esquema BD
   const {
-    loading: loadingEsquemaBD,
-    tieneEsquema,
-    cargarEsquemas,
+    loading: loadingEsquemaBD, tieneEsquema, cargarEsquemas,
   } = useEsquemaBD(proyectoId);
 
   const loadingEspecificaciones = loadingRequisitos || loadingCasosUso || loadingHistorias;
@@ -78,7 +64,20 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     ...historiasUsuario.map(hu => ({ ...hu, tipo_especificacion: 'historia_usuario' })),
   ];
 
-  // Cargar datos al montar
+  // CORRECCIÓN: solo pruebas no aprobadas para mostrar en la lista del editor
+  const pruebasPendientes = pruebas.filter(
+    p => p.estado?.toLowerCase() !== 'aprobada'
+  );
+
+  const tiposConPruebas = () => {
+    const tipos = new Set();
+    pruebas.forEach(p => {
+      const tipo = (p.tipo_prueba || p.tipo || '').toLowerCase().trim();
+      if (tipo) tipos.add(tipo);
+    });
+    return Array.from(tipos);
+  };
+
   useEffect(() => {
     if (proyectoId) {
       cargarRequisitos();
@@ -89,26 +88,19 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     }
   }, [proyectoId]);
 
-  // Determinar vista basada en estado
   useEffect(() => {
     if (!loading && !generandoPruebas) {
-      if (!tieneEsquema) {
-        setVistaActual('sin-esquema');
-      } else if (pruebas.length > 0) {
-        setVistaActual('gestion');
-      } else {
-        setVistaActual('inicial');
-      }
+      if (!tieneEsquema) setVistaActual('sin-esquema');
+      else if (pruebas.length > 0) setVistaActual('gestion');
+      else setVistaActual('inicial');
     }
   }, [loading, generandoPruebas, pruebas.length, tieneEsquema]);
 
-  // Handlers
+  // ── Handlers ───────────────────────────────────────────────────────────────
+
   const handleRecargarTodo = () => {
-    recargarRequisitos();
-    recargarCasosUso();
-    recargarHistorias();
-    recargarPruebas();
-    cargarEsquemas();
+    recargarRequisitos(); recargarCasosUso(); recargarHistorias();
+    recargarPruebas(); cargarEsquemas();
   };
 
   const handleIniciarGeneracionPruebas = (tipos) => {
@@ -120,26 +112,23 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     setModalVisible(true);
   };
 
+  const handleIrAGenerarMas = () => setVistaActual('generar-mas');
+
   const handleConfirmarGeneracion = async () => {
     setModalVisible(false);
     setGenerandoPruebas(true);
-    resetProgreso(); // ← limpiar estados anteriores
-
+    resetProgreso();
     try {
       let resultado;
-
       if (tiposPendientes.length === 1) {
         resultado = await generarPrueba(tiposPendientes[0]);
       } else {
         resultado = await generarPruebasMultiple(tiposPendientes, proyecto?.nombre || '');
       }
-
-      if (resultado && (resultado.total_pruebas > 0)) {
-        await recargarPruebas();
-
-        const totalMsg = resultado.total_pruebas;
+      if (resultado && resultado.total_pruebas > 0) {
+        const total = resultado.total_pruebas;
         message.success({
-          content: `🎉 ${totalMsg} prueba${totalMsg > 1 ? 's' : ''} generada${totalMsg > 1 ? 's' : ''} exitosamente con IA`,
+          content: `🎉 ${total} prueba${total > 1 ? 's' : ''} generada${total > 1 ? 's' : ''} exitosamente con IA`,
           duration: 5,
         });
       } else {
@@ -155,52 +144,68 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
 
   const handleSeleccionarPrueba = (prueba) => setPruebaSeleccionada(prueba);
 
+  // ── Eliminar ────────────────────────────────────────────────────────────────
   const handleEliminarPrueba = async (prueba) => {
     try {
       await eliminarPrueba(prueba.id_prueba);
       if (pruebaSeleccionada?.id_prueba === prueba.id_prueba) {
         setPruebaSeleccionada(null);
       }
+      message.success('Prueba eliminada exitosamente');
     } catch (error) {
       console.error('Error al eliminar la prueba:', error);
+      message.error('Error al eliminar la prueba');
     }
   };
 
-  const handleAprobarPrueba = async (prueba) => {
+  // ── Aprobar ─────────────────────────────────────────────────────────────────
+  // CORRECCIÓN: usar aprobarPrueba (endpoint dedicado /aprobar/) en vez de
+  // guardarPrueba. Esto garantiza que SOLO cambia el estado, sin tocar
+  // descripción ni ningún otro campo. Al aprobar, se deselecciona la prueba
+  // porque sale de la lista de pendientes.
+  const handleAprobarPrueba = async ({ id_prueba, id }) => {
     try {
-      const pruebaAprobada = { ...prueba, estado: 'Aprobada' };
-      setPruebaSeleccionada(pruebaAprobada);
-      await guardarPrueba(pruebaAprobada);
+      await aprobarPrueba({ id_prueba, id });
+      // Deseleccionar: la prueba aprobada ya no aparece en la lista de pendientes
+      setPruebaSeleccionada(null);
       message.success('Prueba aprobada exitosamente');
     } catch (error) {
       console.error('Error al aprobar la prueba:', error);
-      setPruebaSeleccionada(prueba);
+      message.error('Error al aprobar la prueba');
     }
   };
 
+  // ── Guardar cambios de código ───────────────────────────────────────────────
   const handleGuardarCambios = async (pruebaActualizada) => {
     try {
       await guardarPrueba(pruebaActualizada);
-      setPruebaSeleccionada(pruebaActualizada);
-      message.success('Cambios guardados exitosamente');
+      // Sincronizar la referencia local para que Descartar funcione
+      // correctamente si el usuario sigue editando.
+      setPruebaSeleccionada(prev => ({
+        ...prev,
+        prueba: {
+          ...(prev?.prueba || {}),
+          ...pruebaActualizada.prueba,
+        },
+      }));
     } catch (error) {
       console.error('Error al guardar los cambios:', error);
+      throw error;
     }
   };
 
-  const handleDescartarCambios = () => message.info('Cambios descartados');
+  const handleDescartarCambios = () => {
+    // El editor ya restaura el código internamente.
+  };
 
   const handleRegenerarPrueba = async (prueba) => {
     try {
       setGenerandoPruebas(true);
       resetProgreso();
       message.loading('Regenerando prueba con IA...', 0);
-
       const tipoPrueba = (prueba.tipo_prueba || prueba.tipo || 'unitaria').toLowerCase();
       const resultado = await generarPrueba(tipoPrueba);
-
       message.destroy();
-
       if (resultado && resultado.total_pruebas > 0) {
         await recargarPruebas();
         message.success('Pruebas regeneradas exitosamente');
@@ -217,7 +222,7 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     }
   };
 
-  // === RENDERIZADO ===
+  // ── RENDERIZADO ─────────────────────────────────────────────────────────────
 
   if (loading && todasEspecificaciones.length === 0 && pruebas.length === 0) {
     return (
@@ -230,12 +235,15 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
     );
   }
 
+  // Vista de progreso mientras se generan
   if (generandoPruebas) {
     return (
-      <div className="tab-main-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+      <div className="tab-main-content pruebas-progreso-wrapper">
         <ProgresoGeneracion
           tipos={tiposPendientes}
           estadosPorTipo={estadosProgreso}
+          mensajesPorTipo={mensajesPorTipo}
+          pruebasPorTipo={pruebasPorTipo}
           proyectoNombre={progresoInfo?.proyectoNombre || proyecto?.nombre || ''}
           totalGeneradas={progresoInfo?.totalGeneradas ?? 0}
           mensajeGlobal={progresoInfo?.mensajeGlobal || ''}
@@ -257,32 +265,20 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
             <p className="tab-subtitle">Crea y gestiona los casos de prueba de tu proyecto</p>
           </div>
           <div className="tab-header-actions">
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={handleRecargarTodo}
-              loading={loading}
-              className="btn btn-secondary"
-            >
+            <Button icon={<ReloadOutlined />} onClick={handleRecargarTodo} loading={loading} className="btn btn-secondary">
               Actualizar
             </Button>
           </div>
         </div>
 
         <div className="tab-main-content">
-          <Card style={{
-            textAlign: 'center',
-            padding: '3rem 1rem',
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-color)',
-          }}>
+          <Card className="sin-esquema-card">
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
               description={
                 <div>
-                  <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
-                    Esquema de Base de Datos Requerido
-                  </p>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  <p className="panel-vacio-titulo">Esquema de Base de Datos Requerido</p>
+                  <p className="panel-vacio-subtitulo">
                     Para generar pruebas automáticas, primero debes crear o cargar
                     un esquema de base de datos en la pestaña <strong>Base de Datos</strong>.
                   </p>
@@ -291,6 +287,30 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
             />
           </Card>
         </div>
+      </>
+    );
+  }
+
+  // Vista generar más
+  if (vistaActual === 'generar-mas') {
+    const existentes = tiposConPruebas();
+    return (
+      <>
+        <VistaGenerarPruebas
+          loading={loading}
+          onRecargar={handleRecargarTodo}
+          onIniciarPruebas={handleIniciarGeneracionPruebas}
+          tiposExcluidos={existentes}
+          onVolver={() => setVistaActual('gestion')}
+        />
+        <ModalAdvertencia
+          visible={modalVisible}
+          onCancel={() => setModalVisible(false)}
+          onConfirm={handleConfirmarGeneracion}
+          loading={false}
+          especificacionesCount={todasEspecificaciones.length}
+          tiposSeleccionados={tiposPendientes}
+        />
       </>
     );
   }
@@ -320,15 +340,51 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
   if (vistaActual === 'gestion') {
     return (
       <div className="tab-main-content">
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '400px 1fr',
-          gap: 'var(--space-xl)',
-          height: 'calc(100vh - 200px)',
-          minHeight: '600px',
-        }}>
+        <div className="tab-header" style={{ marginBottom: 'var(--space-lg)' }}>
+          <div className="tab-header-content">
+            <h3 className="tab-title">
+              <BugOutlined style={{ marginRight: 'var(--space-sm)' }} />
+              Gestión de Pruebas
+            </h3>
+            <p className="tab-subtitle">
+              {/* CORRECCIÓN: mostrar total y pendientes por separado */}
+              {contadores.total} prueba{contadores.total !== 1 ? 's' : ''} en total
+              {pruebasPendientes.length !== contadores.total && (
+                <span className="pruebas-tipos-badge">
+                  · {pruebasPendientes.length} pendiente{pruebasPendientes.length !== 1 ? 's' : ''}
+                </span>
+              )}
+              {tiposConPruebas().length > 0 && (
+                <span className="pruebas-tipos-badge">
+                  ({tiposConPruebas().join(', ')})
+                </span>
+              )}
+            </p>
+          </div>
+          <div className="tab-header-actions">
+            <Button
+              icon={<PlusOutlined />}
+              type="primary"
+              onClick={handleIrAGenerarMas}
+              className="btn btn-primary"
+            >
+              Generar más pruebas
+            </Button>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={handleRecargarTodo}
+              loading={loading}
+              className="btn btn-secondary"
+            >
+              Actualizar
+            </Button>
+          </div>
+        </div>
+
+        <div className="pruebas-grid-gestion">
+          {/* CORRECCIÓN: pasar solo pruebas pendientes a la lista del editor */}
           <ListaPruebas
-            pruebas={pruebas}
+            pruebas={pruebasPendientes}
             pruebaActiva={pruebaSeleccionada}
             onSeleccionarPrueba={handleSeleccionarPrueba}
           />
@@ -344,25 +400,17 @@ const PruebasTab = ({ proyecto, loading: externalLoading = false }) => {
             />
           ) : (
             <div className="panel-contenido">
-              <Card style={{
-                textAlign: 'center',
-                padding: '3rem 1rem',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border-color)',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
+              <Card className="panel-vacio-card">
                 <Empty
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                   description={
                     <div>
-                      <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
-                        Selecciona una prueba
-                      </p>
-                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                        Elige una prueba de la lista para ver su contenido
+                      <p className="panel-vacio-titulo">Selecciona una prueba</p>
+                      <p className="panel-vacio-subtitulo">
+                        {pruebasPendientes.length === 0
+                          ? '¡Todas las pruebas han sido aprobadas!'
+                          : 'Elige una prueba de la lista para ver su contenido'
+                        }
                       </p>
                     </div>
                   }

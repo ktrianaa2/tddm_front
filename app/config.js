@@ -32,7 +32,8 @@ export const API_ENDPOINTS = {
   OBTENER_PRUEBA: '/app/pruebas/obtener', // Se concatena /:prueba_id en el componente
   ACTUALIZAR_PRUEBA: '/app/pruebas/editar', // Se concatena /:prueba_id en el componente
   ELIMINAR_PRUEBA: '/app/pruebas/eliminar', // Se concatena /:prueba_id en el componente
-
+  APROBAR_PRUEBA: '/app/pruebas/aprobar', // Se concatena /:prueba_id en el componente
+ 
   // GENERACIÓN DE PRUEBAS CON IA - por tipo específico
   GENERAR_PRUEBAS_UNITARIAS_IA: '/app/chat/generar-pruebas/unitaria', // Se concatena /:proyecto_id en el componente
   PREVISUALIZAR_PRUEBAS_UNITARIAS_IA: '/app/chat/previsualizar-pruebas/unitaria', // Se concatena /:proyecto_id en el componente
