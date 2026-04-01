@@ -1,0 +1,253 @@
+/* styles/modo-ejecucion.css */
+
+/* ─── TABS DE MODO ───────────────────────────────────────────────────────── */
+
+.modo-tabs {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem 0;
+    background: var(--bg-secondary, #0d1117);
+    border-bottom: 1px solid var(--border-color, #21262d);
+}
+
+.modo-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 1rem;
+    border: 1px solid var(--border-color, #21262d);
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    background: transparent;
+    color: var(--text-secondary, #8b949e);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    position: relative;
+    bottom: -1px;
+    font-family: inherit;
+    text-align: left;
+}
+
+.modo-tab:hover {
+    background: var(--bg-hover, #161b22);
+    color: var(--text-primary, #e6edf3);
+}
+
+/* Tab activa — fase roja */
+.modo-tab--active.modo-tab--red {
+    background: var(--bg-primary, #0d1117);
+    border-color: #da3633;
+    border-bottom-color: var(--bg-primary, #0d1117);
+    color: #ff7b72;
+}
+
+.modo-tab--active.modo-tab--red .modo-tab__icon {
+    color: #da3633;
+}
+
+/* Tab activa — fase verde */
+.modo-tab--active.modo-tab--green {
+    background: var(--bg-primary, #0d1117);
+    border-color: #238636;
+    border-bottom-color: var(--bg-primary, #0d1117);
+    color: #3fb950;
+}
+
+.modo-tab--active.modo-tab--green .modo-tab__icon {
+    color: #238636;
+}
+
+.modo-tab__icon {
+    font-size: 1rem;
+    color: var(--text-tertiary, #484f58);
+    flex-shrink: 0;
+    transition: color 0.18s;
+}
+
+.modo-tab__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.modo-tab__title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.01em;
+}
+
+.modo-tab__subtitle {
+    font-size: 0.68rem;
+    opacity: 0.7;
+    line-height: 1;
+    font-weight: 400;
+}
+
+.modo-tab__badge {
+    margin-left: auto;
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+}
+
+.modo-tab__badge--red {
+    background: rgba(218, 54, 51, 0.15);
+    color: #da3633;
+    border: 1px solid rgba(218, 54, 51, 0.3);
+}
+
+.modo-tab__badge--green {
+    background: rgba(35, 134, 54, 0.15);
+    color: #238636;
+    border: 1px solid rgba(35, 134, 54, 0.3);
+}
+
+/* ─── BANNER CONTEXTUAL ──────────────────────────────────────────────────── */
+
+.modo-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    border-bottom: 1px solid var(--border-color, #21262d);
+    transition: all 0.2s ease;
+}
+
+.modo-banner--red {
+    background: rgba(218, 54, 51, 0.07);
+    color: #c9a0a0;
+    border-left: 3px solid #da3633;
+}
+
+.modo-banner--green {
+    background: rgba(35, 134, 54, 0.07);
+    color: #9fcba5;
+    border-left: 3px solid #238636;
+}
+
+.modo-banner__icon {
+    margin-top: 0.15rem;
+    font-size: 0.88rem;
+    flex-shrink: 0;
+}
+
+.modo-banner--red .modo-banner__icon {
+    color: #da3633;
+}
+
+.modo-banner--green .modo-banner__icon {
+    color: #238636;
+}
+
+.modo-banner__text strong {
+    color: var(--text-primary, #e6edf3);
+}
+
+.modo-banner__text em {
+    font-style: normal;
+    font-weight: 600;
+}
+
+.modo-banner--red .modo-banner__text em {
+    color: #ff7b72;
+}
+
+.modo-banner--green .modo-banner__text em {
+    color: #3fb950;
+}
+
+/* ─── BOTÓN FASE ROJA ────────────────────────────────────────────────────── */
+
+.btn-red-phase.ant-btn {
+    background: rgba(218, 54, 51, 0.1) !important;
+    border-color: #da3633 !important;
+    color: #ff7b72 !important;
+}
+
+.btn-red-phase.ant-btn:hover {
+    background: rgba(218, 54, 51, 0.2) !important;
+    border-color: #ff7b72 !important;
+}
+
+.btn-red-phase.ant-btn:disabled {
+    opacity: 0.4 !important;
+}
+
+/* ─── PLACEHOLDER MODO PRUEBA SOLA ──────────────────────────────────────── */
+
+.modo-sola-placeholder {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary, #0d1117);
+    border-right: 1px solid var(--border-color, #21262d);
+}
+
+.modo-sola-placeholder__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 360px;
+    text-align: center;
+    padding: 2rem;
+}
+
+.modo-sola-placeholder__icon {
+    font-size: 2.5rem;
+    color: #da3633;
+    opacity: 0.6;
+}
+
+.modo-sola-placeholder__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary, #e6edf3);
+    margin: 0;
+}
+
+.modo-sola-placeholder__desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary, #8b949e);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.modo-sola-placeholder__steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.modo-sola-step {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(218, 54, 51, 0.06);
+    border: 1px solid rgba(218, 54, 51, 0.15);
+    border-radius: 6px;
+    font-size: 0.78rem;
+    color: var(--text-secondary, #8b949e);
+    text-align: left;
+}
+
+.modo-sola-step strong {
+    color: var(--text-primary, #e6edf3);
+}
+
+.modo-sola-step__num {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #da3633;
+    flex-shrink: 0;
+}

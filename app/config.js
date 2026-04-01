@@ -33,6 +33,7 @@ export const API_ENDPOINTS = {
   ACTUALIZAR_PRUEBA: '/app/pruebas/editar', // Se concatena /:prueba_id en el componente
   ELIMINAR_PRUEBA: '/app/pruebas/eliminar', // Se concatena /:prueba_id en el componente
   APROBAR_PRUEBA: '/app/pruebas/aprobar', // Se concatena /:prueba_id en el componente
+  EJECUTAR_PRUEBAS: '/app/pruebas/ejecutar/',
 
   // GitHub Integration
   GITHUB_GUARDAR_CONEXION:  '/app/github/conexion/guardar/',

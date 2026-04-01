@@ -1,34 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Button, message, Upload, Dropdown, Tag, Empty, Spin, Checkbox, Tooltip } from 'antd';
 import {
-  Button,
-  Space,
-  message,
-  Upload,
-  Dropdown,
-  Tag,
-  Row,
-  Col,
-  Empty,
-  Spin,
-  Checkbox
-} from 'antd';
-import {
-  PlayCircleOutlined,
-  GithubOutlined,
-  UploadOutlined,
-  SaveOutlined,
-  StopOutlined,
-  DownloadOutlined,
-  SettingOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  ClockCircleOutlined,
-  ThunderboltOutlined,
-  CodeOutlined,
-  DisconnectOutlined
+  PlayCircleOutlined, GithubOutlined, UploadOutlined, SaveOutlined,
+  StopOutlined, DownloadOutlined, SettingOutlined, CheckCircleOutlined,
+  CloseCircleOutlined, ClockCircleOutlined, CodeOutlined, DisconnectOutlined,
+  ExperimentOutlined, ThunderboltOutlined, InfoCircleOutlined,
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
-import ListaPruebas from '../crear_pruebas/ListaPruebas';
 import ConsolaResultados from './ConsolaResultados';
 import ModalGitHub from './ModalGitHub';
 import ExplorarGitHub from './ExplorarGitHub';
@@ -36,278 +14,95 @@ import { usePruebas } from '../../../hooks/usePruebas';
 import { useEjecucion } from '../../../hooks/useEjecucion';
 import '../../../styles/tabs.css';
 import '../../../styles/ejecutar-pruebas.css';
+import '../../../styles/modo-ejecucion.css';
 
 const EjecutarPruebasTab = ({ proyecto }) => {
   const proyectoId = proyecto?.proyecto_id;
-
+  const { pruebas, loading: loadingPruebas, cargarPruebas } = usePruebas(proyectoId);
   const {
-    pruebas,
-    loading: loadingPruebas,
-    cargarPruebas
-  } = usePruebas(proyectoId);
-
-  const {
-    conectadoGitHub,
-    githubConfig,
-    githubUsuario,
-    loadingGitHub,
-    verificandoConexion,
-    tieneConexionGuardada,
-    arbolArchivos,
-    loadingArbol,
-    archivoActivo,
-    codigoActivo,
-    loadingArchivo,
-    archivosModificados,
-    tieneModificaciones,
-    totalArchivosModificados,
-    tabsAbiertos,
-    cerrarTab,
-    validarToken,
-    listarRepositorios,
-    listarRamas,
-    conectarGitHub,
-    desconectarGitHub,
-    cargarArbolArchivos,
-    cargarArchivo,
-    actualizarCodigoActivo,
-    guardarCambiosLocales,
-    descartarCambios,
+    conectadoGitHub, githubConfig, githubUsuario, loadingGitHub, verificandoConexion,
+    tieneConexionGuardada, arbolArchivos, loadingArbol, archivoActivo, codigoActivo,
+    loadingArchivo, archivosModificados, tieneModificaciones, totalArchivosModificados,
+    tabsAbiertos, cerrarTab, validarToken, listarRepositorios, listarRamas,
+    conectarGitHub, desconectarGitHub, cargarArbolArchivos, cargarArchivo,
+    actualizarCodigoActivo, guardarCambiosLocales, descartarCambios,
+    ejecutando, resultados, estadisticas, ejecutarPruebas, detenerEjecucion,
+    limpiarResultados, inicializarPendientes,
   } = useEjecucion();
 
-  // ── Editor manual ────────────────────────────────────────────────
-  const [codigoManual, setCodigoManual] = useState('// Escribe tu código aquí o cárgalo desde un archivo\n\n');
-  const [codigoManualGuardado, setCodigoManualGuardado] = useState('// Escribe tu código aquí o cárgalo desde un archivo\n\n');
-
-  // ── Multi-selección de pruebas ───────────────────────────────────
+  const [codigoManual, setCodigoManual] = useState(
+    '# Pega aquí el código Python que tus pruebas importan/testean\n' +
+    '# (opcional — déjalo vacío si las pruebas son autónomas)\n\n'
+  );
+  const [codigoManualGuardado, setCodigoManualGuardado] = useState('');
   const [pruebasSeleccionadas, setPruebasSeleccionadas] = useState([]);
-  // La "prueba activa" es la última seleccionada (para mostrar detalles si fuera necesario)
   const [pruebaActiva, setPruebaActiva] = useState(null);
-
-  // ── Estado general ───────────────────────────────────────────────
-  const [ejecutando, setEjecutando] = useState(false);
-  const [resultados, setResultados] = useState([]);
   const [modalGitHubVisible, setModalGitHubVisible] = useState(false);
-  const [estadisticas, setEstadisticas] = useState({
-    pasadas: 0, fallidas: 0, pendientes: 0, tiempo: 0
-  });
+
+  // ── NUEVO: pestaña de modo activa ────────────────────────────────
+  const [modoActivo, setModoActivo] = useState('prueba_sola'); // 'prueba_sola' | 'sobre_codigo'
 
   const editorRef = useRef(null);
 
+  useEffect(() => { if (proyectoId) cargarPruebas(); }, [proyectoId]);
   useEffect(() => {
-    if (proyectoId) cargarPruebas();
-  }, [proyectoId]);
-
-  useEffect(() => {
-    if (pruebas.length > 0) {
-      setEstadisticas(prev => ({
-        ...prev,
-        pendientes: pruebas.filter(p => p.estado === 'Aprobada').length
-      }));
-    }
+    if (pruebas.length > 0) inicializarPendientes(pruebas.filter(p => p.estado === 'Aprobada').length);
   }, [pruebas]);
 
   const pruebasAprobadas = pruebas.filter(p => p.estado === 'Aprobada');
-  const codigoParaEjecucion = conectadoGitHub ? codigoActivo : codigoManual;
 
-  // ── Selección múltiple ───────────────────────────────────────────
   const handleTogglePrueba = (prueba) => {
-    if (prueba.estado !== 'Aprobada') {
-      message.warning('Solo se pueden ejecutar pruebas aprobadas');
-      return;
-    }
+    if (prueba.estado !== 'Aprobada') { message.warning('Solo se pueden ejecutar pruebas aprobadas'); return; }
     setPruebaActiva(prueba);
     setPruebasSeleccionadas(prev => {
       const existe = prev.some(p => p.id_prueba === prueba.id_prueba);
-      return existe
-        ? prev.filter(p => p.id_prueba !== prueba.id_prueba)
-        : [...prev, prueba];
+      return existe ? prev.filter(p => p.id_prueba !== prueba.id_prueba) : [...prev, prueba];
     });
   };
 
-  const handleSeleccionarTodas = (e) => {
-    if (e.target.checked) {
-      setPruebasSeleccionadas([...pruebasAprobadas]);
-    } else {
-      setPruebasSeleccionadas([]);
-    }
-  };
+  const handleSeleccionarTodas = (e) =>
+    setPruebasSeleccionadas(e.target.checked ? [...pruebasAprobadas] : []);
 
-  const todasSeleccionadas =
-    pruebasAprobadas.length > 0 &&
-    pruebasSeleccionadas.length === pruebasAprobadas.length;
+  const todasSeleccionadas = pruebasAprobadas.length > 0 && pruebasSeleccionadas.length === pruebasAprobadas.length;
   const algunaSeleccionada = pruebasSeleccionadas.length > 0;
 
-  // ── Helpers de resultado ─────────────────────────────────────────
-  const agregarResultado = (tipo, msg) => {
-    const timestamp = new Date().toLocaleTimeString('es-ES', {
-      hour: '2-digit', minute: '2-digit', second: '2-digit'
-    });
-    setResultados(prev => [...prev, { tipo, mensaje: msg, timestamp }]);
-  };
-
-  const simularEjecucionPaso = async (paso, indice, totalPasos) => {
-    agregarResultado('log', `\n[Paso ${indice + 1}/${totalPasos}] ${paso.descripcion}`);
-    await new Promise(r => setTimeout(r, 800));
-    const exito = Math.random() > 0.2;
-    if (exito) {
-      agregarResultado('success', `✓ Resultado esperado alcanzado: ${paso.resultado_esperado}`);
-    } else {
-      agregarResultado('error', `✗ Fallo: No se cumplió "${paso.resultado_esperado}"`);
-      agregarResultado('warning', `  Revisar la implementación del código`);
-      return false;
-    }
-    return true;
-  };
-
-  // ── Ejecutar pruebas seleccionadas ───────────────────────────────
-  const handleEjecutarSeleccionadas = async () => {
-    if (pruebasSeleccionadas.length === 0) {
-      message.warning('Selecciona al menos una prueba para ejecutar');
+  // ── Ejecutar según modo activo ───────────────────────────────────
+  const handleEjecutar = () => {
+    if (!algunaSeleccionada) { message.warning('Selecciona al menos una prueba para ejecutar'); return; }
+    if (modoActivo === 'sobre_codigo' && !conectadoGitHub && !codigoManual.trim()) {
+      message.warning('Pega el código del proyecto en el editor o conecta GitHub');
       return;
     }
-    const codigoVacio = !codigoParaEjecucion.trim();
-    if (codigoVacio) {
-      message.warning(
-        conectadoGitHub
-          ? 'Selecciona un archivo del explorador de GitHub'
-          : 'Debes escribir o cargar código antes de ejecutar'
-      );
-      return;
-    }
-
-    if (pruebasSeleccionadas.length === 1) {
-      await _ejecutarUnaPrueba(pruebasSeleccionadas[0]);
-    } else {
-      await _ejecutarMultiples(pruebasSeleccionadas);
-    }
-  };
-
-  const _ejecutarUnaPrueba = async (prueba) => {
-    setEjecutando(true);
-    setResultados([]);
-    const detalle = prueba.prueba || prueba;
-    const inicio = Date.now();
-    try {
-      agregarResultado('info', `═══════════════════════════════════════`);
-      agregarResultado('info', `Iniciando: ${prueba.nombre}`);
-      agregarResultado('info', `Código: ${prueba.codigo} | Tipo: ${prueba.tipo_prueba}`);
-      if (conectadoGitHub && archivoActivo) agregarResultado('info', `Archivo: ${archivoActivo.path}`);
-      agregarResultado('info', `═══════════════════════════════════════`);
-      agregarResultado('log', `\n🎯 OBJETIVO: ${detalle.objetivo}`);
-      agregarResultado('log', `\n📋 Verificando precondiciones...`);
-      await new Promise(r => setTimeout(r, 1000));
-      for (const pre of detalle.precondiciones || []) {
-        agregarResultado('info', `  • ${pre}`);
-        await new Promise(r => setTimeout(r, 300));
-      }
-      agregarResultado('success', '✓ Precondiciones cumplidas');
-      agregarResultado('log', `\n⚙️  Compilando código...`);
-      await new Promise(r => setTimeout(r, 1200));
-      agregarResultado('success', '✓ Compilado');
-      agregarResultado('log', `\n🔄 Ejecutando pasos...`);
-
-      let ok = true;
-      const pasos = detalle.pasos || [];
-      for (let i = 0; i < pasos.length; i++) {
-        const res = await simularEjecucionPaso(pasos[i], i, pasos.length);
-        if (!res) { ok = false; break; }
-      }
-
-      const t = ((Date.now() - inicio) / 1000).toFixed(2);
-      agregarResultado('log', `\n═══════════════════════════════════════`);
-      if (ok) {
-        agregarResultado('success', '✅ PRUEBA APROBADA');
-        agregarResultado('info', `⏱️  Tiempo: ${t}s`);
-        setEstadisticas(prev => ({ ...prev, pasadas: prev.pasadas + 1, pendientes: Math.max(0, prev.pendientes - 1), tiempo: prev.tiempo + parseFloat(t) }));
-        message.success('¡Prueba ejecutada exitosamente!');
-      } else {
-        agregarResultado('error', '❌ PRUEBA FALLIDA');
-        agregarResultado('info', `⏱️  Tiempo: ${t}s`);
-        setEstadisticas(prev => ({ ...prev, fallidas: prev.fallidas + 1, pendientes: Math.max(0, prev.pendientes - 1), tiempo: prev.tiempo + parseFloat(t) }));
-        message.error('La prueba falló');
-      }
-    } catch (err) {
-      agregarResultado('error', `💥 Error crítico: ${err.message}`);
-    } finally {
-      setEjecutando(false);
-    }
-  };
-
-  const _ejecutarMultiples = async (lista) => {
-    setEjecutando(true);
-    setResultados([]);
-    agregarResultado('info', '╔═══════════════════════════════════════╗');
-    agregarResultado('info', `║  EJECUTANDO ${lista.length} PRUEBA(S) SELECCIONADA(S)  ║`);
-    agregarResultado('info', '╚═══════════════════════════════════════╝');
-
-    let pasadas = 0, fallidas = 0;
-    const inicioTotal = Date.now();
-
-    for (let i = 0; i < lista.length; i++) {
-      const prueba = lista[i];
-      agregarResultado('info', `\n[${i + 1}/${lista.length}] ${prueba.nombre}`);
-      await new Promise(r => setTimeout(r, 1200));
-      const exito = Math.random() > 0.15;
-      if (exito) { agregarResultado('success', `✅ ${prueba.codigo} - APROBADA`); pasadas++; }
-      else { agregarResultado('error', `❌ ${prueba.codigo} - FALLIDA`); fallidas++; }
-    }
-
-    const t = ((Date.now() - inicioTotal) / 1000).toFixed(2);
-    agregarResultado('log', '\n═══════════════════════════════════════');
-    agregarResultado('success', `✅ Aprobadas: ${pasadas}/${lista.length}`);
-    if (fallidas > 0) agregarResultado('error', `❌ Fallidas: ${fallidas}/${lista.length}`);
-    agregarResultado('info', `⏱️  Tiempo total: ${t}s`);
-    agregarResultado('info', `📈 Tasa de éxito: ${((pasadas / lista.length) * 100).toFixed(1)}%`);
-    setEstadisticas({ pasadas, fallidas, pendientes: 0, tiempo: parseFloat(t) });
-    setEjecutando(false);
-    if (fallidas === 0) message.success('🎉 ¡Todas las pruebas seleccionadas pasaron!');
-    else message.warning(`${fallidas} prueba(s) fallaron`);
-  };
-
-  const handleDetenerEjecucion = () => {
-    setEjecutando(false);
-    agregarResultado('warning', '⚠️  Ejecución detenida por el usuario');
-    message.info('Ejecución detenida');
+    ejecutarPruebas(
+      pruebasSeleccionadas,
+      conectadoGitHub ? '' : codigoManual,
+      120,
+      modoActivo,
+    );
   };
 
   const handleCargarArchivo = (info) => {
     const { file } = info;
     if (file.status === 'done' || file.originFileObj) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setCodigoManual(e.target.result);
-        message.success(`Archivo ${file.name} cargado`);
-      };
+      reader.onload = (e) => { setCodigoManual(e.target.result); message.success(`${file.name} cargado`); };
       reader.readAsText(file.originFileObj || file);
     }
   };
 
   const handleConectarGitHub = async (valores) => {
-    try {
-      await conectarGitHub(valores);
-      setModalGitHubVisible(false);
-    } catch { /* Error ya manejado */ }
+    try { await conectarGitHub(valores); setModalGitHubVisible(false); } catch { }
   };
-
-  const handleGuardarManual = () => {
-    setCodigoManualGuardado(codigoManual);
-    message.success('Código guardado');
-  };
-
+  const handleGuardarManual = () => { setCodigoManualGuardado(codigoManual); message.success('Código guardado'); };
   const handleExportarManual = () => {
     const blob = new Blob([codigoManual], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
-    link.download = `codigo-prueba-${Date.now()}.js`;
-    link.click();
-    URL.revokeObjectURL(url);
-    message.success('Código exportado');
+    link.href = url; link.download = `codigo-${Date.now()}.py`; link.click();
+    URL.revokeObjectURL(url); message.success('Código exportado');
   };
 
   const tieneModificacionesManual = codigoManual !== codigoManualGuardado;
-
   const menuOpciones = {
     items: [
       { key: 'guardar', label: 'Guardar Código', icon: <SaveOutlined />, onClick: handleGuardarManual, disabled: !tieneModificacionesManual },
@@ -315,51 +110,19 @@ const EjecutarPruebasTab = ({ proyecto }) => {
     ],
   };
 
-  // ── Loading / Empty states ───────────────────────────────────────
-  if (loadingPruebas) {
-    return (
-      <div className="ep-loading-state">
-        <Spin size="large" />
-        <div className="ep-loading-text">Cargando pruebas...</div>
-      </div>
-    );
-  }
-
-  if (pruebas.length === 0) {
-    return (
-      <div className="ep-empty-state">
-        <Empty
-          description={
-            <div>
-              <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No hay pruebas disponibles</p>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                Primero debes crear y aprobar pruebas en la pestaña "Pruebas"
-              </p>
-            </div>
-          }
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-        />
-      </div>
-    );
-  }
-
-  if (pruebasAprobadas.length === 0) {
-    return (
-      <div className="ep-empty-state">
-        <Empty
-          description={
-            <div>
-              <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No hay pruebas aprobadas</p>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                Debes aprobar al menos una prueba para ejecutarla
-              </p>
-            </div>
-          }
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-        />
-      </div>
-    );
-  }
+  if (loadingPruebas) return (
+    <div className="ep-loading-state"><Spin size="large" /><div className="ep-loading-text">Cargando pruebas...</div></div>
+  );
+  if (pruebas.length === 0) return (
+    <div className="ep-empty-state">
+      <Empty description={<div><p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No hay pruebas disponibles</p><p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Primero debes crear y aprobar pruebas en la pestaña "Pruebas"</p></div>} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+    </div>
+  );
+  if (pruebasAprobadas.length === 0) return (
+    <div className="ep-empty-state">
+      <Empty description={<div><p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No hay pruebas aprobadas</p><p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Aprueba al menos una prueba para poder ejecutarla</p></div>} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+    </div>
+  );
 
   return (
     <div className="ep-root">
@@ -367,12 +130,10 @@ const EjecutarPruebasTab = ({ proyecto }) => {
       {/* ── Header ── */}
       <div className="ep-header">
         <div className="ep-header-left">
-          <h3>
-            <PlayCircleOutlined className="ep-header-icon" />
-            Ejecución de Pruebas
-          </h3>
+          <h3><PlayCircleOutlined className="ep-header-icon" />Ejecución de Pruebas</h3>
           <div className="ep-header-tags">
             <Tag color="blue">{pruebasAprobadas.length} pruebas disponibles</Tag>
+            <Tag color="purple">pytest real</Tag>
             {conectadoGitHub && (
               <Tag color="success" icon={<GithubOutlined />}>
                 {githubConfig?.repositorio?.split('/')[1]} · {githubConfig?.rama}
@@ -383,7 +144,6 @@ const EjecutarPruebasTab = ({ proyecto }) => {
             )}
           </div>
         </div>
-
         <div className="ep-stats">
           <div className="ep-stat-item">
             <CheckCircleOutlined className="ep-stat-icon ep-stat-icon--pass" />
@@ -403,100 +163,125 @@ const EjecutarPruebasTab = ({ proyecto }) => {
         </div>
       </div>
 
+      {/* ── TABS DE MODO ── */}
+      <div className="modo-tabs">
+        <button
+          className={`modo-tab ${modoActivo === 'prueba_sola' ? 'modo-tab--active modo-tab--red' : ''}`}
+          onClick={() => setModoActivo('prueba_sola')}
+        >
+          <div className="modo-tab__icon"><ExperimentOutlined /></div>
+          <div className="modo-tab__content">
+            <span className="modo-tab__title">Prueba sola</span>
+            <span className="modo-tab__subtitle">Sin código real · Auto-mock · Red phase</span>
+          </div>
+          <div className="modo-tab__badge modo-tab__badge--red">TDD ①</div>
+        </button>
+
+        <button
+          className={`modo-tab ${modoActivo === 'sobre_codigo' ? 'modo-tab--active modo-tab--green' : ''}`}
+          onClick={() => setModoActivo('sobre_codigo')}
+        >
+          <div className="modo-tab__icon"><ThunderboltOutlined /></div>
+          <div className="modo-tab__content">
+            <span className="modo-tab__title">Sobre código</span>
+            <span className="modo-tab__subtitle">Con código real · Sin mocks · Green phase</span>
+          </div>
+          <div className="modo-tab__badge modo-tab__badge--green">TDD ②</div>
+        </button>
+      </div>
+
+      {/* ── Banner contextual del modo ── */}
+      <div className={`modo-banner ${modoActivo === 'prueba_sola' ? 'modo-banner--red' : 'modo-banner--green'}`}>
+        {modoActivo === 'prueba_sola' ? (
+          <>
+            <ExperimentOutlined className="modo-banner__icon" />
+            <div className="modo-banner__text">
+              <strong>Fase roja (Red):</strong> ejecuta las pruebas sin código real del proyecto.
+              Los imports faltantes se simulan con mocks automáticos.
+              <em> Lo esperado es que fallen</em> — si pasan, la prueba puede ser trivial.
+            </div>
+          </>
+        ) : (
+          <>
+            <ThunderboltOutlined className="modo-banner__icon" />
+            <div className="modo-banner__text">
+              <strong>Fase verde (Green):</strong> ejecuta las pruebas contra el código real
+              {conectadoGitHub
+                ? ` del repo ${githubConfig?.repositorio?.split('/')[1]}.`
+                : ' pegado en el editor.'}
+              {' '}No se aplican mocks automáticos.
+              <em> Lo esperado es que pasen.</em>
+            </div>
+          </>
+        )}
+      </div>
+
       {/* ── Toolbar ── */}
       <div className="ep-toolbar">
         <div className="ep-toolbar-left">
           {!ejecutando ? (
-            <>
-              <Button
-                type="primary"
-                icon={<PlayCircleOutlined />}
-                onClick={handleEjecutarSeleccionadas}
-                disabled={!algunaSeleccionada}
-                className="btn btn-primary"
-              >
-                {pruebasSeleccionadas.length > 1
-                  ? `Ejecutar (${pruebasSeleccionadas.length})`
-                  : 'Ejecutar Prueba'}
-              </Button>
-            </>
-          ) : (
             <Button
-              danger
-              icon={<StopOutlined />}
-              onClick={handleDetenerEjecucion}
-              className="btn btn-danger"
+              type={modoActivo === 'sobre_codigo' ? 'primary' : 'default'}
+              icon={modoActivo === 'sobre_codigo' ? <ThunderboltOutlined /> : <ExperimentOutlined />}
+              onClick={handleEjecutar}
+              disabled={!algunaSeleccionada}
+              className={`btn ${modoActivo === 'sobre_codigo' ? 'btn-primary' : 'btn-red-phase'}`}
             >
-              Detener Ejecución
+              {algunaSeleccionada && pruebasSeleccionadas.length > 1
+                ? `${modoActivo === 'prueba_sola' ? 'Prueba sola' : 'Ejecutar'} (${pruebasSeleccionadas.length})`
+                : modoActivo === 'prueba_sola' ? 'Prueba sola' : 'Ejecutar sobre código'
+              }
+            </Button>
+          ) : (
+            <Button danger icon={<StopOutlined />} onClick={detenerEjecucion} className="btn btn-danger">
+              Detener
             </Button>
           )}
 
-          {!conectadoGitHub && (
-            <Upload
-              beforeUpload={() => false}
-              onChange={handleCargarArchivo}
-              showUploadList={false}
-              accept=".js,.jsx,.ts,.tsx,.py,.java,.cs,.go,.rs,.rb,.php"
-            >
-              <Button icon={<UploadOutlined />} className="btn btn-secondary">
-                Cargar Archivo
-              </Button>
+          {/* Editor / GitHub solo visible en modo sobre_codigo */}
+          {modoActivo === 'sobre_codigo' && !conectadoGitHub && (
+            <Upload beforeUpload={() => false} onChange={handleCargarArchivo} showUploadList={false} accept=".py,.pyi,.pyx">
+              <Button icon={<UploadOutlined />} className="btn btn-secondary">Cargar .py</Button>
             </Upload>
           )}
 
-          {conectadoGitHub ? (
-            <Button
-              icon={<DisconnectOutlined />}
-              onClick={desconectarGitHub}
-              danger
-              className="btn btn-danger-outline"
-            >
-              Desconectar GitHub
-            </Button>
-          ) : (
-            <Button
-              icon={<GithubOutlined />}
-              onClick={() => setModalGitHubVisible(true)}
-              loading={loadingGitHub || verificandoConexion}
-              className={tieneConexionGuardada ? 'btn ep-btn-github-saved' : 'btn btn-secondary'}
-            >
-              {verificandoConexion
-                ? 'Verificando...'
-                : tieneConexionGuardada
-                  ? `GitHub — @${githubUsuario?.login || '...'}`
-                  : 'Conectar GitHub'
-              }
-            </Button>
+          {modoActivo === 'sobre_codigo' && (
+            conectadoGitHub
+              ? <Button icon={<DisconnectOutlined />} onClick={desconectarGitHub} danger className="btn btn-danger-outline">
+                Desconectar GitHub
+              </Button>
+              : <Button
+                icon={<GithubOutlined />}
+                onClick={() => setModalGitHubVisible(true)}
+                loading={loadingGitHub || verificandoConexion}
+                className={tieneConexionGuardada ? 'btn ep-btn-github-saved' : 'btn btn-secondary'}
+              >
+                {verificandoConexion ? 'Verificando...' : tieneConexionGuardada ? `GitHub — @${githubUsuario?.login || '...'}` : 'Conectar GitHub'}
+              </Button>
           )}
         </div>
 
         <div className="ep-toolbar-right">
-          {!conectadoGitHub && tieneModificacionesManual && (
+          {modoActivo === 'sobre_codigo' && !conectadoGitHub && tieneModificacionesManual && (
             <Tag color="orange">Sin guardar</Tag>
           )}
-          {!conectadoGitHub && (
+          {modoActivo === 'sobre_codigo' && !conectadoGitHub && (
             <Dropdown menu={menuOpciones} trigger={['click']}>
-              <Button icon={<SettingOutlined />} className="btn btn-secondary">
-                Opciones
-              </Button>
+              <Button icon={<SettingOutlined />} className="btn btn-secondary">Opciones</Button>
             </Dropdown>
           )}
         </div>
       </div>
 
-      {/* ── Cuerpo ── */}
+      {/* ── Body ── */}
       <div className="ep-body">
 
-        {/* Lista de pruebas con checkboxes */}
+        {/* Lista de pruebas */}
         <div className="ep-list-panel">
           <div className="ep-list-header">
             <div className="ep-list-header-top">
               <h4 className="ep-list-title">Pruebas aprobadas</h4>
-              {algunaSeleccionada && (
-                <span className="ep-selected-count">
-                  {pruebasSeleccionadas.length} sel.
-                </span>
-              )}
+              {algunaSeleccionada && <span className="ep-selected-count">{pruebasSeleccionadas.length} sel.</span>}
             </div>
             <Checkbox
               checked={todasSeleccionadas}
@@ -506,7 +291,6 @@ const EjecutarPruebasTab = ({ proyecto }) => {
               <span className="ep-list-select-all">Seleccionar todas</span>
             </Checkbox>
           </div>
-
           <div className="ep-list-items">
             {pruebasAprobadas.map(prueba => {
               const seleccionada = pruebasSeleccionadas.some(p => p.id_prueba === prueba.id_prueba);
@@ -514,11 +298,7 @@ const EjecutarPruebasTab = ({ proyecto }) => {
               return (
                 <div
                   key={prueba.id_prueba}
-                  className={[
-                    'ep-prueba-item',
-                    seleccionada ? 'ep-prueba-item--selected' : '',
-                    activa ? 'ep-prueba-item--active' : '',
-                  ].join(' ')}
+                  className={['ep-prueba-item', seleccionada ? 'ep-prueba-item--selected' : '', activa ? 'ep-prueba-item--active' : ''].join(' ')}
                   onClick={() => handleTogglePrueba(prueba)}
                 >
                   <Checkbox
@@ -528,13 +308,12 @@ const EjecutarPruebasTab = ({ proyecto }) => {
                     onChange={() => handleTogglePrueba(prueba)}
                   />
                   <div className="ep-prueba-icon">
-                    {prueba.tipo_prueba === 'unitaria' ? '🧪' :
-                      prueba.tipo_prueba === 'sistema' ? '🖥️' : '⚙️'}
+                    {prueba.tipo_prueba?.nombre === 'unitaria' ? '🧪' : prueba.tipo_prueba?.nombre === 'sistema' ? '🖥️' : '⚙️'}
                   </div>
                   <div className="ep-prueba-content">
                     <div className="ep-prueba-name">{prueba.nombre}</div>
                     <div className="ep-prueba-meta">
-                      <Tag size="small" color="blue">{prueba.tipo_prueba}</Tag>
+                      <Tag size="small" color="blue">{prueba.tipo_prueba?.nombre}</Tag>
                       <span className="ep-prueba-code">{prueba.codigo}</span>
                     </div>
                   </div>
@@ -544,10 +323,9 @@ const EjecutarPruebasTab = ({ proyecto }) => {
           </div>
         </div>
 
-        {/* Zona de código */}
+        {/* Zona de editor — cambia según modo */}
         <div className="ep-editor-zone">
-
-          {conectadoGitHub ? (
+          {modoActivo === 'sobre_codigo' && conectadoGitHub ? (
             <ExplorarGitHub
               githubConfig={githubConfig}
               arbolArchivos={arbolArchivos}
@@ -566,46 +344,61 @@ const EjecutarPruebasTab = ({ proyecto }) => {
               onCerrarTab={cerrarTab}
               onDesconectar={desconectarGitHub}
               onCambiarProyecto={() => setModalGitHubVisible(true)}
-              onRecargarArbol={() =>
-                cargarArbolArchivos(githubConfig.token, githubConfig.repositorio, githubConfig.rama)
-              }
+              onRecargarArbol={() => cargarArbolArchivos(githubConfig.token, githubConfig.repositorio, githubConfig.rama)}
             />
-          ) : (
+          ) : modoActivo === 'sobre_codigo' ? (
             <>
               <div className="ep-manual-bar">
-                <span className="ep-manual-bar-label">
-                  <CodeOutlined />
-                  Editor de Código
+                <span className="ep-manual-bar-label"><CodeOutlined />Código bajo prueba</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>
+                  Pega el código Python que tus pruebas necesitan
                 </span>
-                {pruebaActiva && (
-                  <Tag color="blue">{pruebaActiva.codigo} seleccionada</Tag>
-                )}
+                {pruebaActiva && <Tag color="blue" style={{ marginLeft: 'auto' }}>{pruebaActiva.codigo}</Tag>}
               </div>
               <div style={{ flex: 1, overflow: 'hidden' }}>
                 <Editor
                   height="100%"
-                  defaultLanguage="javascript"
+                  defaultLanguage="python"
                   value={codigoManual}
                   onChange={(v) => setCodigoManual(v || '')}
                   onMount={(editor) => { editorRef.current = editor; }}
                   theme="vs-dark"
-                  options={{
-                    minimap: { enabled: true },
-                    fontSize: 14,
-                    lineNumbers: 'on',
-                    scrollBeyondLastLine: false,
-                    automaticLayout: true,
-                    tabSize: 2,
-                    wordWrap: 'on',
-                  }}
+                  options={{ minimap: { enabled: true }, fontSize: 14, lineNumbers: 'on', scrollBeyondLastLine: false, automaticLayout: true, tabSize: 4, wordWrap: 'on' }}
                 />
               </div>
             </>
+          ) : (
+            /* Modo prueba_sola: no hay editor, mostrar explicación */
+            <div className="modo-sola-placeholder">
+              <div className="modo-sola-placeholder__inner">
+                <ExperimentOutlined className="modo-sola-placeholder__icon" />
+                <h4 className="modo-sola-placeholder__title">Modo Prueba Sola</h4>
+                <p className="modo-sola-placeholder__desc">
+                  En este modo no necesitas código del proyecto. Las pruebas se ejecutan
+                  de forma aislada y los imports del proyecto se simulan automáticamente.
+                </p>
+                <div className="modo-sola-placeholder__steps">
+                  <div className="modo-sola-step">
+                    <span className="modo-sola-step__num">①</span>
+                    <span>Selecciona las pruebas de la lista</span>
+                  </div>
+                  <div className="modo-sola-step">
+                    <span className="modo-sola-step__num">②</span>
+                    <span>Haz clic en <strong>Prueba sola</strong></span>
+                  </div>
+                  <div className="modo-sola-step">
+                    <span className="modo-sola-step__num">③</span>
+                    <span>Lo esperado es que las pruebas <strong>fallen</strong> (red phase)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           <ConsolaResultados
             resultados={resultados}
             ejecutando={ejecutando}
+            onLimpiar={limpiarResultados}
           />
         </div>
       </div>

@@ -148,7 +148,7 @@
 
 .progreso-barra-track {
     height: 10px;
-    background: var(--bg-hover, #f3f4f6);
+    background: var(--bg-hover);
     border-radius: 9999px;
     overflow: hidden;
 }
@@ -156,7 +156,7 @@
 .progreso-barra-fill-global {
     height: 100%;
     border-radius: 9999px;
-    background: linear-gradient(to right, #6366f1, #8b5cf6, #ec4899);
+    background: linear-gradient(to right, #6366f1, var(--primary-color), var(--secondary-color));
     transition: width 0.7s ease-out;
 }
 
@@ -177,11 +177,11 @@
 /* Advertencia errores */
 .progreso-alerta-error {
     border-radius: 8px;
-    background: var(--color-warn-bg, #fffbeb);
-    border: 1px solid var(--color-warn-border, #fcd34d);
+    background: var(--warning-light);
+    border: 1px solid var(--warning-color);
     padding: 8px 12px;
     font-size: 12px;
-    color: var(--color-warn-text, #92400e);
+    color: var(--warning-hover);
 }
 
 .progreso-mensaje-global {
@@ -200,14 +200,14 @@
 }
 
 .tarjeta-tipo--pendiente {
-    border-color: var(--border-color, #e5e7eb);
-    background: var(--bg-hover, #f9fafb);
+    border-color: var(--border-color);
+    background: var(--bg-hover);
     opacity: 0.55;
 }
 
 .tarjeta-tipo--error {
-    border-color: #fca5a5;
-    background: var(--color-error-bg, #fef2f2);
+    border-color: var(--error-color);
+    background: var(--error-light);
 }
 
 /* Encabezado de tarjeta */
@@ -239,15 +239,15 @@
 .tarjeta-tipo__badge-ok {
     font-size: 11px;
     font-weight: 700;
-    color: #059669;
-    background: #d1fae5;
+    color: var(--success-hover);
+    background: var(--success-light);
     padding: 2px 8px;
     border-radius: 99px;
 }
 
 .tarjeta-tipo__estado-cola {
     font-size: 12px;
-    color: var(--text-secondary, #9ca3af);
+    color: var(--text-tertiary);
     font-weight: 500;
 }
 
@@ -298,7 +298,7 @@
 
 .tarjeta-tipo__texto-ok {
     font-size: 12px;
-    color: #059669;
+    color: var(--success-hover);
     font-weight: 500;
     margin: 0;
     display: flex;
@@ -308,7 +308,7 @@
 
 .tarjeta-tipo__texto-error {
     font-size: 12px;
-    color: #ef4444;
+    color: var(--error-color);
     font-weight: 500;
     margin: 0;
     display: flex;
@@ -318,7 +318,7 @@
 
 .tarjeta-tipo__texto-pendiente {
     font-size: 12px;
-    color: var(--text-secondary, #9ca3af);
+    color: var(--text-tertiary);
     margin: 0;
 }
 
@@ -363,12 +363,12 @@
 /* Info de tipos ya generados */
 .vista-generar-ya-generados {
     width: 100%;
-    background: var(--color-success-bg, #f6ffed);
-    border: 1px solid var(--color-success-border, #b7eb8f);
+    background: var(--success-light);
+    border: 1px solid var(--success-color);
     border-radius: var(--border-radius-lg);
     padding: 10px 16px;
     font-size: var(--font-size-sm);
-    color: var(--color-success-text, #389e0d);
+    color: var(--success-hover);
 }
 
 /* Sección de selección de tipos */
@@ -417,7 +417,7 @@
 }
 
 .tipo-card:hover {
-    border-color: var(--border-hover-color, #d1d5db);
+    border-color: var(--border-hover);
 }
 
 .tipo-card__icono {
@@ -544,11 +544,11 @@
 }
 
 .item-prueba:hover {
-    background: var(--bg-gray, var(--bg-hover));
+    background: var(--bg-gray);
 }
 
 .item-prueba.active {
-    background: var(--primary-bg-light);
+    background: var(--primary-light);
     border-color: var(--primary-color);
 }
 
@@ -597,9 +597,9 @@
    EditorPrueba
    ════════════════════════════════════════════════════════════════════ */
 .editor-prueba {
-    background: var(--bg-card, white);
+    background: var(--bg-card);
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-md);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -609,8 +609,8 @@
 /* Header */
 .editor-prueba__header {
     padding: 1.5rem;
-    border-bottom: 1px solid var(--border-color, #f0f0f0);
-    background: var(--bg-secondary, #fafafa);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-hover);
 }
 
 .editor-prueba__header-top {
@@ -636,7 +636,7 @@
 }
 
 .editor-prueba__cambios-pendientes {
-    color: #ff9800;
+    color: var(--warning-color);
     font-weight: 500;
     display: flex;
     align-items: center;
@@ -652,8 +652,8 @@
 /* Footer info */
 .editor-prueba__footer-info {
     padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border-color, #f0f0f0);
-    background: var(--bg-secondary, #fafafa);
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-hover);
     font-size: 0.85rem;
     color: var(--text-secondary);
 }
@@ -667,8 +667,8 @@
 /* Barra de acciones */
 .editor-prueba__acciones {
     padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border-color, #f0f0f0);
-    background: var(--bg-card, white);
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-card);
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
@@ -677,10 +677,10 @@
 
 /* Estado vacío */
 .editor-prueba__vacio {
-    background: var(--bg-card, white);
+    background: var(--bg-card);
     border-radius: 8px;
     padding: 3rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-md);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -700,14 +700,14 @@
 
 /* Botón Aprobar — verde coherente con el sistema */
 .btn-aprobar {
-    background: #52c41a !important;
-    border-color: #52c41a !important;
-    color: #fff !important;
+    background: var(--success-color) !important;
+    border-color: var(--success-color) !important;
+    color: var(--text-white) !important;
 }
 
 .btn-aprobar:hover:not(:disabled) {
-    background: #389e0d !important;
-    border-color: #389e0d !important;
+    background: var(--success-hover) !important;
+    border-color: var(--success-hover) !important;
 }
 
 .btn-aprobar:disabled {

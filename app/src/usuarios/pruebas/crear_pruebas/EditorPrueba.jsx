@@ -81,16 +81,6 @@ const EditorPrueba = ({
     useEffect(() => {
         if (!prueba) return;
 
-        // DEBUG - quitar después
-        console.log('=== DEBUG prueba ===');
-        console.log('prueba.prueba tipo:', typeof prueba.prueba);
-        console.log('prueba.prueba valor:', prueba.prueba);
-        const detalle = normalizarPruebaJson(prueba.prueba);
-        console.log('detalle normalizado:', detalle);
-        console.log('codigo_pytest existe:', !!detalle.codigo_pytest);
-        console.log('codigo_editado existe:', !!detalle.codigo_editado);
-        // FIN DEBUG
-
         const codigoAMostrar = obtenerCodigoPrueba(prueba);
         setCodigo(codigoAMostrar);
         setCodigoGuardado(codigoAMostrar);

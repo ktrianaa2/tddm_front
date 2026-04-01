@@ -237,14 +237,10 @@ export const useEsquemaBD = (proyectoId, autoLoad = true) => {
                 token
             );
 
-            console.log('🔍 DEBUG - Response del backend:', response);
-
             const esquemasData = response.data || response.esquemas || [];
 
             if (Array.isArray(esquemasData)) {
-                const esquemasProcesados = esquemasData.map(esquema => {
-                    console.log('🔍 DEBUG - Procesando esquema:', esquema);
-                    
+                const esquemasProcesados = esquemasData.map(esquema => {                    
                     // Parsear esquema (puede ser string o objeto)
                     let esquemaObj = esquema.esquema;
                     if (typeof esquemaObj === 'string') {
@@ -255,14 +251,9 @@ export const useEsquemaBD = (proyectoId, autoLoad = true) => {
                             esquemaObj = {};
                         }
                     }
-                    
-                    console.log('🔍 DEBUG - esquemaObj parseado:', esquemaObj);
-                    
+                                        
                     const tablasTransformadas = transformarEsquema(esquemaObj);
                     const nombreBD = extraerNombreBD(esquemaObj);
-                    
-                    console.log('🔍 DEBUG - tablasTransformadas:', tablasTransformadas);
-                    console.log('🔍 DEBUG - nombreBD extraído:', nombreBD);
 
                     return {
                         id: esquema.id,
@@ -278,7 +269,6 @@ export const useEsquemaBD = (proyectoId, autoLoad = true) => {
                     };
                 });
                 
-                console.log('✅ DEBUG - esquemasProcesados finales:', esquemasProcesados);
                 setEsquemas(esquemasProcesados);
             } else {
                 setEsquemas([]);
@@ -308,8 +298,6 @@ export const useEsquemaBD = (proyectoId, autoLoad = true) => {
                 token
             );
 
-            console.log('🔍 DEBUG - obtenerEsquema response:', response);
-
             const esquema = response;
 
             if (esquema) {
@@ -324,14 +312,10 @@ export const useEsquemaBD = (proyectoId, autoLoad = true) => {
                         esquemaJSON = {};
                     }
                 }
-                
-                console.log('🔍 DEBUG - esquemaJSON:', esquemaJSON);
-                
+                                
                 const tablasConEstructura = transformarEsquema(esquemaJSON);
                 const nombreBD = extraerNombreBD(esquemaJSON);
                 
-                console.log('🔍 DEBUG - tablasConEstructura:', tablasConEstructura);
-
                 const esquemaProcesado = {
                     id: esquema.id,
                     proyecto_id: esquema.proyecto_id,
@@ -347,7 +331,6 @@ export const useEsquemaBD = (proyectoId, autoLoad = true) => {
                     fecha_actualizacion: esquema.fecha_actualizacion
                 };
 
-                console.log('✅ DEBUG - esquemaProcesado:', esquemaProcesado);
                 setEsquemaActual(esquemaProcesado);
                 return esquemaProcesado;
             }
